@@ -16,7 +16,6 @@ import org.springframework.data.domain.Sort;
 import com.adamasorho.mindapax_backend.dto.MessageDTO;
 import com.adamasorho.mindapax_backend.dto.response.PageResponse;
 import com.adamasorho.mindapax_backend.mapper.MessageMapper;
-import com.adamasorho.mindapax_backend.model.Message;
 import com.adamasorho.mindapax_backend.service.MessageService;
 
 import jakarta.validation.Valid;
@@ -31,9 +30,9 @@ public class MessageController {
 
   @PostMapping
   public ResponseEntity<MessageDTO> send(@RequestBody @Valid MessageDTO dto) {
-    Message message = messageMapper.toEntity(dto);
+    // Message message = messageMapper.toEntity(dto);
     
-    return ResponseEntity.ok(messageMapper.toDTO(messageService.sendMessage(message)));
+    return ResponseEntity.ok(messageMapper.toDTO(messageService.sendMessage(dto)));
   }
 
     @GetMapping
