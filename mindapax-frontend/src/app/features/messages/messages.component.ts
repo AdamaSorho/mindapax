@@ -204,9 +204,6 @@ export class MessagesComponent implements OnInit, OnDestroy {
       isRead: false,
     };
 
-    // Optimistically add message to UI
-    this.messages.push(newMsg);
-
     // Update the conversation's last message
     this.selectedConversation.lastMessage = newMsg;
 
