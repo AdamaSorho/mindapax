@@ -38,7 +38,7 @@
               }
             </div>
             <div class="flex items-center justify-between mt-1">
-              <p class="text-sm text-gray-500 truncate">{{ conversation.lastMessage }}</p>
+              <p class="text-sm text-gray-500 truncate">{{ conversation.lastMessage?.content }}</p>
               <div *ngIf="conversation.unreadCount && conversation.unreadCount > 0"
                 class="ml-2 bg-blue-500 text-white text-xs font-medium rounded-full h-5 w-5 flex items-center justify-center">
                 {{ conversation.unreadCount }}
