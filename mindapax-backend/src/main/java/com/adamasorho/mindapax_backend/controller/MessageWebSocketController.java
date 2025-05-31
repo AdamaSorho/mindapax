@@ -1,7 +1,7 @@
 package com.adamasorho.mindapax_backend.controller;
 
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.adamasorho.mindapax_backend.dto.MessageDTO;
@@ -18,13 +18,14 @@ public class MessageWebSocketController {
 
     private final MessageService messageService;
     private final MessageMapper messageMapper;
+    private final SimpMessagingTemplate simpMessagingTemplate;
 
     @MessageMapping("/chat") // maps to /app/chat
-    @SendTo("/topic/messages/{conversationId}") // everyone subscribed gets message
     public MessageDTO sendMessage(@Valid MessageDTO messageDTO) {
       Message message = messageService.sendMessage(messageMapper.toEntity(messageDTO));
-
-      return messageMapper.toDTO(message);
+      MessageDTO savedMessageDTO = messageMapper.toDTO(message);
+      simpMessagingTemplate.convertAndSend("/topic/messages/" + savedMessageDTO.getConversationId(), savedMessageDTO);
+      return savedMessageDTO;
     }
 }
 
