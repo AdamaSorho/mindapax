@@ -22,7 +22,7 @@ public class MessageWebSocketController {
 
     @MessageMapping("/chat") // maps to /app/chat
     public MessageDTO sendMessage(@Valid MessageDTO messageDTO) {
-      Message message = messageService.sendMessage(messageMapper.toEntity(messageDTO));
+      Message message = messageService.sendMessage(messageDTO); // Changed this line
       MessageDTO savedMessageDTO = messageMapper.toDTO(message);
       simpMessagingTemplate.convertAndSend("/topic/messages/" + savedMessageDTO.getConversationId(), savedMessageDTO);
       return savedMessageDTO;
