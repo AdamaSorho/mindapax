@@ -37,16 +37,16 @@ public class MessageWebSocketControllerTest {
     public void testSendMessage() {
         // 1. Create a sample MessageDTO
         MessageDTO messageDTO = new MessageDTO();
-        messageDTO.setConversationId("testConversationId");
+        messageDTO.setConversationId(1L);
         messageDTO.setContent("Hello");
-        messageDTO.setSender("testSender");
+        // messageDTO.setSender();
 
         // 2. Mock Message and its mapping
         Message message = new Message(); // Assume Message has a default constructor
         MessageDTO mappedMessageDTO = new MessageDTO(); // This will be returned by mapper.toDTO
-        mappedMessageDTO.setConversationId("testConversationId");
+        mappedMessageDTO.setConversationId(2L);
         mappedMessageDTO.setContent("Hello");
-        mappedMessageDTO.setSender("testSender");
+        // mappedMessageDTO.setSender("testSender");
 
 
         // 3. Mock service and mapper methods

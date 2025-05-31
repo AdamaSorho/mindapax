@@ -198,7 +198,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
 
     const newMsg: Message = {
       senderId: this.currentUserId,
-      conversationId: this.selectedConversation!.id,
+      conversationId: this.selectedConversation.id,
       content: this.newMessage,
       timestamp: new Date(),
       isRead: false,
