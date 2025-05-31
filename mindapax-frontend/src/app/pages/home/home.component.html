@@ -1,0 +1,165 @@
+<!-- Hero Section -->
+<section class="relative bg-indigo-900 text-white">
+  <!-- Background Image with Overlay -->
+  <div class="absolute inset-0 bg-gradient-to-r from-indigo-900 to-indigo-700 opacity-90"></div>
+
+  <!-- Hero Content -->
+  <div class="container mx-auto px-4 py-20 md:py-32 relative z-10">
+    <div class="max-w-2xl">
+      <h1 class="text-4xl md:text-5xl font-bold mb-6">
+        Empowering Your Mental, Physical & Financial Well-being
+      </h1>
+      <p class="text-xl md:text-2xl mb-8 text-indigo-200">
+        Connect with professionals who can help you thrive in every aspect of your life.
+      </p>
+      <button
+        class="bg-white text-indigo-900 hover:bg-indigo-100 px-8 py-3 rounded-md font-semibold text-lg transition duration-300">
+        Get Started
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-4 text-gray-800">How It Works</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Your journey to holistic well-being is just three simple steps away.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Step 1 -->
+      <div class="bg-white p-8 rounded-lg shadow-md text-center">
+        <div
+          class="bg-indigo-100 text-indigo-800 w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+          1</div>
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Choose a Professional</h3>
+        <p class="text-gray-600">
+          Browse our curated network of licensed therapists, certified coaches, and expert counselors.
+        </p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="bg-white p-8 rounded-lg shadow-md text-center">
+        <div
+          class="bg-indigo-100 text-indigo-800 w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+          2</div>
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Select a Service</h3>
+        <p class="text-gray-600">
+          Choose from therapy, coaching, or counseling services tailored to your specific needs.
+        </p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="bg-white p-8 rounded-lg shadow-md text-center">
+        <div
+          class="bg-indigo-100 text-indigo-800 w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+          3</div>
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Connect</h3>
+        <p class="text-gray-600">
+          Meet with your professional via chat, video, or messaging at times that work for you.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Services Section -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-4 text-gray-800">Our Services</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Comprehensive support for every dimension of your well-being
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Mental Health -->
+      <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition duration-300">
+        <div class="h-48 bg-indigo-800"></div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-3 text-gray-800">Mental Health</h3>
+          <p class="text-gray-600 mb-4">
+            Connect with licensed therapists and counselors specialized in anxiety, depression, stress management, and
+            more.
+          </p>
+          <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Learn more →</a>
+        </div>
+      </div>
+
+      <!-- Physical Wellness -->
+      <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition duration-300">
+        <div class="h-48 bg-green-700"></div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-3 text-gray-800">Physical Wellness</h3>
+          <p class="text-gray-600 mb-4">
+            Work with nutrition experts, fitness coaches and wellness practitioners to optimize your physical health.
+          </p>
+          <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Learn more →</a>
+        </div>
+      </div>
+
+      <!-- Financial Coaching -->
+      <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition duration-300">
+        <div class="h-48 bg-blue-700"></div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-3 text-gray-800">Financial Coaching</h3>
+          <p class="text-gray-600 mb-4">
+            Get guidance from certified financial coaches on budgeting, investing, debt management, and long-term
+            planning.
+          </p>
+          <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium">Learn more →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-4 text-gray-800">What Our Clients Say</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Real stories from people just like you who have transformed their lives with Mindapax
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div *ngFor="let testimonial of testimonials" class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex items-center mb-4">
+          <img [src]="testimonial.image" alt="{{testimonial.name}}" class="w-12 h-12 rounded-full mr-4">
+          <div>
+            <h4 class="font-semibold text-gray-800">{{testimonial.name}}</h4>
+            <p class="text-gray-600 text-sm">{{testimonial.role}}</p>
+          </div>
+        </div>
+        <blockquote class="italic text-gray-700">"{{testimonial.quote}}"</blockquote>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-indigo-900 text-white">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-3xl font-bold mb-6">Ready to Begin Your Journey?</h2>
+    <p class="text-xl mb-8 text-indigo-200 max-w-2xl mx-auto">
+      Join thousands of people who have transformed their lives with personalized professional guidance.
+    </p>
+    <div class="flex flex-col sm:flex-row justify-center gap-4">
+      <button
+        class="bg-white text-indigo-900 hover:bg-indigo-100 px-8 py-3 rounded-md font-semibold text-lg transition duration-300">
+        Sign Up For Free
+      </button>
+      <button
+        class="bg-transparent border-2 border-white text-white hover:bg-white hover:text-indigo-900 px-8 py-3 rounded-md font-semibold text-lg transition duration-300">
+        Learn More
+      </button>
+    </div>
+  </div>
+</section>

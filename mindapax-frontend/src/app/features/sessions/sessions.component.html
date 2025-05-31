@@ -1,0 +1,269 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">My Sessions</h1>
+    <p class="text-gray-600">Manage your scheduled sessions and view past sessions</p>
+  </div>
+
+  <!-- Loading State for Initial Load -->
+  <div *ngIf="loading" class="flex flex-col items-center justify-center py-12 bg-white rounded-lg shadow-md">
+    <div class="flex items-center justify-center">
+      <svg aria-hidden="true" class="w-8 h-8 mr-2 text-gray-200 animate-spin fill-blue-600" viewBox="0 0 100 101"
+        fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+          fill="currentColor" />
+        <path
+          d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+          fill="currentFill" />
+      </svg>
+      <span class="text-lg font-medium text-gray-700">Loading sessions...</span>
+    </div>
+  </div>
+
+
+  <div *ngIf="!loading">
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+      <ul class="flex flex-wrap -mb-px text-sm font-medium text-center">
+        <li class="mr-2">
+          <button [ngClass]="{'inline-block p-4 border-b-2 rounded-t-lg': true, 
+                            'border-blue-600 text-blue-600 active': activeTab === 'upcoming', 
+                            'border-transparent hover:text-gray-600 hover:border-gray-300': activeTab !== 'upcoming'}"
+            (click)="setActiveTab('upcoming')">
+            Upcoming Sessions
+            <span *ngIf="upcomingSessions.length > 0"
+              class="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              {{upcomingSessions.length}}
+            </span>
+          </button>
+        </li>
+        <li class="mr-2">
+          <button [ngClass]="{'inline-block p-4 border-b-2 rounded-t-lg': true, 
+                            'border-blue-600 text-blue-600 active': activeTab === 'past', 
+                            'border-transparent hover:text-gray-600 hover:border-gray-300': activeTab !== 'past'}"
+            (click)="setActiveTab('past')">
+            Past Sessions
+            <span *ngIf="pastSessions.length > 0"
+              class="ml-2 bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              {{pastSessions.length}}
+            </span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Book New Session Button -->
+    <div class="flex justify-end mb-6">
+      <button (click)="bookNewSession()"
+        class="flex items-center text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Book New Session
+      </button>
+    </div>
+
+    <!-- Upcoming Sessions Tab Content -->
+    <div *ngIf="activeTab === 'upcoming'">
+      <!-- No Upcoming Sessions Message -->
+      <div *ngIf="upcomingSessions.length === 0"
+        class="flex flex-col items-center justify-center py-12 bg-white rounded-lg shadow-md">
+        <svg class="w-16 h-16 text-gray-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <h3 class="text-xl font-medium text-gray-900 mb-2">No upcoming sessions</h3>
+        <p class="text-gray-600 text-center max-w-md mb-6">You don't have any upcoming sessions scheduled. Book a
+          session
+          with a professional to get started.</p>
+        <button (click)="bookNewSession()"
+          class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+          Find a Professional
+        </button>
+      </div>
+
+      <!-- Upcoming Sessions List -->
+      <div *ngIf="upcomingSessions.length > 0">
+        <div *ngFor="let session of upcomingSessions"
+          class="bg-white rounded-lg shadow-md overflow-hidden mb-6 hover:shadow-lg transition-shadow duration-300">
+          <div class="p-6">
+            <div class="flex items-start">
+              <!-- Session Info -->
+              <div class="flex-grow">
+                <!-- Session Date and Time -->
+                <div class="mb-4">
+                  <div class="flex items-center mb-2">
+                    <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                      viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                    <h3 class="text-lg font-semibold text-gray-900">{{formatDateToRelative(session.date)}}</h3>
+                  </div>
+                  <div class="flex items-center mb-2">
+                    <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                      viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-gray-700">{{session.startTime}} - {{session.endTime}}</p>
+                  </div>
+                  <div class="flex items-center">
+                    <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                      viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                      [ngClass]="{'hidden': !getSessionTypeIcon(session.mode)}">
+                      <path *ngIf="getSessionTypeIcon(session.mode) === 'video-camera'" stroke-linecap="round"
+                        d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                      <path *ngIf="getSessionTypeIcon(session.mode) === 'chat-bubble-left-right'" stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+                      <path *ngIf="getSessionTypeIcon(session.mode) === 'envelope'" stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                    </svg>
+                    <p class="text-gray-700 capitalize">{{session.mode}} Session</p>
+                  </div>
+                </div>
+
+                <!-- Professional Info -->
+                <div class="flex items-center mb-4">
+                  <img [src]="session.professionalImage" alt="{{session.professionalName}}"
+                    class="w-12 h-12 rounded-full mr-4 object-cover">
+                  <div>
+                    <h4 class="font-semibold text-gray-900">{{session.professionalName}}</h4>
+                    <p class="text-sm text-blue-600">{{session.specialization}}</p>
+                  </div>
+                </div>
+
+                <!-- Notes -->
+                <div *ngIf="session.notes" class="mb-4 p-3 bg-gray-50 rounded-md">
+                  <p class="text-sm text-gray-700"><span class="font-medium">Session Notes:</span> {{session.notes}}</p>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="ml-6 flex flex-col space-y-2">
+                <button *ngIf="isToday(session)" (click)="joinSession(session.id)"
+                  class="bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg text-sm px-4 py-2 text-center">
+                  Join Now
+                </button>
+                <button (click)="rescheduleSession(session.id)"
+                  class="text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 font-medium rounded-lg text-sm px-4 py-2 text-center">
+                  Reschedule
+                </button>
+                <button (click)="cancelSession(session.id)"
+                  class="text-red-600 bg-white border border-red-300 hover:bg-red-50 font-medium rounded-lg text-sm px-4 py-2 text-center">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Past Sessions Tab Content -->
+    <div *ngIf="activeTab === 'past'">
+      <!-- No Past Sessions Message -->
+      <div *ngIf="pastSessions.length === 0"
+        class="flex flex-col items-center justify-center py-12 bg-white rounded-lg shadow-md">
+        <svg class="w-16 h-16 text-gray-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 class="text-xl font-medium text-gray-900 mb-2">No past sessions</h3>
+        <p class="text-gray-600 text-center max-w-md mb-6">You haven't had any sessions yet. Book your first session to
+          get started on your wellness journey.</p>
+        <button (click)="bookNewSession()"
+          class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+          Find a Professional
+        </button>
+      </div>
+
+      <!-- Past Sessions List -->
+      <div *ngIf="pastSessions.length > 0">
+        <div *ngFor="let session of pastSessions" class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-6">
+            <div class="flex items-start">
+              <!-- Session Info -->
+              <div class="flex-grow">
+                <!-- Session Status Badge -->
+                <div class="mb-3">
+                  <span *ngIf="session.status === 'COMPLETED'"
+                    class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Completed</span>
+                  <span *ngIf="session.status === 'CANCELLED'"
+                    class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Canceled</span>
+                </div>
+
+                <!-- Session Date and Time -->
+                <div class="mb-4">
+                  <div class="flex items-center mb-2">
+                    <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                      viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                    <h3 class="text-lg font-semibold text-gray-900">{{formatDateToRelative(session.date)}}</h3>
+                  </div>
+                  <div class="flex items-center mb-2">
+                    <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                      viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-gray-700">{{session.startTime}} - {{session.endTime}}</p>
+                  </div>
+                  <div class="flex items-center">
+                    <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                      viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                      [ngClass]="{'hidden': !getSessionTypeIcon(session.mode)}">
+                      <path *ngIf="getSessionTypeIcon(session.mode) === 'video-camera'" stroke-linecap="round"
+                        d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                      <path *ngIf="getSessionTypeIcon(session.mode) === 'chat-bubble-left-right'" stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+                      <path *ngIf="getSessionTypeIcon(session.mode) === 'envelope'" stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                    </svg>
+                    <p class="text-gray-700 capitalize">{{session.mode}} Session</p>
+                  </div>
+                </div>
+
+                <!-- Professional Info -->
+                <div class="flex items-center mb-4">
+                  <img [src]="session.professionalImage" alt="{{session.professionalName}}"
+                    class="w-12 h-12 rounded-full mr-4 object-cover">
+                  <div>
+                    <h4 class="font-semibold text-gray-900">{{session.professionalName}}</h4>
+                    <p class="text-sm text-blue-600">{{session.specialization}}</p>
+                  </div>
+                </div>
+
+                <!-- Notes -->
+                <div *ngIf="session.notes" class="mb-4 p-3 bg-gray-50 rounded-md">
+                  <p class="text-sm text-gray-700"><span class="font-medium">Session Notes:</span> {{session.notes}}</p>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="ml-6">
+                <button *ngIf="session.status === 'COMPLETED'" (click)="viewPastSession(session.id)"
+                  class="text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 font-medium rounded-lg text-sm px-4 py-2 text-center">
+                  View Details
+                </button>
+                <button *ngIf="session.status === 'COMPLETED'" (click)="bookNewSession()"
+                  class="mt-2 text-blue-600 bg-white border border-blue-300 hover:bg-blue-50 font-medium rounded-lg text-sm px-4 py-2 text-center">
+                  Book Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

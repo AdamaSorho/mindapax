@@ -1,0 +1,318 @@
+<div class="p-4">
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Connection Requests</h1>
+    <p class="text-gray-600">Manage client connection requests, transfers, and referrals</p>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+      <div class="flex items-center">
+        <div class="inline-flex rounded-md bg-blue-100 p-2">
+          <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <h2 class="font-semibold text-gray-500 text-sm">Pending</h2>
+          <p class="font-bold text-gray-900 text-2xl">{{filterConnectionsByStatus(connectionStatus.PENDING).length}}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+      <div class="flex items-center">
+        <div class="inline-flex rounded-md bg-green-100 p-2">
+          <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <h2 class="font-semibold text-gray-500 text-sm">Accepted</h2>
+          <p class="font-bold text-gray-900 text-2xl">{{filterConnectionsByStatus(connectionStatus.ACCEPTED).length}}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+      <div class="flex items-center">
+        <div class="inline-flex rounded-md bg-purple-100 p-2">
+          <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <h2 class="font-semibold text-gray-500 text-sm">Transferred</h2>
+          <p class="font-bold text-gray-900 text-2xl">{{filterConnectionsByStatus(connectionStatus.TRANSFERRED).length}}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+      <div class="flex items-center">
+        <div class="inline-flex rounded-md bg-yellow-100 p-2">
+          <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+            </path>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <h2 class="font-semibold text-gray-500 text-sm">Escalated</h2>
+          <p class="font-bold text-gray-900 text-2xl">{{filterConnectionsByStatus(connectionStatus.ESCALATED).length}}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs and Filters Section -->
+  <div class="bg-white rounded-lg border border-gray-200 mb-6">
+    <div class="border-b border-gray-200">
+      <ul class="flex flex-wrap -mb-px">
+        <li class="mr-2">
+          <button
+            [ngClass]="{'text-blue-600 border-blue-600': activeTab === 'pending', 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300': activeTab !== 'pending'}"
+            class="inline-flex items-center py-4 px-4 text-sm font-medium border-b-2" (click)="changeTab('pending')">
+            Pending
+            <span
+              class="ml-2 bg-gray-100 text-gray-700 py-0.5 px-2 rounded-full text-xs">{{filterConnectionsByStatus(connectionStatus.PENDING).length}}</span>
+          </button>
+        </li>
+        <li class="mr-2">
+          <button
+            [ngClass]="{'text-blue-600 border-blue-600': activeTab === 'accepted', 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300': activeTab !== 'accepted'}"
+            class="inline-flex items-center py-4 px-4 text-sm font-medium border-b-2" (click)="changeTab('accepted')">
+            Accepted
+          </button>
+        </li>
+        <li class="mr-2">
+          <button
+            [ngClass]="{'text-blue-600 border-blue-600': activeTab === 'transferred', 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300': activeTab !== 'transferred'}"
+            class="inline-flex items-center py-4 px-4 text-sm font-medium border-b-2"
+            (click)="changeTab('transferred')">
+            Transferred
+          </button>
+        </li>
+        <li>
+          <button
+            [ngClass]="{'text-blue-600 border-blue-600': activeTab === 'all', 'text-gray-500 border-transparent hover:text-gray-600 hover:border-gray-300': activeTab !== 'all'}"
+            class="inline-flex items-center py-4 px-4 text-sm font-medium border-b-2" (click)="changeTab('all')">
+            All Connections
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="p-4 flex flex-col md:flex-row justify-between items-center">
+      <div class="flex mb-4 md:mb-0">
+        <button
+          [ngClass]="{'bg-blue-50 text-blue-600': sortBy === 'date', 'bg-white text-gray-500 hover:bg-gray-50': sortBy !== 'date'}"
+          class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md mr-2"
+          (click)="changeSortBy('date')">
+          <svg class="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          Sort by Date
+        </button>
+        <button
+          [ngClass]="{'bg-blue-50 text-blue-600': sortBy === 'urgency', 'bg-white text-gray-500 hover:bg-gray-50': sortBy !== 'urgency'}"
+          class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md"
+          (click)="changeSortBy('urgency')">
+          <svg class="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+            </path>
+          </svg>
+          Sort by Urgency
+        </button>
+      </div>
+
+      <div class="relative">
+        <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </div>
+        <input type="search"
+          class="block p-2 pl-10 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Search connections..." />
+      </div>
+    </div>
+  </div>
+
+  <!-- Connection Cards -->
+  <div class="grid grid-cols-1 gap-4">
+    <div *ngIf="filteredConnections.length === 0" class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No connections found</h3>
+      <p class="mt-1 text-sm text-gray-500">No connection requests match your current filter settings.</p>
+    </div>
+
+    <div *ngFor="let connection of filteredConnections"
+      class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div class="flex items-center mb-4 md:mb-0">
+          <img [src]="connection.user.avatar || 'https://placehold.co/400x400?text=Profile'" alt="Client Photo"
+            class="w-10 h-10 rounded-full" />
+          <div class="ml-3">
+            <h3 class="text-lg font-semibold text-gray-900">{{connection.user.firstName}}
+              {{connection.user.lastName}}</h3>
+            <div class="flex items-center">
+              <span class="text-sm text-gray-500">{{connection.requestType | titlecase}}</span>
+              <span class="mx-2 h-1 w-1 rounded-full bg-gray-300"></span>
+              <span class="text-sm text-gray-500">{{connection.createdAt | date}}</span>
+              <span class="mx-2 h-1 w-1 rounded-full bg-gray-300"></span>
+              @if (connection.urgency) {
+              <span [ngClass]="getUrgencyClass(connection.urgency)"
+                class="px-2 py-0.5 rounded-full text-xs font-medium">
+                {{connection.urgency | titlecase}} Priority
+              </span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2" *ngIf="connection.status === connectionStatus.PENDING">
+          <button
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            (click)="acceptConnection(connection.id)">
+            Accept
+          </button>
+          <button
+            class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            (click)="openTransferModal(connection.id)">
+            Transfer
+          </button>
+          <button
+            class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            (click)="openAdminModal(connection.id)">
+            Escalate to Admin
+          </button>
+        </div>
+
+        <div *ngIf="connection.status === connectionStatus.ACCEPTED"
+          class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+          <svg class="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          Accepted
+        </div>
+
+        <div *ngIf="connection.status === connectionStatus.TRANSFERRED"
+          class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+          <svg class="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+          </svg>
+          Transferred
+        </div>
+
+        <div *ngIf="connection.status === connectionStatus.ESCALATED"
+          class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+          <svg class="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+          Escalated to Admin
+        </div>
+      </div>
+
+      <div class="border-t border-gray-200 p-4">
+        <p class="text-gray-700">{{connection.message}}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transfer Modal -->
+  <div *ngIf="isTransferModalOpen"
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-lg w-full">
+      <div class="p-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Transfer Connection</h3>
+      </div>
+
+      <div class="p-4">
+        <div class="mb-4">
+          <label for="selectProfessional" class="block mb-2 text-sm font-medium text-gray-900">Select
+            Professional</label>
+          <select [(ngModel)]="selectedProfessional" id="selectProfessional"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+            <option value="" disabled>Choose a professional</option>
+            <option *ngFor="let prof of professionals" [value]="prof.id" [disabled]="!prof.availability">
+              {{prof.user.firstName}} {{prof.user.lastName}} - {{prof.specialization}} {{!prof.availability ?
+              '(Unavailable)' : ''}}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label for="transferReason" class="block mb-2 text-sm font-medium text-gray-900">Reason for Transfer</label>
+          <textarea [(ngModel)]="transferReason" id="transferReason" rows="3"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            placeholder="Please provide a reason for transferring this connection..."></textarea>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-gray-200 flex justify-end space-x-2">
+        <button (click)="closeTransferModal()"
+          class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Cancel
+        </button>
+        <button (click)="transferToProf()" [disabled]="!selectedProfessional"
+          class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed">
+          Transfer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Escalation Modal -->
+  <div *ngIf="isAdminModalOpen"
+    class="fixed inset-0 bg-gray-500 bg-opacity-75 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-lg w-full">
+      <div class="p-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Escalate to Admin</h3>
+      </div>
+
+      <div class="p-4">
+        <div class="mb-4">
+          <label for="adminNote" class="block mb-2 text-sm font-medium text-gray-900">Note to Admin</label>
+          <textarea [(ngModel)]="adminNote" id="adminNote" rows="3"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            placeholder="Please provide details about why this connection needs admin attention..."></textarea>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-gray-200 flex justify-end space-x-2">
+        <button (click)="closeAdminModal()"
+          class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Cancel
+        </button>
+        <button (click)="escalateToAdmin()"
+          class="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+          Escalate
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

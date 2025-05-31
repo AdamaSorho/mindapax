@@ -1,0 +1,357 @@
+<!-- Professional Header Section -->
+<section class="bg-gradient-to-r from-blue-500 to-teal-400 py-8">
+  <div class="container mx-auto px-4">
+    <nav class="text-white mb-4" aria-label="Breadcrumb">
+      <ol class="list-none p-0 inline-flex">
+        <li class="flex items-center">
+          <a href="#" class="hover:text-blue-100">Home</a>
+          <svg class="fill-current w-3 h-3 mx-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512">
+            <path
+              d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z">
+            </path>
+          </svg>
+        </li>
+        <li class="flex items-center">
+          <a routerLink="/professionals" class="hover:text-blue-100">Professionals</a>
+          <svg class="fill-current w-3 h-3 mx-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512">
+            <path
+              d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z">
+            </path>
+          </svg>
+        </li>
+        <li>
+          <span class="text-blue-100">{{ professional.name }}</span>
+        </li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Professional Profile Content -->
+<section class="py-8">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- Left Column -->
+      <div class="w-full lg:w-2/3">
+        <!-- Professional Info Card -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+          <div class="p-6">
+            <div class="flex flex-col md:flex-row gap-6">
+              <!-- Profile Image -->
+              <div class="w-full md:w-1/3">
+                <img [src]="professional.image" [alt]="professional.name" class="w-full h-auto rounded-lg">
+              </div>
+
+              <!-- Profile Details -->
+              <div class="w-full md:w-2/3">
+                <h1 class="text-2xl font-bold mb-1">{{ professional.name }}</h1>
+                <p class="text-gray-600 mb-3">{{ professional.title }}</p>
+
+                <!-- Rating -->
+                <div class="flex items-center mb-4">
+                  <div class="flex text-yellow-400">
+                    <i *ngFor="let star of renderStars(professional.rating)" class="fas fa-star"></i>
+                    <i *ngIf="showPartialStar(professional.rating)" class="fas fa-star-half-alt"></i>
+                  </div>
+                  <span class="ml-2 text-gray-700">{{ professional.rating }}/5.0</span>
+                  <span class="mx-2 text-gray-500">•</span>
+                  <span class="text-gray-700">{{ professional.reviewCount }} reviews</span>
+                </div>
+
+                <!-- Specialties -->
+                <div class="mb-4">
+                  <h3 class="text-sm font-medium text-gray-700 mb-2">Specializes in:</h3>
+                  <div class="flex flex-wrap gap-2">
+                    <span *ngFor="let specialty of professional.specialties"
+                      class="bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded">
+                      {{ specialty }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Languages -->
+                <div class="mb-4">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-globe text-gray-500"></i>
+                    <span class="text-gray-700">{{ professional.languages.join(', ') }}</span>
+                  </div>
+                </div>
+
+                <!-- Experience -->
+                <div class="mb-4">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-briefcase text-gray-500"></i>
+                    <span class="text-gray-700">{{ professional.experience }} years of experience</span>
+                  </div>
+                </div>
+
+                <!-- Price -->
+                <div class="mb-6">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-dollar-sign text-gray-500"></i>
+                    <span class="text-gray-700">${{ professional.sessionPrice }} per session</span>
+                  </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="flex flex-wrap gap-3">
+                  <button
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2 px-4 transition duration-300">
+                    <i class="fas fa-calendar-alt mr-2"></i> Book Session
+                  </button>
+                  <button
+                    class="flex-1 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium rounded-lg py-2 px-4 transition duration-300">
+                    <i class="fas fa-comment mr-2"></i> Message
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="border-b border-gray-200 mb-6">
+          <ul class="flex flex-wrap -mb-px">
+            <li class="mr-2">
+              <button (click)="setActiveTab('about')" class="inline-block py-4 px-4 border-b-2 font-medium text-sm"
+                [ngClass]="activeTab === 'about' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                About
+              </button>
+            </li>
+            <li class="mr-2">
+              <button (click)="setActiveTab('reviews')" class="inline-block py-4 px-4 border-b-2 font-medium text-sm"
+                [ngClass]="activeTab === 'reviews' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                Reviews ({{ professional.reviewCount }})
+              </button>
+            </li>
+            <li class="mr-2">
+              <button (click)="setActiveTab('credentials')"
+                class="inline-block py-4 px-4 border-b-2 font-medium text-sm"
+                [ngClass]="activeTab === 'credentials' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+                Credentials
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Tab Content: About -->
+        <div *ngIf="activeTab === 'about'" class="space-y-8">
+          <div>
+            <h2 class="text-xl font-bold mb-4">About {{ professional.name }}</h2>
+            <p class="text-gray-700 mb-4">{{ professional.bio }}</p>
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold mb-4">My Approach</h2>
+            <p class="text-gray-700">{{ professional.approach }}</p>
+          </div>
+        </div>
+
+        <!-- Tab Content: Reviews -->
+        <div *ngIf="activeTab === 'reviews'" class="space-y-6">
+          <h2 class="text-xl font-bold mb-4">Client Reviews</h2>
+
+          <!-- Review Summary -->
+          <div class="flex items-center mb-6">
+            <div class="text-5xl font-bold text-gray-800 mr-4">{{ professional.rating }}</div>
+            <div>
+              <div class="flex text-yellow-400 mb-1">
+                <i *ngFor="let star of renderStars(professional.rating)" class="fas fa-star"></i>
+                <i *ngIf="showPartialStar(professional.rating)" class="fas fa-star-half-alt"></i>
+              </div>
+              <div class="text-gray-600">Based on {{ professional.reviewCount }} reviews</div>
+            </div>
+          </div>
+
+          <!-- Review List -->
+          <div class="space-y-6">
+            <div *ngFor="let review of reviews" class="border-b border-gray-200 pb-6 last:border-0">
+              <div class="flex items-start">
+                <img [src]="review.userImage" [alt]="review.userName" class="w-10 h-10 rounded-full mr-4">
+                <div class="flex-1">
+                  <div class="flex justify-between mb-1">
+                    <h3 class="font-bold">{{ review.userName }}</h3>
+                    <span class="text-gray-500 text-sm">{{ review.date }}</span>
+                  </div>
+                  <div class="flex text-yellow-400 mb-2">
+                    <i *ngFor="let star of renderStars(review.rating)" class="fas fa-star text-sm"></i>
+                  </div>
+                  <p class="text-gray-700">{{ review.comment }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- See More Button -->
+          <div class="text-center">
+            <button class="text-blue-600 hover:text-blue-800 font-medium">
+              See More Reviews <i class="fas fa-chevron-down ml-1"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab Content: Credentials -->
+        <div *ngIf="activeTab === 'credentials'" class="space-y-8">
+          <!-- Education -->
+          <div>
+            <h2 class="text-xl font-bold mb-4">Education</h2>
+            <div class="space-y-4">
+              <div *ngFor="let edu of professional.education" class="flex">
+                <div class="mr-4 pt-1">
+                  <i class="fas fa-graduation-cap text-blue-500"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold">{{ edu.degree }}</h3>
+                  <p class="text-gray-600">{{ edu.institution }}</p>
+                  <p class="text-gray-500 text-sm">{{ edu.year }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Certifications -->
+          <div>
+            <h2 class="text-xl font-bold mb-4">Certifications</h2>
+            <div class="space-y-4">
+              <div *ngFor="let cert of professional.certifications" class="flex">
+                <div class="mr-4 pt-1">
+                  <i class="fas fa-certificate text-blue-500"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold">{{ cert.name }}</h3>
+                  <p class="text-gray-600">{{ cert.authority }}</p>
+                  <p class="text-gray-500 text-sm">{{ cert.year }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Booking Section -->
+      <div class="w-full lg:w-1/3">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden sticky top-4">
+          <div class="bg-blue-50 p-4 border-b border-blue-100">
+            <h2 class="text-lg font-bold text-gray-800 mb-1">Book a Session</h2>
+            <p class="text-gray-600 text-sm">Select a session type and available time slot</p>
+          </div>
+          <div class="p-4">
+            <!-- Session Type Selection -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Session Type</label>
+              <div class="flex flex-wrap gap-2">
+                <button *ngFor="let type of professional.sessionTypes" (click)="selectedSessionType = type"
+                  class="py-2 px-4 text-sm font-medium rounded-lg transition-colors duration-200"
+                  [ngClass]="selectedSessionType === type ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
+                  <i class="mr-2" [ngClass]="{'fas fa-video': type === 'Video Call', 
+                                'fas fa-phone-alt': type === 'Phone Call',
+                                'fas fa-user': type === 'In-Person'}"></i>
+                  {{ type }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Date/Time Selection -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Select Date & Time</label>
+
+              <!-- Days Tabs -->
+              <div class="border-b border-gray-200 mb-4">
+                <ul class="flex overflow-x-auto -mb-px">
+                  <li *ngFor="let slot of timeSlots" class="mr-2">
+                    <button class="inline-block p-4 text-sm font-medium border-b-2"
+                      [ngClass]="{'border-blue-600 text-blue-600': slot.day === (selectedTimeSlot?.day || timeSlots[0].day),
+                                       'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': slot.day !== (selectedTimeSlot?.day || timeSlots[0].day)}">
+                      <div class="text-center">
+                        <div>{{ slot.day }}</div>
+                        <div class="text-xs">{{ slot.date }}</div>
+                      </div>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Time Slots -->
+              <div class="grid grid-cols-2 gap-2">
+                <ng-container *ngFor="let slot of timeSlots">
+                  <ng-container *ngIf="slot.day === (selectedTimeSlot?.day || timeSlots[0].day)">
+                    <button *ngFor="let time of slot.slots" (click)="selectTimeSlot(slot.day, slot.date, time.time)"
+                      [disabled]="!time.available" class="py-2 px-3 text-center text-sm font-medium rounded-lg"
+                      [ngClass]="{'bg-blue-600 text-white': selectedTimeSlot?.time === time.time && time.available,
+                                       'bg-gray-200 text-gray-700 hover:bg-gray-300': selectedTimeSlot?.time !== time.time && time.available,
+                                       'bg-gray-100 text-gray-400 cursor-not-allowed': !time.available}">
+                      {{ time.time }}
+                    </button>
+                  </ng-container>
+                </ng-container>
+              </div>
+            </div>
+
+            <!-- Summary and Book Button -->
+            <div *ngIf="selectedTimeSlot" class="border-t border-gray-200 pt-4 mb-4">
+              <h3 class="text-sm font-medium text-gray-700 mb-2">Your Selection</h3>
+              <div class="bg-gray-50 p-3 rounded-lg mb-4">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm text-gray-600">Session Type:</span>
+                  <span class="font-medium">{{ selectedSessionType }}</span>
+                </div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm text-gray-600">Date:</span>
+                  <span class="font-medium">{{ selectedTimeSlot.day }}, {{ selectedTimeSlot.date }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-600">Time:</span>
+                  <span class="font-medium">{{ selectedTimeSlot.time }}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-3 transition duration-300"
+              [disabled]="!selectedTimeSlot" [ngClass]="{'opacity-50 cursor-not-allowed': !selectedTimeSlot}">
+              Book Session <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+
+            <!-- Help Text -->
+            <p class="text-xs text-gray-500 text-center mt-4">
+              <i class="fas fa-info-circle mr-1"></i>
+              Need help? <a href="#" class="text-blue-600 hover:underline">Contact support</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Similar Professionals Section -->
+<section class="py-12 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <h2 class="text-2xl font-bold mb-8">Similar Professionals</h2>
+
+    <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <!-- Similar Professional Cards (3-4) -->
+      <div *ngFor="let i of [1, 2, 3, 4]"
+        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
+        <img src="https://placehold.co/300x200?text=Professional+{{i}}" alt="Professional"
+          class="w-full h-40 object-cover">
+        <div class="p-4">
+          <h3 class="font-bold mb-1">Dr. Name Example {{i}}</h3>
+          <p class="text-gray-600 text-sm mb-2">Specialty Title</p>
+          <div class="flex text-yellow-400 mb-3">
+            <i class="fas fa-star text-sm"></i>
+            <i class="fas fa-star text-sm"></i>
+            <i class="fas fa-star text-sm"></i>
+            <i class="fas fa-star text-sm"></i>
+            <i class="fas fa-star-half-alt text-sm"></i>
+            <span class="ml-1 text-gray-700 text-sm">4.5</span>
+          </div>
+          <button
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg py-1.5 transition duration-300">
+            View Profile
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

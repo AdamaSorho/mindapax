@@ -1,0 +1,209 @@
+<!-- Hero Section -->
+<section class="bg-indigo-900 text-white py-16 md:py-24">
+  <div class="container mx-auto px-4 text-center">
+    <h1 class="text-4xl md:text-5xl font-bold mb-6">About Mindapax</h1>
+    <p class="text-xl max-w-3xl mx-auto text-indigo-200">
+      Dedicated to empowering individuals through integrated well-being solutions for mind, body, and finances.
+    </p>
+  </div>
+</section>
+
+<!-- Our Story Section -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col md:flex-row items-center gap-12">
+      <div class="md:w-1/2">
+        <img src="https://placehold.co/600x400" alt="Mindapax founding story" class="rounded-lg shadow-lg">
+      </div>
+      <div class="md:w-1/2">
+        <h2 class="text-3xl font-bold mb-6 text-gray-800">Our Story</h2>
+        <p class="text-gray-700 mb-4">
+          Mindapax was founded in 2022 with a revolutionary idea: that mental, physical, and financial wellness are
+          deeply interconnected, and that true well-being requires addressing all three aspects.
+        </p>
+        <p class="text-gray-700 mb-4">
+          Our founder, Dr. Elena Rodriguez, saw firsthand how financial stress impacted her therapy clients' mental
+          health, and how mental health challenges often manifested in physical symptoms. She envisioned a platform
+          where people could access comprehensive care in one place.
+        </p>
+        <p class="text-gray-700">
+          Today, Mindapax connects thousands of individuals with qualified professionals across these three vital
+          dimensions of wellness, helping people live healthier, more balanced lives.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Mission & Values Section -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-4 text-gray-800">Our Mission & Values</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Guiding principles that inform everything we do at Mindapax
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Mission -->
+      <div class="bg-white p-8 rounded-lg shadow-md">
+        <h3 class="text-xl font-semibold mb-4 text-indigo-800">Our Mission</h3>
+        <p class="text-gray-700">
+          To empower individuals to achieve balance and fulfillment by providing accessible, integrated support for
+          mental, physical, and financial well-being through a network of trusted professionals.
+        </p>
+      </div>
+
+      <!-- Vision -->
+      <div class="bg-white p-8 rounded-lg shadow-md">
+        <h3 class="text-xl font-semibold mb-4 text-indigo-800">Our Vision</h3>
+        <p class="text-gray-700">
+          A world where holistic wellness is accessible to everyone, and where mental, physical, and financial health
+          are understood as essential, interconnected elements of a thriving life.
+        </p>
+      </div>
+
+      <!-- Values -->
+      <div class="bg-white p-8 rounded-lg shadow-md">
+        <h3 class="text-xl font-semibold mb-4 text-indigo-800">Our Values</h3>
+        <ul class="text-gray-700 space-y-2">
+          <li><span class="font-medium">Integrity:</span> Maintaining the highest ethical standards</li>
+          <li><span class="font-medium">Empathy:</span> Understanding and respecting each individual's journey</li>
+          <li><span class="font-medium">Accessibility:</span> Making quality care available to all</li>
+          <li><span class="font-medium">Excellence:</span> Commitment to quality and continuous improvement</li>
+          <li><span class="font-medium">Innovation:</span> Embracing new approaches to well-being</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Team Section -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-4 text-gray-800">Meet Our Team</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Led by experts in mental health, financial wellness, and physical well-being
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div *ngFor="let member of teamMembers" class="bg-white rounded-lg shadow-md overflow-hidden">
+        <img [src]="member.image" [alt]="member.name" class="w-full h-64 object-cover">
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-1 text-gray-800">{{member.name}}</h3>
+          <p class="text-indigo-600 mb-4">{{member.role}}</p>
+          <p class="text-gray-700">{{member.bio}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-16 bg-indigo-900 text-white">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+      <div>
+        <div class="text-4xl font-bold mb-2">10,000+</div>
+        <p class="text-indigo-200">Clients Served</p>
+      </div>
+      <div>
+        <div class="text-4xl font-bold mb-2">500+</div>
+        <p class="text-indigo-200">Qualified Professionals</p>
+      </div>
+      <div>
+        <div class="text-4xl font-bold mb-2">95%</div>
+        <p class="text-indigo-200">Client Satisfaction</p>
+      </div>
+      <div>
+        <div class="text-4xl font-bold mb-2">3</div>
+        <p class="text-indigo-200">Dimensions of Wellness</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Partners Section -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-4 text-gray-800">Our Partners</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Working with leading organizations to advance holistic well-being
+      </p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
+      <div *ngFor="let partner of partners" class="text-center">
+        <img [src]="partner.logo" [alt]="partner.name" class="mx-auto h-12 md:h-16 object-contain">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold mb-4 text-gray-800">Frequently Asked Questions</h2>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Learn more about how Mindapax works
+      </p>
+    </div>
+
+    <div class="max-w-4xl mx-auto space-y-6">
+      <div class="border border-gray-200 rounded-lg p-6">
+        <h3 class="text-xl font-semibold mb-3 text-gray-800">How does Mindapax verify its professionals?</h3>
+        <p class="text-gray-700">
+          All professionals on our platform undergo a rigorous verification process including credential checks,
+          background screening, and professional reference verification. We only accept licensed or certified
+          practitioners in their respective fields.
+        </p>
+      </div>
+
+      <div class="border border-gray-200 rounded-lg p-6">
+        <h3 class="text-xl font-semibold mb-3 text-gray-800">Is my information secure on Mindapax?</h3>
+        <p class="text-gray-700">
+          Absolutely. We maintain the highest standards of data security and privacy. Our platform is HIPAA-compliant,
+          and we use end-to-end encryption for all communications. Your privacy is our top priority.
+        </p>
+      </div>
+
+      <div class="border border-gray-200 rounded-lg p-6">
+        <h3 class="text-xl font-semibold mb-3 text-gray-800">Can I switch between different types of professionals?</h3>
+        <p class="text-gray-700">
+          Yes! One of the benefits of Mindapax is the ability to access different types of professionals all on one
+          platform. You can work with a therapist, financial coach, and wellness expert simultaneously or switch as your
+          needs change.
+        </p>
+      </div>
+
+      <div class="border border-gray-200 rounded-lg p-6">
+        <h3 class="text-xl font-semibold mb-3 text-gray-800">How do I get started with Mindapax?</h3>
+        <p class="text-gray-700">
+          Getting started is easy! Simply create a free account, complete a brief wellness assessment, and you'll be
+          matched with professionals who meet your specific needs. You can then review profiles, book sessions, and
+          begin your wellness journey.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-indigo-100">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-3xl font-bold mb-6 text-indigo-900">Join the Mindapax Community</h2>
+    <p class="text-xl mb-8 text-indigo-800 max-w-2xl mx-auto">
+      Experience the benefits of integrated well-being with access to mental health, physical wellness, and financial
+      coaching professionals.
+    </p>
+    <button
+      class="bg-indigo-600 text-white hover:bg-indigo-700 px-8 py-3 rounded-md font-semibold text-lg transition duration-300">
+      Get Started Today
+    </button>
+  </div>
+</section>

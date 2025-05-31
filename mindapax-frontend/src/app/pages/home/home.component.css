@@ -1,0 +1,6 @@
+/* For the hero section background image */
+.hero-section {
+  background-image: url("https://placehold.co/1920x1080"); /* Replace with your actual hero image */
+  background-size: cover;
+  background-position: center;
+}

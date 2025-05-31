@@ -1,0 +1,182 @@
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-blue-500 to-teal-400 py-20">
+  <div class="container mx-auto px-4">
+    <div class="text-center">
+      <h1 class="text-4xl font-bold text-white mb-6">Our Wellness Services</h1>
+      <p class="text-xl text-white mb-8 max-w-3xl mx-auto">
+        Comprehensive support for your mental, physical, and financial well-being through our network of certified
+        professionals.
+      </p>
+      <button class="bg-white text-blue-600 hover:bg-blue-50 font-medium rounded-lg px-6 py-3 transition duration-300">
+        Find Your Professional Today
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Main Services Section -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-12">Services We Offer</h2>
+
+    <div class="grid md:grid-cols-3 gap-8">
+      <div *ngFor="let service of services"
+        class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:transform hover:scale-105"
+        [ngClass]="{'border-2 border-blue-500': service.popular}">
+        <!-- Popular Badge -->
+        <div *ngIf="service.popular" class="bg-blue-500 text-white text-center py-1">
+          Most Popular
+        </div>
+
+        <div class="p-6">
+          <div class="flex justify-center mb-4">
+            <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+              <i class="fas {{service.icon}} text-blue-500 text-2xl"></i>
+            </div>
+          </div>
+          <h3 class="text-xl font-bold text-center mb-3">{{service.title}}</h3>
+          <p class="text-gray-600 mb-6 text-center">{{service.description}}</p>
+
+          <ul class="space-y-2 mb-6">
+            <li *ngFor="let feature of service.features" class="flex items-start">
+              <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+              <span>{{feature}}</span>
+            </li>
+          </ul>
+
+          <div class="text-center">
+            <button
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-5 py-2.5 transition duration-300">
+              Learn More
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-4">How Our Services Work</h2>
+    <p class="text-gray-600 text-center mb-12 max-w-3xl mx-auto">
+      Getting started with Mindapax is simple. Follow these steps to begin your wellness journey.
+    </p>
+
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Step 1 -->
+      <div class="text-center">
+        <div class="relative mb-6">
+          <div
+            class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto text-white text-2xl font-bold">
+            1</div>
+          <div class="hidden md:block absolute top-10 w-full border-t-2 border-dashed border-gray-300 z-0"></div>
+        </div>
+        <h3 class="text-xl font-bold mb-3">Choose a Professional</h3>
+        <p class="text-gray-600">Browse our directory of certified professionals and find the perfect match for your
+          needs.</p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="text-center">
+        <div class="relative mb-6">
+          <div
+            class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto text-white text-2xl font-bold">
+            2</div>
+          <div class="hidden md:block absolute top-10 w-full border-t-2 border-dashed border-gray-300 z-0"></div>
+        </div>
+        <h3 class="text-xl font-bold mb-3">Select a Service</h3>
+        <p class="text-gray-600">Choose from therapy, coaching, or counseling options based on your personal goals.</p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="text-center">
+        <div class="relative mb-6">
+          <div
+            class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto text-white text-2xl font-bold">
+            3</div>
+        </div>
+        <h3 class="text-xl font-bold mb-3">Connect and Grow</h3>
+        <p class="text-gray-600">Schedule sessions via chat, video, or messaging and begin your journey to better
+          well-being.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured Professionals Section -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-4">Featured Professionals</h2>
+    <p class="text-gray-600 text-center mb-12 max-w-3xl mx-auto">
+      Meet some of our top-rated experts ready to support your wellness journey.
+    </p>
+
+    <div class="grid md:grid-cols-3 gap-8">
+      <div *ngFor="let professional of featuredProfessionals" class="bg-white rounded-lg shadow overflow-hidden">
+        <img [src]="professional.image" alt="{{professional.name}}" class="w-full h-56 object-cover">
+        <div class="p-6">
+          <h3 class="text-xl font-bold mb-2">{{professional.name}}</h3>
+          <p class="text-gray-600 mb-3">{{professional.specialization}}</p>
+          <div class="flex items-center mb-4">
+            <div class="flex text-yellow-400">
+              <i class="fas fa-star"></i>
+              <span class="ml-1 text-gray-700">{{professional.rating}}/5.0</span>
+            </div>
+          </div>
+          <button
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2 transition duration-300">
+            View Profile
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-10">
+      <a href="/professionals" class="text-blue-600 hover:text-blue-800 font-medium">
+        View All Professionals <i class="fas fa-arrow-right ml-1"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+
+    <div class="max-w-3xl mx-auto">
+      <div *ngFor="let faq of faqs; let i = index" class="mb-4">
+        <div class="border border-gray-200 rounded-lg">
+          <button class="w-full text-left p-4 focus:outline-none font-medium" [attr.data-collapse-toggle]="'faq-' + i">
+            {{faq.question}}
+            <i class="fas fa-chevron-down float-right"></i>
+          </button>
+          <div [id]="'faq-' + i" class="hidden p-4 border-t border-gray-200 bg-gray-50">
+            <p class="text-gray-600">{{faq.answer}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-gradient-to-r from-blue-500 to-teal-400">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-3xl font-bold text-white mb-6">Ready to Begin Your Wellness Journey?</h2>
+    <p class="text-xl text-white mb-8 max-w-3xl mx-auto">
+      Join thousands of clients who have transformed their lives with Mindapax's personalized wellness services.
+    </p>
+    <div class="space-x-4">
+      <button class="bg-white text-blue-600 hover:bg-blue-50 font-medium rounded-lg px-6 py-3 transition duration-300">
+        Get Started
+      </button>
+      <button
+        class="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-600 font-medium rounded-lg px-6 py-3 transition duration-300">
+        Learn More
+      </button>
+    </div>
+  </div>
+</section>

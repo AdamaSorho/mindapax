@@ -1,0 +1,213 @@
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-blue-500 to-teal-400 py-16">
+  <div class="container mx-auto px-4">
+    <div class="text-center">
+      <h1 class="text-4xl font-bold text-white mb-4">Find Your Wellness Professional</h1>
+      <p class="text-xl text-white mb-6 max-w-3xl mx-auto">
+        Connect with certified experts in mental health, financial coaching, and physical wellness.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Main Content -->
+<section class="py-12">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col lg:flex-row">
+      <!-- Filter Sidebar -->
+      <div class="w-full lg:w-1/4 mb-8 lg:mb-0 lg:pr-8">
+        <div class="bg-white rounded-lg shadow p-6 sticky top-4">
+          <h2 class="text-xl font-bold mb-6">Filter Professionals</h2>
+
+          <!-- Search Bar -->
+          <div class="mb-6">
+            <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+              </div>
+              <input type="text" id="search" [(ngModel)]="searchTerm"
+                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
+                placeholder="Name or specialization">
+            </div>
+          </div>
+
+          <!-- Category Filter -->
+          <div class="mb-6">
+            <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+            <select id="category" [(ngModel)]="selectedCategory"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+              <option *ngFor="let category of categories" [value]="category">{{category}}</option>
+            </select>
+          </div>
+
+          <!-- Experience Filter -->
+          <div class="mb-6">
+            <label for="experience" class="block text-sm font-medium text-gray-700 mb-2">Experience Level</label>
+            <select id="experience" [(ngModel)]="selectedExperience"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+              <option *ngFor="let exp of experienceLevels" [value]="exp">{{exp}}</option>
+            </select>
+          </div>
+
+          <!-- Language Filter -->
+          <div class="mb-6">
+            <label for="language" class="block text-sm font-medium text-gray-700 mb-2">Language</label>
+            <select id="language" [(ngModel)]="selectedLanguage"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+              <option *ngFor="let lang of languages" [value]="lang">{{lang}}</option>
+            </select>
+          </div>
+
+          <!-- Price Range Filter -->
+          <div class="mb-6">
+            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+            <select id="price" [(ngModel)]="selectedPrice"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+              <option *ngFor="let price of priceRanges" [value]="price">{{price}}</option>
+            </select>
+          </div>
+
+          <!-- Filter Buttons -->
+          <div class="flex space-x-2">
+            <button (click)="applyFilters()"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2.5 px-5 transition duration-300">
+              Apply Filters
+            </button>
+            <button (click)="resetFilters()"
+              class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg py-2.5 px-4 transition duration-300">
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Professional Cards Grid -->
+      <div class="w-full lg:w-3/4">
+        <!-- Results Info -->
+        <div class="flex justify-between items-center mb-6">
+          <p class="text-gray-700">Showing {{filteredProfessionals.length}} professionals</p>
+          <div class="flex space-x-2">
+            <button
+              class="bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium rounded-lg p-2 transition duration-300">
+              <i class="fas fa-th-large"></i>
+            </button>
+            <button
+              class="bg-gray-200 text-gray-700 hover:bg-gray-300 font-medium rounded-lg p-2 transition duration-300">
+              <i class="fas fa-list"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Grid View -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div *ngFor="let pro of filteredProfessionals"
+            class="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition duration-300"
+            [ngClass]="{'border-2 border-blue-500': pro.featured}">
+            <!-- Featured Badge -->
+            <div *ngIf="pro.featured" class="bg-blue-500 text-white text-center py-1">
+              Featured Professional
+            </div>
+
+            <!-- Professional Card -->
+            <img [src]="pro.image" [alt]="pro.name" class="w-full h-48 object-cover">
+            <div class="p-5">
+              <h3 class="text-lg font-bold mb-1">{{pro.name}}</h3>
+              <p class="text-gray-600 mb-2">{{pro.specialization}}</p>
+
+              <div class="flex items-center mb-3">
+                <div class="flex text-yellow-400">
+                  <i class="fas fa-star"></i>
+                </div>
+                <span class="ml-1 text-gray-700">{{pro.rating}}/5.0</span>
+                <span class="mx-2 text-gray-400">•</span>
+                <span class="text-gray-700">{{pro.experience}} years</span>
+              </div>
+
+              <div class="flex flex-wrap gap-1 mb-3">
+                <span *ngFor="let lang of pro.languages"
+                  class="bg-blue-50 text-blue-700 text-xs font-medium px-2 py-1 rounded">
+                  {{lang}}
+                </span>
+              </div>
+
+              <div class="flex justify-between items-center mb-4">
+                <div class="text-gray-700">
+                  <span class="font-bold">${{pro.sessionPrice}}</span> / session
+                </div>
+                <div class="text-xs text-gray-500">
+                  Available: <span class="font-medium">{{pro.availability.join(', ')}}</span>
+                </div>
+              </div>
+
+              <button
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2 transition duration-300"
+                [routerLink]="['/professionals', pro.id]">
+                View Profile
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Results Message -->
+        <div *ngIf="filteredProfessionals.length === 0" class="text-center py-12">
+          <div class="text-6xl mb-4">🔍</div>
+          <h3 class="text-xl font-bold mb-2">No professionals found</h3>
+          <p class="text-gray-600 mb-6">Try adjusting your filters to find more results</p>
+          <button (click)="resetFilters()"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2.5 px-5 transition duration-300">
+            Reset Filters
+          </button>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex justify-center mt-8">
+          <nav aria-label="Page navigation">
+            <ul class="flex items-center -space-x-px h-8 text-sm">
+              <li>
+                <a href="#"
+                  class="flex items-center justify-center px-3 h-8 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100">
+                  <span class="sr-only">Previous</span>
+                  <i class="fas fa-chevron-left w-5 h-5"></i>
+                </a>
+              </li>
+              <li>
+                <a href="#"
+                  class="flex items-center justify-center px-3 h-8 leading-tight text-blue-600 bg-blue-50 border border-gray-300 hover:bg-blue-100 hover:text-blue-700">1</a>
+              </li>
+              <li>
+                <a href="#"
+                  class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100">2</a>
+              </li>
+              <li>
+                <a href="#"
+                  class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100">3</a>
+              </li>
+              <li>
+                <a href="#"
+                  class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100">
+                  <span class="sr-only">Next</span>
+                  <i class="fas fa-chevron-right w-5 h-5"></i>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-12 bg-gray-50">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-2xl font-bold mb-6">Can't find the right professional?</h2>
+    <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+      Let us help you find the perfect match for your wellness journey. Take our quick assessment and get personalized
+      recommendations.
+    </p>
+    <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-6 py-3 transition duration-300">
+      Take Matching Quiz
+    </button>
+  </div>
+</section>

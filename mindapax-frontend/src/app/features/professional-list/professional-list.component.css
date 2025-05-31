@@ -1,0 +1,113 @@
+/* Tab styles for the modal */
+[role="tab"] {
+  position: relative;
+  transition: all 0.3s;
+
+  &.active {
+    color: #2563eb;
+  }
+
+  &:hover:not(.active) {
+    color: #4b5563;
+    border-color: #e5e7eb;
+  }
+}
+
+/* Modal animation */
+#professionalDetailsModal {
+  animation: fadeIn 0.3s ease-in-out;
+
+  & > div {
+    animation: slideDown 0.3s ease-in-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Status badge styles */
+.bg-yellow-100 {
+  background-color: #fef3c7;
+}
+
+.text-yellow-800 {
+  color: #92400e;
+}
+
+.bg-green-100 {
+  background-color: #d1fae5;
+}
+
+.text-green-800 {
+  color: #065f46;
+}
+
+.bg-red-100 {
+  background-color: #fee2e2;
+}
+
+.text-red-800 {
+  color: #991b1b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    margin: 0 -1rem;
+    width: calc(100% + 2rem);
+  }
+}
+
+/* Custom scrollbar for the modal content */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+  }
+}
+
+/* Hover effect for professional rows */
+.bg-white.border-b {
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #f9fafb;
+  }
+}
+
+/* Focus styles for inputs */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 0;
+}

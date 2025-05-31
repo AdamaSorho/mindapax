@@ -1,0 +1,434 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6 text-gray-800">Billing & Subscription</h1>
+
+  <!-- Tabs -->
+  <div class="border-b border-gray-200 mb-6">
+    <ul class="flex flex-wrap -mb-px">
+      <li class="mr-2">
+        <button
+          [ngClass]="{'text-blue-600 border-blue-600': activeTab === 'overview', 'text-gray-500 hover:text-gray-700': activeTab !== 'overview'}"
+          class="inline-block p-4 border-b-2 border-transparent rounded-t-lg" (click)="setActiveTab('overview')">
+          Overview
+        </button>
+      </li>
+      <li class="mr-2">
+        <button
+          [ngClass]="{'text-blue-600 border-blue-600': activeTab === 'invoices', 'text-gray-500 hover:text-gray-700': activeTab !== 'invoices'}"
+          class="inline-block p-4 border-b-2 border-transparent rounded-t-lg" (click)="setActiveTab('invoices')">
+          Invoices
+        </button>
+      </li>
+      <li class="mr-2">
+        <button
+          [ngClass]="{'text-blue-600 border-blue-600': activeTab === 'subscription', 'text-gray-500 hover:text-gray-700': activeTab !== 'subscription'}"
+          class="inline-block p-4 border-b-2 border-transparent rounded-t-lg" (click)="setActiveTab('subscription')">
+          Subscription
+        </button>
+      </li>
+      <li>
+        <button
+          [ngClass]="{'text-blue-600 border-blue-600': activeTab === 'payment-methods', 'text-gray-500 hover:text-gray-700': activeTab !== 'payment-methods'}"
+          class="inline-block p-4 border-b-2 border-transparent rounded-t-lg" (click)="setActiveTab('payment-methods')">
+          Payment Methods
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Overview Tab Content -->
+  <div *ngIf="activeTab === 'overview'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Current Plan -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4 text-gray-800">Current Plan</h2>
+      <div class="flex justify-between items-center mb-2">
+        <span class="font-medium">{{ currentPlan.name }}</span>
+        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">{{ currentPlan.status |
+          titlecase }}</span>
+      </div>
+      <div class="mb-4">
+        <p class="text-gray-600">${{ currentPlan.price }}/{{ currentPlan.billingCycle }}</p>
+        <p class="text-gray-600">Next billing: {{ currentPlan.nextBillingDate | date:'mediumDate' }}</p>
+      </div>
+      <button
+        class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2"
+        (click)="setActiveTab('subscription')">Manage Subscription</button>
+    </div>
+
+    <!-- Recent Invoices -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Recent Invoices</h2>
+        <button class="text-sm text-blue-600 hover:underline" (click)="setActiveTab('invoices')">View All</button>
+      </div>
+      <div class="overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Amount</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr *ngFor="let invoice of invoices.slice(0, 3)">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.date | date:'mediumDate' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${{ invoice.amount }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span [ngClass]="{
+                  'bg-green-100 text-green-800': invoice.status === 'paid',
+                  'bg-yellow-100 text-yellow-800': invoice.status === 'pending',
+                  'bg-red-100 text-red-800': invoice.status === 'overdue'
+                }" class="text-xs font-medium px-2.5 py-0.5 rounded-full">
+                  {{ invoice.status | titlecase }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoices Tab Content -->
+  <div *ngIf="activeTab === 'invoices'" class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-semibold mb-4 text-gray-800">Invoice History</h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Invoice ID</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Service</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Professional</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Amount</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Action</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let invoice of invoices">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ invoice.id }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.date | date:'mediumDate' }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.service }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.professional }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${{ invoice.amount }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span [ngClass]="{
+                'bg-green-100 text-green-800': invoice.status === 'paid',
+                'bg-yellow-100 text-yellow-800': invoice.status === 'pending',
+                'bg-red-100 text-red-800': invoice.status === 'overdue'
+              }" class="text-xs font-medium px-2.5 py-0.5 rounded-full">
+                {{ invoice.status | titlecase }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <button class="text-blue-600 hover:text-blue-800" (click)="downloadInvoice(invoice.id)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Subscription Tab Content -->
+  <div *ngIf="activeTab === 'subscription'" class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">Subscription Details</h2>
+      <button
+        class="text-red-600 bg-red-100 hover:bg-red-200 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5"
+        (click)="toggleCancelSubscriptionModal()">
+        Cancel Subscription
+      </button>
+    </div>
+
+    <div class="p-4 mb-6 text-sm text-blue-800 rounded-lg bg-blue-50" role="alert">
+      <div class="font-medium">Current Plan: {{ currentPlan.name }}</div>
+      <div>
+        <p>Price: ${{ currentPlan.price }}/{{ currentPlan.billingCycle }}</p>
+        <p>Status: {{ currentPlan.status | titlecase }}</p>
+        <p>Next billing date: {{ currentPlan.nextBillingDate | date:'mediumDate' }}</p>
+      </div>
+    </div>
+
+    <h3 class="text-lg font-semibold mb-4 text-gray-800">Plan Features</h3>
+    <ul class="mb-6 space-y-2">
+      <li *ngFor="let feature of currentPlan.features" class="flex items-center">
+        <svg class="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20"
+          xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"></path>
+        </svg>
+        {{ feature }}
+      </li>
+    </ul>
+
+    <h3 class="text-lg font-semibold mb-4 text-gray-800">Available Plans</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div *ngFor="let plan of plans" class="border rounded-lg p-4"
+        [ngClass]="{'border-blue-500 bg-blue-50': plan.id === currentPlan.id, 'border-gray-200': plan.id !== currentPlan.id}">
+        <h4 class="text-lg font-medium mb-2">{{ plan.name }}</h4>
+        <p class="text-2xl font-bold mb-2">${{ plan.price }}<span class="text-sm font-normal text-gray-500">/{{
+            plan.billingCycle }}</span></p>
+        <ul class="mb-4 space-y-2">
+          <li *ngFor="let feature of plan.features" class="flex items-start">
+            <svg class="w-4 h-4 mt-1 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"></path>
+            </svg>
+            <span class="text-sm">{{ feature }}</span>
+          </li>
+        </ul>
+        <button *ngIf="plan.id !== currentPlan.id"
+          class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5"
+          (click)="changePlan(plan.id)">
+          Switch to Plan
+        </button>
+        <p *ngIf="plan.id === currentPlan.id"
+          class="w-full text-center text-blue-600 font-medium rounded-lg text-sm px-5 py-2.5">
+          Current Plan
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Methods Tab Content -->
+  <div *ngIf="activeTab === 'payment-methods'" class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">Payment Methods</h2>
+      <button
+        class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5"
+        (click)="togglePaymentModal()">
+        Add Payment Method
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <div *ngFor="let method of paymentMethods" class="border border-gray-200 rounded-lg p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <!-- Credit Card Icon -->
+            <div *ngIf="method.type === 'credit'" class="mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+            </div>
+
+            <!-- PayPal Icon -->
+            <div *ngIf="method.type === 'paypal'" class="mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-800" viewBox="0 0 24 24"
+                fill="currentColor">
+                <path
+                  d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.978 5.018-4.303 6.755-8.562 6.755h-2.19c-.524 0-.968.382-1.05.9L7.654 21.9c-.06.38.208.724.591.724h4.41c.488 0 .9-.354.976-.838l.147-.892.282-1.793.016-.148c.076-.483.489-.837.975-.837h.614c3.98 0 7.01-1.615 7.913-6.286.383-1.927.199-3.551-.9-4.914z" />
+              </svg>
+            </div>
+
+            <!-- Bank Icon -->
+            <div *ngIf="method.type === 'bank'" class="mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-700" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+
+            <div>
+              <p class="font-medium text-gray-800">{{ method.name }}</p>
+              <p class="text-sm text-gray-500" *ngIf="method.expiryDate">Expires: {{ method.expiryDate }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <span *ngIf="method.isDefault"
+              class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Default</span>
+            <div class="flex space-x-2">
+              <button *ngIf="!method.isDefault" class="text-blue-600 hover:text-blue-800"
+                (click)="setDefaultPaymentMethod(method.id)">
+                Set Default
+              </button>
+              <button class="text-red-600 hover:text-red-800" (click)="removePaymentMethod(method.id)">
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Payment Method Modal -->
+  <div *ngIf="showAddPaymentModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold text-gray-800">Add Payment Method</h3>
+        <button (click)="togglePaymentModal()" class="text-gray-400 hover:text-gray-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="mb-4">
+        <label class="block mb-2 text-sm font-medium text-gray-700">Payment Type</label>
+        <div class="flex space-x-2">
+          <button
+            class="border border-gray-200 rounded-lg p-3 flex flex-col items-center hover:border-blue-500 hover:bg-blue-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600 mb-2" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+            <span class="text-sm">Credit Card</span>
+          </button>
+
+          <button
+            class="border border-gray-200 rounded-lg p-3 flex flex-col items-center hover:border-blue-500 hover:bg-blue-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-800 mb-2" viewBox="0 0 24 24"
+              fill="currentColor">
+              <path
+                d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.978 5.018-4.303 6.755-8.562 6.755h-2.19c-.524 0-.968.382-1.05.9L7.654 21.9c-.06.38.208.724.591.724h4.41c.488 0 .9-.354.976-.838l.147-.892.282-1.793.016-.148c.076-.483.489-.837.975-.837h.614c3.98 0 7.01-1.615 7.913-6.286.383-1.927.199-3.551-.9-4.914z" />
+            </svg>
+            <span class="text-sm">PayPal</span>
+          </button>
+
+          <button
+            class="border border-gray-200 rounded-lg p-3 flex flex-col items-center hover:border-blue-500 hover:bg-blue-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-700 mb-2" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <span class="text-sm">Bank Account</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Credit Card Form (Default View) -->
+      <div>
+        <div class="mb-4">
+          <label for="cardNumber" class="block mb-2 text-sm font-medium text-gray-700">Card Number</label>
+          <input type="text" id="cardNumber"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            placeholder="1234 5678 9012 3456" required>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="expiryDate" class="block mb-2 text-sm font-medium text-gray-700">Expiry Date</label>
+            <input type="text" id="expiryDate"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+              placeholder="MM/YY" required>
+          </div>
+          <div>
+            <label for="cvv" class="block mb-2 text-sm font-medium text-gray-700">CVV</label>
+            <input type="text" id="cvv"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+              placeholder="123" required>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="nameOnCard" class="block mb-2 text-sm font-medium text-gray-700">Name on Card</label>
+          <input type="text" id="nameOnCard"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            placeholder="John Doe" required>
+        </div>
+
+        <div class="mb-4 flex items-center">
+          <input id="setDefault" type="checkbox"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+          <label for="setDefault" class="ml-2 text-sm font-medium text-gray-700">Set as default payment method</label>
+        </div>
+
+        <button
+          class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2">Add
+          Payment Method</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel Subscription Modal -->
+  <div *ngIf="showCancelSubscriptionModal"
+    class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold text-gray-800">Cancel Subscription</h3>
+        <button (click)="toggleCancelSubscriptionModal()" class="text-gray-400 hover:text-gray-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="mb-6">
+        <p class="text-gray-700 mb-4">Are you sure you want to cancel your subscription? You will lose access to the
+          following benefits:</p>
+        <ul class="list-disc list-inside space-y-1 text-gray-600">
+          <li *ngFor="let feature of currentPlan.features">{{ feature }}</li>
+        </ul>
+      </div>
+
+      <div class="mb-4">
+        <label for="cancelReason" class="block mb-2 text-sm font-medium text-gray-700">Reason for cancellation
+          (optional)</label>
+        <select id="cancelReason"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+          <option value="" selected>Select a reason</option>
+          <option value="cost">Too expensive</option>
+          <option value="usecase">Not using it enough</option>
+          <option value="features">Missing features</option>
+          <option value="alternative">Found an alternative</option>
+          <option value="temporary">Temporary pause</option>
+          <option value="other">Other reason</option>
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label for="cancelFeedback" class="block mb-2 text-sm font-medium text-gray-700">Additional feedback
+          (optional)</label>
+        <textarea id="cancelFeedback" rows="3"
+          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+          placeholder="Tell us how we could improve..."></textarea>
+      </div>
+
+      <div class="flex items-center mb-4">
+        <input id="keepUntilBilling" type="checkbox" checked
+          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+        <label for="keepUntilBilling" class="ml-2 text-sm font-medium text-gray-700">Keep my subscription until the next
+          billing date ({{ currentPlan.nextBillingDate | date:'mediumDate' }})</label>
+      </div>
+
+      <div class="flex space-x-3">
+        <button
+          class="flex-1 text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:ring-gray-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5"
+          (click)="toggleCancelSubscriptionModal()">
+          Keep Subscription
+        </button>
+        <button
+          class="flex-1 text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5">
+          Cancel Subscription
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
