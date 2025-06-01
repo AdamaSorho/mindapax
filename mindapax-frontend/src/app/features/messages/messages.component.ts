@@ -125,6 +125,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.conversations = response.content;
+          console.log(this.conversations);
 
           // Sort conversations by most recent message
           this.sortConversationsByDate();
