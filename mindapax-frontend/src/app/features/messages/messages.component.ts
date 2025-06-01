@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ElementRef } from '@angular/core'; // Added ElementRef
 import { Message } from '../../models/message.model';
 import { Conversation } from '../../models/conversation.model';
 import { NgClass, NgFor, NgIf } from '@angular/common';
@@ -37,8 +37,23 @@ export class MessagesComponent implements OnInit, OnDestroy {
   constructor(
     private messageService: MessageService,
     private authService: AuthService,
-    private conversationService: ConversationService
+    private conversationService: ConversationService,
+    private el: ElementRef // Injected ElementRef
   ) {}
+
+  private scrollToBottom(): void {
+    try {
+      const scrollContainer = this.el.nativeElement.querySelector('#scrollMe');
+      if (scrollContainer) {
+        // Use setTimeout to allow Angular to update the DOM first
+        setTimeout(() => {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }, 0);
+      }
+    } catch (err) {
+      console.error('Error scrolling to bottom:', err);
+    }
+  }
 
   ngOnInit(): void {
     // Monitor WebSocket connection status
@@ -75,6 +90,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
         ) {
           // Add message to the list
           this.messages.push(message);
+          this.scrollToBottom(); // Call scrollToBottom
 
           // Mark as read if it's not from current user
           if (message.senderId !== this.currentUserId) {
@@ -172,6 +188,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.messages = response.content;
         this.isLoadingMessages = false;
+        this.scrollToBottom(); // Call scrollToBottom
 
         // Mark all messages from other users as read
         this.markMessagesAsRead(conversationId);
@@ -198,14 +215,11 @@ export class MessagesComponent implements OnInit, OnDestroy {
 
     const newMsg: Message = {
       senderId: this.currentUserId,
-      conversationId: this.selectedConversation!.id,
+      conversationId: this.selectedConversation.id,
       content: this.newMessage,
       timestamp: new Date(),
       isRead: false,
     };
-
-    // Optimistically add message to UI
-    this.messages.push(newMsg);
 
     // Update the conversation's last message
     this.selectedConversation.lastMessage = newMsg;

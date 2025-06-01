@@ -46,8 +46,7 @@ public class ConversationController {
     @PageableDefault(size = 10) Pageable pageable) {
     return ResponseEntity.ok(
       new PageResponse<ConversationResponse>(
-      conversationService.getConversationsByUser(userId, pageable)
-      .map(conversationMapper::toDTO)
+      conversationService.getConversationsByUser(userId, pageable) // Service now returns Page<ConversationResponse>
       )
     );
   }

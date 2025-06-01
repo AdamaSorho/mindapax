@@ -3,6 +3,7 @@ package com.adamasorho.mindapax_backend.dto;
 import java.time.LocalDateTime;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull; // Added import
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,13 +13,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MessageDTO {
   private Long id;
+
   private Long sessionId;
   private Long conversationId;
-  @NotBlank(message = "Sender is required")
+  @NotNull(message = "Sender ID is required") // Changed from @NotBlank
   private Long senderId;
   @NotBlank(message = "Content is required")
   private String content;
   private LocalDateTime timestamp;
-  @NotBlank(message = "isRead is required")
   private boolean isRead;
 }
