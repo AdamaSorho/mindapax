@@ -41,7 +41,7 @@ public class MessageController {
             @RequestParam Long conversationId,
             @PageableDefault(size = 10) 
             @SortDefaults({
-                @SortDefault(sort = "timestamp", direction = Sort.Direction.DESC)
+                @SortDefault(sort = "timestamp", direction = Sort.Direction.ASC) // Changed DESC to ASC
             })
             Pageable pageable) {
         return ResponseEntity.ok(
