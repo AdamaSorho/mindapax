@@ -22,13 +22,14 @@ import com.adamasorho.mindapax_backend.service.SessionService;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor; // Keep if other constructors use it, or remove if specific constructor is added
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 // Consider removing @AllArgsConstructor if you add a specific constructor
 public class SessionServiceImpl implements SessionService {
   private final SessionRepository sessionRepository;
@@ -113,6 +114,7 @@ public class SessionServiceImpl implements SessionService {
     // Fetch the Professional entity based on the email
     // Assuming ProfessionalRepository has a findByUserEmail method.
     // If not, this needs to be added to ProfessionalRepository.
+    log.info("Current principal name: {}", currentPrincipalName);
     Professional professional = professionalRepository.findByUserEmail(currentPrincipalName)
         .orElseThrow(() -> new EntityNotFoundException("Professional not found with email: " + currentPrincipalName));
 

@@ -7,6 +7,7 @@ import {
   SessionStatus,
   SessionTimeFilter,
 } from '../../models/enums/SessionFilter';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-sessions',
@@ -22,7 +23,8 @@ export class SessionsComponent implements OnInit {
 
   constructor(
     private sessionService: SessionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -37,9 +39,11 @@ export class SessionsComponent implements OnInit {
     const sessionStartDate = new Date(session.startTime);
     const today = new Date();
 
-    return sessionStartDate.getFullYear() === today.getFullYear() &&
-           sessionStartDate.getMonth() === today.getMonth() &&
-           sessionStartDate.getDate() === today.getDate();
+    return (
+      sessionStartDate.getFullYear() === today.getFullYear() &&
+      sessionStartDate.getMonth() === today.getMonth() &&
+      sessionStartDate.getDate() === today.getDate()
+    );
   }
 
   fetchUpcomingSessions(): void {
@@ -94,29 +98,28 @@ export class SessionsComponent implements OnInit {
     this.activeTab = tab;
   }
 
-  joinSession(sessionId: number): void {
+  joinSession(sessionId: number | undefined): void {
     // In a real app, this would navigate to the video/chat interface
     console.log(`Joining session with ID: ${sessionId}`);
   }
 
-  rescheduleSession(sessionId: number): void {
+  rescheduleSession(sessionId: number | undefined): void {
     // In a real app, this would open a rescheduling modal/page
     console.log(`Rescheduling session with ID: ${sessionId}`);
   }
 
-  cancelSession(sessionId: number): void {
+  cancelSession(sessionId: number | undefined): void {
     // In a real app, this would make an API call to cancel the session
     console.log(`Canceling session with ID: ${sessionId}`);
   }
 
-  viewPastSession(sessionId: number): void {
+  viewPastSession(sessionId: number | undefined): void {
     // In a real app, this would navigate to the session details page
     console.log(`Viewing past session with ID: ${sessionId}`);
   }
 
   bookNewSession(): void {
-    // In a real app, this would navigate to the find professional page
-    console.log('Navigating to Find a Professional page');
+    this.router.navigate(['/member/schedule-session']);
   }
 
   formatDateToRelative(date: Date): string {

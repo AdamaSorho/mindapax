@@ -1,7 +1,5 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { SessionQueryParams } from '../models/network/SessionQueryParams';
 import { Observable } from 'rxjs';
@@ -12,7 +10,7 @@ import { SessionMode } from '../models/enums/SessionFilter'; // Added import
 export interface ScheduleSessionPayload {
   userId: number;
   startTime: string; // ISO 8601 format
-  endTime: string;   // ISO 8601 format
+  endTime: string; // ISO 8601 format
   mode: SessionMode;
   notes?: string;
 }
@@ -39,7 +37,12 @@ export class SessionService {
     return this.http.get(this.baseUrl, { params: httpParams });
   }
 
-  scheduleSessionByProfessional(payload: ScheduleSessionPayload): Observable<Session> {
-    return this.http.post<Session>(`${this.baseUrl}/professional/schedule`, payload);
+  scheduleSessionByProfessional(
+    payload: ScheduleSessionPayload
+  ): Observable<Session> {
+    return this.http.post<Session>(
+      `${this.baseUrl}/professional/schedule`,
+      payload
+    );
   }
 }

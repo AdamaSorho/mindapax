@@ -1,16 +1,26 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
-import { SessionService, ScheduleSessionPayload } from '../../services/session.service';
+import {
+  SessionService,
+  ScheduleSessionPayload,
+} from '../../services/session.service';
 import { UserService } from '../../services/user.service';
 import { User } from '../../models/user.model';
 import { SessionMode } from '../../models/enums/SessionFilter'; // Adjust path as needed
 import { HttpErrorResponse } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-schedule-session',
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './schedule-session.component.html',
-  styleUrls: ['./schedule-session.component.css']
+  styleUrl: './schedule-session.component.css',
 })
 export class ScheduleSessionComponent implements OnInit {
   scheduleForm!: FormGroup;
@@ -32,7 +42,7 @@ export class ScheduleSessionComponent implements OnInit {
       startTime: ['', Validators.required],
       endTime: ['', Validators.required],
       mode: [SessionMode.VIDEO, Validators.required], // Default to VIDEO
-      notes: ['']
+      notes: [''],
     });
 
     this.loadUsers();
@@ -46,7 +56,7 @@ export class ScheduleSessionComponent implements OnInit {
       error: (error: HttpErrorResponse) => {
         this.errorMessage = 'Failed to load users: ' + error.message;
         console.error('Error loading users:', error);
-      }
+      },
     });
   }
 
@@ -75,7 +85,7 @@ export class ScheduleSessionComponent implements OnInit {
       startTime: startTime,
       endTime: endTime,
       mode: formValues.mode,
-      notes: formValues.notes
+      notes: formValues.notes,
     };
 
     this.sessionService.scheduleSessionByProfessional(payload).subscribe({
@@ -86,9 +96,11 @@ export class ScheduleSessionComponent implements OnInit {
         // this.router.navigate(['/sessions']); // Example navigation
       },
       error: (error: HttpErrorResponse) => {
-        this.errorMessage = 'Failed to schedule session: ' + (error.error?.message || error.message);
+        this.errorMessage =
+          'Failed to schedule session: ' +
+          (error.error?.message || error.message);
         console.error('Error scheduling session:', error);
-      }
+      },
     });
   }
 }
