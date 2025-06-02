@@ -10,17 +10,19 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class UserService {
-  private readonly baseUrl = environment.apiUrl + '/users'; // Assuming /users endpoint
+  private readonly apiUrl = environment.apiUrl; // Base API URL
 
   constructor(private http: HttpClient) { }
 
   getUsers(): Observable<User[]> {
-    // If the dropdown needs all users, and the backend paginates by default,
-    // you might need to request a large page size.
-    // Example: const params = new HttpParams().set('page', '0').set('size', '100'); // Fetch up to 100 users
-    // For simplicity, if the backend returns a reasonable number of users on the first page
-    // for selection, or if it doesn't paginate unless requested, this will work.
-    return this.http.get<PagedResponse<User>>(this.baseUrl /*, { params } */)
+    // Fetches users connected to the currently authenticated professional
+    // The backend endpoint /api/v1/professionals/me/connected-users handles filtering.
+    // It expects pagination parameters.
+    const params = new HttpParams()
+      .set('page', '0')
+      .set('size', '50'); // Fetch up to 50 users by default, adjust as needed
+
+    return this.http.get<PagedResponse<User>>(`${this.apiUrl}/professionals/me/connected-users`, { params })
       .pipe(
         map(response => response.content)
       );
