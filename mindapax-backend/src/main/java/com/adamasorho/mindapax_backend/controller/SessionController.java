@@ -7,7 +7,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -82,4 +84,10 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
   return ResponseEntity.ok(dtos);
 }
 
+  @PostMapping("/professional/schedule")
+  @PreAuthorize("hasRole('PROFESSIONAL')")
+  public ResponseEntity<SessionDTO> scheduleByProfessional(@RequestBody SessionDTO sessionDto) {
+      SessionDTO createdSession = serviceService.scheduleSessionByProfessional(sessionDto);
+      return ResponseEntity.status(HttpStatus.CREATED).body(createdSession);
+  }
 }
