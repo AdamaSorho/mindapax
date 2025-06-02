@@ -11,7 +11,9 @@ import com.adamasorho.mindapax_backend.model.Session;
 public interface SessionMapper {
   @Mappings({
     @Mapping(target = "userId", source = "user.id"),
-    @Mapping(target = "professionalId", source = "professional.id")
+    @Mapping(target = "professionalId", source = "professional.id"),
+    @Mapping(target = "professionalName", expression = "java(session.getProfessional().getUser().getFirstName() + \" \" + session.getProfessional().getUser().getLastName())"),
+    @Mapping(target = "professionalSpecialization", source = "professional.specialization")
   })
   SessionDTO toDTO(Session session);
 

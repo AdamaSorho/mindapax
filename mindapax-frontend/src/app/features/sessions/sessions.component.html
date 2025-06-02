@@ -129,11 +129,11 @@
 
                 <!-- Professional Info -->
                 <div class="flex items-center mb-4">
-                  <img [src]="session.professionalImage" alt="{{session.professionalName}}"
-                    class="w-12 h-12 rounded-full mr-4 object-cover">
+                  <!-- <img [src]="session.professionalImage" alt="{{session.professionalName}}"
+                    class="w-12 h-12 rounded-full mr-4 object-cover"> -->
                   <div>
-                    <h4 class="font-semibold text-gray-900">{{session.professionalName}}</h4>
-                    <p class="text-sm text-blue-600">{{session.specialization}}</p>
+                    <h4 class="font-semibold text-gray-900">{{session.professionalName || 'Professional Name N/A'}}</h4>
+                    <p class="text-sm text-blue-600">{{session.professionalSpecialization || 'Specialization N/A'}}</p>
                   </div>
                 </div>
 
@@ -235,11 +235,11 @@
 
                 <!-- Professional Info -->
                 <div class="flex items-center mb-4">
-                  <img [src]="session.professionalImage" alt="{{session.professionalName}}"
-                    class="w-12 h-12 rounded-full mr-4 object-cover">
+                  <!-- <img [src]="session.professionalImage" alt="{{session.professionalName}}"
+                    class="w-12 h-12 rounded-full mr-4 object-cover"> -->
                   <div>
-                    <h4 class="font-semibold text-gray-900">{{session.professionalName}}</h4>
-                    <p class="text-sm text-blue-600">{{session.specialization}}</p>
+                    <h4 class="font-semibold text-gray-900">{{session.professionalName || 'Professional Name N/A'}}</h4>
+                    <p class="text-sm text-blue-600">{{session.professionalSpecialization || 'Specialization N/A'}}</p>
                   </div>
                 </div>
 
