@@ -11,19 +11,37 @@ import org.springframework.stereotype.Service;
 import com.adamasorho.mindapax_backend.dto.SessionDTO;
 import com.adamasorho.mindapax_backend.dto.SessionTimeFilter;
 import com.adamasorho.mindapax_backend.mapper.SessionMapper;
+import com.adamasorho.mindapax_backend.model.Professional;
 import com.adamasorho.mindapax_backend.model.Session;
+import com.adamasorho.mindapax_backend.model.User;
 import com.adamasorho.mindapax_backend.model.enums.SessionStatus;
+import com.adamasorho.mindapax_backend.repository.ProfessionalRepository;
 import com.adamasorho.mindapax_backend.repository.SessionRepository;
+import com.adamasorho.mindapax_backend.repository.UserRepository;
 import com.adamasorho.mindapax_backend.service.SessionService;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.AllArgsConstructor;
+import lombok.AllArgsConstructor; // Keep if other constructors use it, or remove if specific constructor is added
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@AllArgsConstructor
+// Consider removing @AllArgsConstructor if you add a specific constructor
 public class SessionServiceImpl implements SessionService {
   private final SessionRepository sessionRepository;
   private final SessionMapper mapper;
+  private final UserRepository userRepository;
+  private final ProfessionalRepository professionalRepository;
+
+  public SessionServiceImpl(SessionRepository sessionRepository, SessionMapper mapper, UserRepository userRepository, ProfessionalRepository professionalRepository) {
+    this.sessionRepository = sessionRepository;
+    this.mapper = mapper;
+    this.userRepository = userRepository;
+    this.professionalRepository = professionalRepository;
+  }
 
   @Override
   public SessionDTO createSession(SessionDTO dto) {
@@ -86,4 +104,41 @@ public class SessionServiceImpl implements SessionService {
     }
 }
 
+  @Override
+  @Transactional
+  public SessionDTO scheduleSessionByProfessional(SessionDTO sessionDto) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String currentPrincipalName = authentication.getName(); // This is usually the email
+
+    // Fetch the Professional entity based on the email
+    // Assuming ProfessionalRepository has a findByUserEmail method.
+    // If not, this needs to be added to ProfessionalRepository.
+    Professional professional = professionalRepository.findByUserEmail(currentPrincipalName)
+        .orElseThrow(() -> new EntityNotFoundException("Professional not found with email: " + currentPrincipalName));
+
+    // Validate that the userId from the DTO corresponds to an existing User
+    User user = userRepository.findById(sessionDto.getUserId())
+        .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + sessionDto.getUserId()));
+
+    // Create a new Session entity
+    Session session = mapper.toEntity(sessionDto);
+
+    // Set the professional and user fields
+    session.setProfessional(professional);
+    session.setUser(user);
+
+    // Set the status to SCHEDULED by default
+    session.setStatus(SessionStatus.SCHEDULED);
+    
+    // Explicitly set professionalId and userId in the DTO before mapping,
+    // or ensure mapper handles this if toEntity is used.
+    // The current mapper.toEntity might ignore professional and user objects if they are complex.
+    // It's safer to set them on the entity directly as done above.
+
+    // Save the Session entity
+    Session savedSession = sessionRepository.save(session);
+
+    // Return the saved Session mapped back to a SessionDTO
+    return mapper.toDTO(savedSession);
+  }
 }

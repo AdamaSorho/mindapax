@@ -23,4 +23,6 @@ public interface SessionService {
     SessionTimeFilter filter,
     SessionStatus status,
     Pageable pageable);
+
+    SessionDTO scheduleSessionByProfessional(SessionDTO sessionDto);
 }

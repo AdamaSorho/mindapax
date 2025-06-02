@@ -30,11 +30,16 @@ export class SessionsComponent implements OnInit {
     this.fetchPastSessions();
   }
 
-  isToday(session: Session): boolean | undefined {
-    return (
-      session.date.getDate() === new Date().getDate() &&
-      session.startTime?.includes(new Date().getHours().toString())
-    );
+  isToday(session: Session): boolean {
+    if (!session.startTime) {
+      return false;
+    }
+    const sessionStartDate = new Date(session.startTime);
+    const today = new Date();
+
+    return sessionStartDate.getFullYear() === today.getFullYear() &&
+           sessionStartDate.getMonth() === today.getMonth() &&
+           sessionStartDate.getDate() === today.getDate();
   }
 
   fetchUpcomingSessions(): void {
