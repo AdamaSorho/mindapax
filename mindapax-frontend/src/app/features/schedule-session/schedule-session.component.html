@@ -16,8 +16,8 @@
         <option value="" disabled selected>Choose a user</option>
         <option *ngFor="let user of users" [value]="user.id">{{user.firstName}} {{user.lastName}} ({{user.email}})</option>
       </select>
-      <div *ngIf="scheduleForm.get('userId')?.invalid && scheduleForm.get('userId')?.touched"
-        class="mt-1 text-sm text-red-600">
+      <div *ngIf="scheduleForm.get('userId')?.errors?.['required'] && scheduleForm.get('userId')?.touched"
+        class="mt-1 text-sm text-red-600" id="userIdError">
         User selection is required.
       </div>
     </div>
@@ -26,8 +26,8 @@
       <label for="startTime" class="block mb-2 text-sm font-medium text-gray-900">Start Time *</label>
       <input type="datetime-local" id="startTime" formControlName="startTime"
         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-      <div *ngIf="scheduleForm.get('startTime')?.invalid && scheduleForm.get('startTime')?.touched"
-        class="mt-1 text-sm text-red-600">
+      <div *ngIf="scheduleForm.get('startTime')?.errors?.['required'] && scheduleForm.get('startTime')?.touched"
+        class="mt-1 text-sm text-red-600" id="startTimeError">
         Start time is required.
       </div>
     </div>
@@ -36,8 +36,8 @@
       <label for="endTime" class="block mb-2 text-sm font-medium text-gray-900">End Time *</label>
       <input type="datetime-local" id="endTime" formControlName="endTime"
         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-      <div *ngIf="scheduleForm.get('endTime')?.invalid && scheduleForm.get('endTime')?.touched"
-        class="mt-1 text-sm text-red-600">
+      <div *ngIf="scheduleForm.get('endTime')?.errors?.['required'] && scheduleForm.get('endTime')?.touched"
+        class="mt-1 text-sm text-red-600" id="endTimeError">
         End time is required.
       </div>
     </div>
@@ -48,8 +48,8 @@
         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
         <option *ngFor="let mode of sessionModes" [value]="mode">{{mode}}</option>
       </select>
-      <div *ngIf="scheduleForm.get('mode')?.invalid && scheduleForm.get('mode')?.touched"
-        class="mt-1 text-sm text-red-600">
+      <div *ngIf="scheduleForm.get('mode')?.errors?.['required'] && scheduleForm.get('mode')?.touched"
+        class="mt-1 text-sm text-red-600" id="modeError">
         Session mode is required.
       </div>
     </div>
