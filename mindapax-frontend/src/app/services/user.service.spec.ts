@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { UserService } from './user.service';
 import { User } from '../models/user.model';
+import { PagedResponse } from '../models/network/pagedResponse'; // Import PagedResponse
 import { environment } from '../../environments/environment';
 import { Role } from '../models/enums/role';
 
@@ -36,12 +37,24 @@ describe('UserService', () => {
 
       service.getUsers().subscribe(users => {
         expect(users.length).toBe(2);
-        expect(users).toEqual(mockUsers);
+        expect(users).toEqual(mockUsers); // Should still receive the content array
       });
+
+      const mockPagedResponse: PagedResponse<User> = {
+        content: mockUsers,
+        totalPages: 1,
+        totalElements: 2,
+        page: 0,
+        size: 10,
+        empty: false,
+        isLast: true
+        // Add other PagedResponse fields as defined in your interface if necessary for completeness,
+        // but 'content' is the most crucial for this test.
+      };
 
       const req = httpMock.expectOne(apiUrl);
       expect(req.request.method).toBe('GET');
-      req.flush(mockUsers);
+      req.flush(mockPagedResponse); // Flush the PagedResponse object
     });
 
     it('should handle errors when fetching users', () => {
