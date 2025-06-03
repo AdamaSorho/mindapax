@@ -21,16 +21,19 @@ import com.adamasorho.mindapax_backend.repository.UserRepository;
 import com.adamasorho.mindapax_backend.service.SessionService;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.AllArgsConstructor; // Keep if other constructors use it, or remove if specific constructor is added
+// import lombok.AllArgsConstructor; // Lombok not used if specific constructor is present
 
+import org.slf4j.Logger; // Added Logger
+import org.slf4j.LoggerFactory; // Added LoggerFactory
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-// Consider removing @AllArgsConstructor if you add a specific constructor
 public class SessionServiceImpl implements SessionService {
+  private static final Logger logger = LoggerFactory.getLogger(SessionServiceImpl.class); // Added logger instance
+
   private final SessionRepository sessionRepository;
   private final SessionMapper mapper;
   private final UserRepository userRepository;
@@ -108,17 +111,38 @@ public class SessionServiceImpl implements SessionService {
   @Transactional
   public SessionDTO scheduleSessionByProfessional(SessionDTO sessionDto) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String currentPrincipalName = authentication.getName(); // This is usually the email
+    String professionalEmail = authentication.getName(); // This is usually the email
 
-    // Fetch the Professional entity based on the email
-    // Assuming ProfessionalRepository has a findByUserEmail method.
-    // If not, this needs to be added to ProfessionalRepository.
-    Professional professional = professionalRepository.findByUserEmail(currentPrincipalName)
-        .orElseThrow(() -> new EntityNotFoundException("Professional not found with email: " + currentPrincipalName));
+    Professional professionalFromAuth = professionalRepository.findByUserEmail(professionalEmail)
+        .orElseThrow(() -> {
+            logger.error("Professional not found for email: {}", professionalEmail);
+            return new EntityNotFoundException("Professional not found for email: " + professionalEmail);
+        });
+    logger.info("Fetched initial professionalFromAuth with ID: {} and User Email: {}", professionalFromAuth.getId(), professionalFromAuth.getUser().getEmail());
 
-    // Validate that the userId from the DTO corresponds to an existing User
-    User user = userRepository.findById(sessionDto.getUserId())
-        .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + sessionDto.getUserId()));
+
+    User clientUserFromDto = userRepository.findById(sessionDto.getUserId())
+        .orElseThrow(() -> {
+            logger.error("User (client) not found with ID: {}", sessionDto.getUserId());
+            return new EntityNotFoundException("User (client) not found with ID: " + sessionDto.getUserId());
+        });
+    logger.info("Fetched initial clientUserFromDto with ID: {}", clientUserFromDto.getId());
+
+    // Re-fetch to ensure managed state and log details
+    Professional managedProfessional = professionalRepository.findById(professionalFromAuth.getId())
+        .orElseThrow(() -> {
+            logger.error("Failed to re-fetch professional with ID: {}", professionalFromAuth.getId());
+            return new EntityNotFoundException("Professional not found on re-fetch with ID: " + professionalFromAuth.getId());
+        });
+    logger.info("Re-fetched managedProfessional with ID: {} and User Email: {}", managedProfessional.getId(), managedProfessional.getUser().getEmail());
+
+
+    User managedClientUser = userRepository.findById(clientUserFromDto.getId())
+        .orElseThrow(() -> {
+            logger.error("Failed to re-fetch client user with ID: {}", clientUserFromDto.getId());
+            return new EntityNotFoundException("Client user not found on re-fetch with ID: " + clientUserFromDto.getId());
+        });
+    logger.info("Re-fetched managedClientUser with ID: {}", managedClientUser.getId());
 
     // Create a new Session entity
     Session session = new Session(); // Create new session instance
@@ -134,16 +158,27 @@ public class SessionServiceImpl implements SessionService {
     } else {
         session.setStatus(SessionStatus.SCHEDULED);
     }
-    
+
     // Set the professional and user fields
-    session.setProfessional(professional); // Ensure this professional object has its ID
-    session.setUser(user);                 // Ensure this user object has its ID
+    session.setProfessional(managedProfessional); // Use the re-fetched, managed instance
+    session.setUser(managedClientUser);         // Use the re-fetched, managed instance
 
     // If status wasn't in DTO or needs override:
     session.setStatus(SessionStatus.SCHEDULED); // Explicitly set/override status
 
+    logger.info("Attempting to save session with Professional ID: {} (User ID: {}) and Client User ID: {}",
+            session.getProfessional().getId(), session.getProfessional().getUser().getId(), session.getUser().getId());
+    if(session.getProfessional().getId() == null) {
+        logger.error("CRITICAL: Professional ID is NULL before save for professional email: {}", professionalEmail);
+        // Potentially throw an exception here if this condition is unexpected and critical
+        throw new IllegalStateException("Professional ID is null before saving session for professional: " + professionalEmail);
+    }
+
+
     // Save the Session entity
     Session savedSession = sessionRepository.save(session);
+    logger.info("Session saved successfully with ID: {}", savedSession.getId());
+
 
     // Return the saved Session mapped back to a SessionDTO
     return mapper.toDTO(savedSession);

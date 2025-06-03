@@ -16,7 +16,7 @@ import { BillingComponent } from './billing/billing.component';
 import { SettingsComponent } from './settings/settings.component';
 import { authGuard } from '../guards/auth.guard';
 // Assuming RoleGuard exists or will be created, e.g., in ../guards/role.guard
-// import { roleGuard } from '../guards/role.guard'; 
+// import { roleGuard } from '../guards/role.guard';
 import { ProfessionalListComponent } from './professional-list/professional-list.component';
 import { ConnectionsComponent } from './connections/connections.component';
 import { ScheduleSessionComponent } from './schedule-session/schedule-session.component'; // Import new component
@@ -35,8 +35,8 @@ export const featuresRoutes: Routes = [
       { path: 'settings', component: SettingsComponent },
       { path: 'professionals', component: ProfessionalListComponent },
       { path: 'connections', component: ConnectionsComponent },
-      { 
-        path: 'schedule-session', 
+      {
+        path: 'schedule-session',
         component: ScheduleSessionComponent,
         // Assuming authGuard protects parent, and roleGuard for specific role
         // canActivate: [authGuard, roleGuard], // If roleGuard is separate

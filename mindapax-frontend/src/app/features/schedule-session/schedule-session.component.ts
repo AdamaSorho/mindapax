@@ -47,7 +47,7 @@ export class ScheduleSessionComponent implements OnInit, AfterViewInit, OnDestro
       userId: ['', Validators.required],
       // Store as full ISO-like string (YYYY-MM-DDTHH:mm)
       // The datepicker will manage the date part, time is manual.
-      startTime: ['', Validators.required], 
+      startTime: ['', Validators.required],
       endTime: ['', Validators.required],
       mode: [SessionMode.VIDEO, Validators.required],
       notes: ['']
@@ -107,13 +107,13 @@ export class ScheduleSessionComponent implements OnInit, AfterViewInit, OnDestro
     // The format 'yyyy-mm-dd' applies to how the datepicker displays/parses the date part.
     const commonOptions = {
       autohide: true,
-      format: 'yyyy-mm-dd', 
+      format: 'yyyy-mm-dd',
       todayHighlight: true,
     };
 
     if (startTimePickerEl) {
       this.startTimepickerInstance = new Datepicker(startTimePickerEl, { ...commonOptions });
-      
+
       this.startTimeChangeDateListener = (event: CustomEvent) => {
         // event.detail.date is the Date object selected by the datepicker (date part only)
         // The input field (event.target.value or startTimePickerEl.value) will have "yyyy-mm-dd"
@@ -123,7 +123,7 @@ export class ScheduleSessionComponent implements OnInit, AfterViewInit, OnDestro
         if (existingFormControlValue && existingFormControlValue.includes('T')) {
             timePart = existingFormControlValue.split('T')[1] || "00:00";
         }
-        
+
         this.scheduleForm.get('startTime')?.setValue(`${newDateValue}T${timePart}`);
         this.scheduleForm.get('startTime')?.markAsDirty();
       };

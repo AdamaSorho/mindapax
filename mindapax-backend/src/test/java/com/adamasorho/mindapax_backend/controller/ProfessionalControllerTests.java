@@ -43,7 +43,7 @@ class ProfessionalControllerTests {
 
     @MockBean
     private ProfessionalRepository professionalRepository;
-    
+
     @MockBean
     private ProfessionalMapper professionalMapper; // ProfessionalController depends on this
 
@@ -100,7 +100,7 @@ class ProfessionalControllerTests {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound()); // Assuming EntityNotFoundException maps to 404
     }
-    
+
     @Test
     @WithMockUser(username = "user@example.com", roles = {"USER"})
     void testGetMyConnectedUsers_Forbidden_WrongRole() throws Exception {
