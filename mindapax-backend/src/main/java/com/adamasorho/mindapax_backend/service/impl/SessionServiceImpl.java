@@ -21,7 +21,6 @@ import com.adamasorho.mindapax_backend.repository.UserRepository;
 import com.adamasorho.mindapax_backend.service.SessionService;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.AllArgsConstructor; // Keep if other constructors use it, or remove if specific constructor is added
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.core.Authentication;

@@ -17,6 +17,7 @@ public interface UserMapper {
     @Mapping(target = "agreeTerms", ignore = true),
     @Mapping(target = "sessions", ignore = true),
     @Mapping(target = "password", ignore = true),
+    @Mapping(target = "professional", ignore = true)
   })
   User toEntity(UserDTO userDTO);
 
@@ -25,6 +26,9 @@ public interface UserMapper {
     @Mapping(target = "location", ignore = true),
     @Mapping(target = "sessions", ignore = true),
     @Mapping(target = "phone", ignore = true),
+    @Mapping(target = "professional", ignore = true),
+    @Mapping(target = "active", ignore = true),
+    @Mapping(target = "emailVerified", ignore = true)
   })
   User toEntity(AuthRequest authRequest);
 }

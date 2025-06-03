@@ -17,8 +17,6 @@ import com.adamasorho.mindapax_backend.model.Professional;
 import com.adamasorho.mindapax_backend.dto.UserDTO;
 import com.adamasorho.mindapax_backend.mapper.UserMapper;
 import com.adamasorho.mindapax_backend.model.Connection;
-import com.adamasorho.mindapax_backend.model.Professional;
-import com.adamasorho.mindapax_backend.model.User;
 import com.adamasorho.mindapax_backend.model.enums.ConnectionStatus;
 import com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus;
 import com.adamasorho.mindapax_backend.model.enums.Specialization;
@@ -29,18 +27,14 @@ import com.adamasorho.mindapax_backend.service.ProfessionalService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired; // For constructor injection if not using Lombok's @AllArgsConstructor for all fields
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
 
 @Service
-@AllArgsConstructor
 @Transactional
 public class ProfessionalServiceImpl implements ProfessionalService {
   private final ProfessionalRepository professionalRepository;
   private final ConnectionRepository connectionRepository;
   private final UserMapper userMapper;
 
-  // Assuming @AllArgsConstructor is present and handles these, 
-  // otherwise, create a constructor:
   @Autowired
   public ProfessionalServiceImpl(
       ProfessionalRepository professionalRepository,

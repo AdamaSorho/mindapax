@@ -49,9 +49,10 @@ export class ScheduleSessionComponent implements OnInit {
   }
 
   loadUsers(): void {
-    this.userService.getUsers().subscribe({
+    this.userService.getProfessionalConnectedUsers().subscribe({
       next: (users) => {
         this.users = users;
+        console.log('Loaded users:', this.users);
       },
       error: (error: HttpErrorResponse) => {
         this.errorMessage = 'Failed to load users: ' + error.message;

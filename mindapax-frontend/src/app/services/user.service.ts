@@ -7,25 +7,25 @@ import { PagedResponse } from '../models/network/pagedResponse'; // Added PagedR
 import { environment } from '../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class UserService {
   private readonly apiUrl = environment.apiUrl; // Base API URL
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
-  getUsers(): Observable<User[]> {
+  getProfessionalConnectedUsers(): Observable<User[]> {
     // Fetches users connected to the currently authenticated professional
     // The backend endpoint /api/v1/professionals/me/connected-users handles filtering.
     // It expects pagination parameters.
-    const params = new HttpParams()
-      .set('page', '0')
-      .set('size', '50'); // Fetch up to 50 users by default, adjust as needed
+    const params = new HttpParams().set('page', '0').set('size', '50'); // Fetch up to 50 users by default, adjust as needed
 
-    return this.http.get<PagedResponse<User>>(`${this.apiUrl}/professionals/me/connected-users`, { params })
-      .pipe(
-        map(response => response.content)
-      );
+    return this.http
+      .get<PagedResponse<User>>(
+        `${this.apiUrl}/professionals/me/connected-users`,
+        { params }
+      )
+      .pipe(map((response) => response.content));
   }
 
   // Add other user-related methods here if needed, e.g., getUserById
