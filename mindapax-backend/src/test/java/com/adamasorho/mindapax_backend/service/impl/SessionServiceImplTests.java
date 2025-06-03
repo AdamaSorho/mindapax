@@ -30,6 +30,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import org.mockito.ArgumentCaptor; // Import ArgumentCaptor
+import org.hibernate.PropertyValueException; // Import for testing null property violations
+
 
 @ExtendWith(MockitoExtension.class)
 class SessionServiceImplTests {
@@ -175,6 +177,12 @@ class SessionServiceImplTests {
         assertEquals(user.getId(), capturedSession.getUser().getId(), "User ID should match the mockUser's ID");
 
         assertEquals(SessionStatus.SCHEDULED, capturedSession.getStatus(), "Session status should be SCHEDULED");
+        // Explicitly assert non-null for fields that are non-nullable in the entity
+        assertNotNull(capturedSession.getStartTime(), "StartTime should be set on the session");
+        assertNotNull(capturedSession.getEndTime(), "EndTime should be set on the session");
+        assertNotNull(capturedSession.getMode(), "Mode should be set on the session");
+        assertNotNull(capturedSession.getStatus(), "Status should be set on the session");
+
         assertEquals(sessionDTO.getStartTime(), capturedSession.getStartTime());
         assertEquals(sessionDTO.getEndTime(), capturedSession.getEndTime());
         assertEquals(sessionDTO.getMode(), capturedSession.getMode());
@@ -182,6 +190,51 @@ class SessionServiceImplTests {
 
         verify(sessionMapper).toDTO(capturedSession); // Verify DTO mapping was called with the captured session
     }
+
+    @Test
+    void testScheduleSessionByProfessional_NullStartTimeInDto_ThrowsPropertyValueException() {
+        // Arrange
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(professionalUser.getEmail());
+
+        when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
+        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
+        // Mock re-fetches as they happen before the session object is fully constructed and saved
+        when(professionalRepository.findById(eq(professional.getId()))).thenReturn(Optional.of(professional));
+        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
+
+
+        SessionDTO dtoWithNullStartTime = new SessionDTO();
+        dtoWithNullStartTime.setUserId(user.getId());
+        dtoWithNullStartTime.setStartTime(null); // Intentionally set to null
+        dtoWithNullStartTime.setEndTime(LocalDateTime.now().plusHours(2));
+        dtoWithNullStartTime.setMode(SessionMode.VIDEO);
+
+        // This mock is important: it simulates what happens when Hibernate tries to save
+        // an entity that violates a non-nullable constraint at the entity/ORM level.
+        when(sessionRepository.save(any(Session.class))).thenThrow(
+            new PropertyValueException("startTime is null", Session.class.getName(), "startTime")
+        );
+
+        // Act & Assert
+        PropertyValueException exception = assertThrows(PropertyValueException.class, () -> {
+            sessionService.scheduleSessionByProfessional(dtoWithNullStartTime);
+        });
+
+        // Verify that the exception is about the 'startTime' property
+        assertTrue(exception.getMessage().contains("startTime"));
+        assertEquals("startTime", exception.getPropertyName());
+
+        // Verify that findByUserEmail and findById were called, but save was also attempted
+        verify(professionalRepository).findByUserEmail(professionalUser.getEmail());
+        verify(userRepository).findById(eq(user.getId())); // For initial client user fetch
+        verify(professionalRepository).findById(eq(professional.getId())); // For professional re-fetch
+        verify(userRepository, times(2)).findById(eq(user.getId())); // For client user re-fetch (original + re-fetch)
+                                                                    // Note: if user.getId() is different from sessionDTO.getUserId(), adjust
+        verify(sessionRepository).save(any(Session.class)); // Save was attempted
+    }
+
 
     @Test
     void testScheduleSessionByProfessional_ProfessionalNotFound() {
@@ -229,6 +282,6 @@ class SessionServiceImplTests {
 
         verify(professionalRepository).findByUserEmail(professionalUser.getEmail());
         verify(userRepository).findById(nonExistentUserId);
-        verify(sessionRepository, never()).save(any(Session.class));
+        verify(sessionRepository, never()).save(any(Session.class)); // Save should not be reached if user not found
     }
 }
