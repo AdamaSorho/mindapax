@@ -121,19 +121,26 @@ public class SessionServiceImpl implements SessionService {
         .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + sessionDto.getUserId()));
 
     // Create a new Session entity
-    Session session = mapper.toEntity(sessionDto);
+    Session session = new Session(); // Create new session instance
 
-    // Set the professional and user fields
-    session.setProfessional(professional);
-    session.setUser(user);
-
-    // Set the status to SCHEDULED by default
-    session.setStatus(SessionStatus.SCHEDULED);
+    // Manually map fields from DTO
+    session.setStartTime(sessionDto.getStartTime());
+    session.setEndTime(sessionDto.getEndTime());
+    session.setMode(sessionDto.getMode());
+    session.setNotes(sessionDto.getNotes());
+    // If DTO can carry a status, map it, otherwise default is fine
+    if (sessionDto.getStatus() != null) {
+        session.setStatus(sessionDto.getStatus());
+    } else {
+        session.setStatus(SessionStatus.SCHEDULED);
+    }
     
-    // Explicitly set professionalId and userId in the DTO before mapping,
-    // or ensure mapper handles this if toEntity is used.
-    // The current mapper.toEntity might ignore professional and user objects if they are complex.
-    // It's safer to set them on the entity directly as done above.
+    // Set the professional and user fields
+    session.setProfessional(professional); // Ensure this professional object has its ID
+    session.setUser(user);                 // Ensure this user object has its ID
+
+    // If status wasn't in DTO or needs override:
+    session.setStatus(SessionStatus.SCHEDULED); // Explicitly set/override status
 
     // Save the Session entity
     Session savedSession = sessionRepository.save(session);

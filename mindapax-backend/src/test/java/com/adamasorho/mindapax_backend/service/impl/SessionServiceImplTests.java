@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor; // Import ArgumentCaptor
 
 @ExtendWith(MockitoExtension.class)
 class SessionServiceImplTests {
@@ -105,27 +106,70 @@ class SessionServiceImplTests {
 
         when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        when(sessionMapper.toEntity(any(SessionDTO.class))).thenReturn(session); // map DTO to an initial session entity
-        when(sessionRepository.save(any(Session.class))).thenReturn(session); // saving sets ID and returns the saved entity
-        when(sessionMapper.toDTO(any(Session.class))).thenReturn(sessionDTO); // map final entity back to DTO
+        
+        // The service now uses 'new Session()' and manually sets fields from DTO.
+        // So, no need to mock sessionMapper.toEntity().
+
+        // Mock the save operation to return the session passed to it, potentially with an ID set.
+        // For the purpose of capturing and verifying, this is fine.
+        // If the ID set by save is crucial for DTO mapping, adjust accordingly.
+        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> {
+            Session sessionToSave = invocation.getArgument(0);
+            if (sessionToSave.getId() == null) { // Simulate ID generation if not already set
+                 sessionToSave.setId(1L); // Example ID
+            }
+            return sessionToSave;
+        });
+        
+        // Prepare the DTO that mapper.toDTO should return
+        SessionDTO mappedDto = new SessionDTO();
+        mappedDto.setId(1L); // Assuming ID is set by save
+        mappedDto.setUserId(user.getId());
+        mappedDto.setProfessionalId(professional.getId());
+        mappedDto.setStartTime(sessionDTO.getStartTime());
+        mappedDto.setEndTime(sessionDTO.getEndTime());
+        mappedDto.setMode(sessionDTO.getMode());
+        mappedDto.setNotes(sessionDTO.getNotes());
+        mappedDto.setStatus(SessionStatus.SCHEDULED);
+        // Add professionalName and professionalSpecialization if mapper sets them
+        // mappedDto.setProfessionalName(professional.getUser().getFirstName() + " " + professional.getUser().getLastName());
+        // mappedDto.setProfessionalSpecialization(professional.getSpecialization().name());
+
+
+        when(sessionMapper.toDTO(any(Session.class))).thenReturn(mappedDto);
 
         // Act
         SessionDTO resultDTO = sessionService.scheduleSessionByProfessional(sessionDTO);
 
-        // Assert
+        // Assertions on the returned DTO
         assertNotNull(resultDTO);
-        assertEquals(sessionDTO.getUserId(), user.getId()); // Check if user ID is correctly set from original DTO
-        // In a real scenario, the returned DTO would now also have professionalId, professionalName etc.
-        // sessionDTO after mapping might be enriched with IDs and names by the mapper if configured
+        assertEquals(mappedDto.getId(), resultDTO.getId());
+        assertEquals(user.getId(), resultDTO.getUserId());
+        assertEquals(professional.getId(), resultDTO.getProfessionalId());
+        assertEquals(SessionStatus.SCHEDULED, resultDTO.getStatus());
 
+        // Verify interactions and capture the saved session
         verify(professionalRepository).findByUserEmail(professionalUser.getEmail());
         verify(userRepository).findById(user.getId());
-        verify(sessionMapper).toEntity(sessionDTO);
-        verify(sessionRepository).save(session); // verify that the session passed to save had professional and user set
-        assertEquals(SessionStatus.SCHEDULED, session.getStatus()); // Status should be set before save
-        assertEquals(professional, session.getProfessional());
-        assertEquals(user, session.getUser());
-        verify(sessionMapper).toDTO(session);
+
+        ArgumentCaptor<Session> sessionCaptor = ArgumentCaptor.forClass(Session.class);
+        verify(sessionRepository).save(sessionCaptor.capture());
+        Session capturedSession = sessionCaptor.getValue();
+
+        // Assertions on the captured Session entity
+        assertNotNull(capturedSession.getProfessional(), "Professional should be set on the session");
+        assertEquals(professional.getId(), capturedSession.getProfessional().getId(), "Professional ID should match the mockProfessional's ID");
+        
+        assertNotNull(capturedSession.getUser(), "User should be set on the session");
+        assertEquals(user.getId(), capturedSession.getUser().getId(), "User ID should match the mockUser's ID");
+        
+        assertEquals(SessionStatus.SCHEDULED, capturedSession.getStatus(), "Session status should be SCHEDULED");
+        assertEquals(sessionDTO.getStartTime(), capturedSession.getStartTime());
+        assertEquals(sessionDTO.getEndTime(), capturedSession.getEndTime());
+        assertEquals(sessionDTO.getMode(), capturedSession.getMode());
+        assertEquals(sessionDTO.getNotes(), capturedSession.getNotes());
+        
+        verify(sessionMapper).toDTO(capturedSession); // Verify DTO mapping was called with the captured session
     }
 
     @Test
