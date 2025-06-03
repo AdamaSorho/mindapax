@@ -136,13 +136,9 @@ export class ScheduleSessionComponent
     };
 
     if (startTimePickerEl) {
-<<<<<<< HEAD
       this.startTimepickerInstance = new Datepicker(startTimePickerEl, {
         ...commonOptions,
       });
-=======
-      this.startTimepickerInstance = new Datepicker(startTimePickerEl, { ...commonOptions });
->>>>>>> 7a86f432c68acf3862ec60355522d6f61e1f1f53
 
       this.startTimeChangeDateListener = (event: CustomEvent) => {
         // event.detail.date is the Date object selected by the datepicker (date part only)
@@ -158,13 +154,9 @@ export class ScheduleSessionComponent
           timePart = existingFormControlValue.split('T')[1] || '00:00';
         }
 
-<<<<<<< HEAD
         this.scheduleForm
           .get('startTime')
           ?.setValue(`${newDateValue}T${timePart}`);
-=======
-        this.scheduleForm.get('startTime')?.setValue(`${newDateValue}T${timePart}`);
->>>>>>> 7a86f432c68acf3862ec60355522d6f61e1f1f53
         this.scheduleForm.get('startTime')?.markAsDirty();
       };
       startTimePickerEl.addEventListener(
