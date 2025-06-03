@@ -35,6 +35,8 @@ public class ProfessionalServiceImpl implements ProfessionalService {
   private final ConnectionRepository connectionRepository;
   private final UserMapper userMapper;
 
+  // Assuming @AllArgsConstructor is present and handles these,
+  // otherwise, create a constructor:
   @Autowired
   public ProfessionalServiceImpl(
       ProfessionalRepository professionalRepository,
@@ -55,7 +57,7 @@ public class ProfessionalServiceImpl implements ProfessionalService {
 
     return connections.map(connection -> userMapper.toDTO(connection.getUser()));
   }
-  
+
   @Override
   public Professional createProfessional(Professional professional) {
     return professionalRepository.save(professional);

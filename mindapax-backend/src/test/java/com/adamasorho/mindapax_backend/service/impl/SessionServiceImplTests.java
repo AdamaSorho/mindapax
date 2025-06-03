@@ -103,9 +103,15 @@ class SessionServiceImplTests {
         SecurityContextHolder.setContext(securityContext);
         when(authentication.getName()).thenReturn(professionalUser.getEmail());
 
+        // Mock initial fetches
         when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        
+        when(userRepository.findById(eq(sessionDTO.getUserId()))).thenReturn(Optional.of(user)); // Use eq() for specific ID
+
+        // Mock re-fetches
+        // Ensure the IDs used here match the IDs of 'professional' and 'user' objects defined in setUp()
+        when(professionalRepository.findById(eq(professional.getId()))).thenReturn(Optional.of(professional));
+        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
+
         // The service now uses 'new Session()' and manually sets fields from DTO.
         // So, no need to mock sessionMapper.toEntity().
 
@@ -119,7 +125,7 @@ class SessionServiceImplTests {
             }
             return sessionToSave;
         });
-        
+
         // Prepare the DTO that mapper.toDTO should return
         SessionDTO mappedDto = new SessionDTO();
         mappedDto.setId(1L); // Assuming ID is set by save
@@ -143,13 +149,18 @@ class SessionServiceImplTests {
         // Assertions on the returned DTO
         assertNotNull(resultDTO);
         assertEquals(mappedDto.getId(), resultDTO.getId());
-        assertEquals(user.getId(), resultDTO.getUserId());
-        assertEquals(professional.getId(), resultDTO.getProfessionalId());
+        assertEquals(user.getId(), resultDTO.getUserId()); // Assert based on the 'user' object's ID
+        assertEquals(professional.getId(), resultDTO.getProfessionalId()); // Assert based on the 'professional' object's ID
         assertEquals(SessionStatus.SCHEDULED, resultDTO.getStatus());
 
         // Verify interactions and capture the saved session
-        verify(professionalRepository).findByUserEmail(professionalUser.getEmail());
-        verify(userRepository).findById(user.getId());
+        verify(professionalRepository).findByUserEmail(professionalUser.getEmail()); // Initial fetch
+        verify(userRepository).findById(eq(sessionDTO.getUserId())); // Initial fetch for client user
+
+        // Verify re-fetches
+        verify(professionalRepository).findById(eq(professional.getId()));
+        verify(userRepository).findById(eq(user.getId()));
+
 
         ArgumentCaptor<Session> sessionCaptor = ArgumentCaptor.forClass(Session.class);
         verify(sessionRepository).save(sessionCaptor.capture());
@@ -158,26 +169,27 @@ class SessionServiceImplTests {
         // Assertions on the captured Session entity
         assertNotNull(capturedSession.getProfessional(), "Professional should be set on the session");
         assertEquals(professional.getId(), capturedSession.getProfessional().getId(), "Professional ID should match the mockProfessional's ID");
-        
+
         assertNotNull(capturedSession.getUser(), "User should be set on the session");
         assertEquals(user.getId(), capturedSession.getUser().getId(), "User ID should match the mockUser's ID");
-        
+
         assertEquals(SessionStatus.SCHEDULED, capturedSession.getStatus(), "Session status should be SCHEDULED");
         assertEquals(sessionDTO.getStartTime(), capturedSession.getStartTime());
         assertEquals(sessionDTO.getEndTime(), capturedSession.getEndTime());
         assertEquals(sessionDTO.getMode(), capturedSession.getMode());
         assertEquals(sessionDTO.getNotes(), capturedSession.getNotes());
-        
+
         verify(sessionMapper).toDTO(capturedSession); // Verify DTO mapping was called with the captured session
     }
 
     @Test
     void testScheduleSessionByProfessional_ProfessionalNotFound() {
         // Arrange
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn("unknown@example.com");
+        // No change to SecurityContextHolder needed here as it's for the initial part
+        when(authentication.getName()).thenReturn("unknown@example.com"); // Ensure this is used for the first call
         when(professionalRepository.findByUserEmail("unknown@example.com")).thenReturn(Optional.empty());
+        // No need to mock SecurityContextHolder.getContext() again if it's already set up generally
+        // or if the test doesn't rely on a specific state of it beyond authentication.getName()
 
         // Act & Assert
         EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
@@ -193,21 +205,27 @@ class SessionServiceImplTests {
     @Test
     void testScheduleSessionByProfessional_UserNotFound() {
         // Arrange
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(professionalUser.getEmail());
-
+        // No change to SecurityContextHolder needed here
+        when(authentication.getName()).thenReturn(professionalUser.getEmail()); // For initial professional fetch
         when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
+
         Long nonExistentUserId = 99L;
-        sessionDTO.setUserId(nonExistentUserId); // Set DTO to use a non-existent user ID
+        sessionDTO.setUserId(nonExistentUserId); // Set DTO to use a non-existent user ID for the initial client fetch
+
+        // Mock for initial client fetch (which will fail)
         when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+        // The re-fetch for the professional (professionalRepository.findById) might still be mocked if you want to be thorough,
+        // but the code should ideally not reach the re-fetch of the user if the initial client fetch fails.
+        // For robustness, ensure professional re-fetch is still mocked if it could be reached.
+        // when(professionalRepository.findById(eq(professional.getId()))).thenReturn(Optional.of(professional));
+
 
         // Act & Assert
         EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
             sessionService.scheduleSessionByProfessional(sessionDTO);
         });
         assertEquals("User not found with ID: " + nonExistentUserId, exception.getMessage());
-        
+
         verify(professionalRepository).findByUserEmail(professionalUser.getEmail());
         verify(userRepository).findById(nonExistentUserId);
         verify(sessionRepository, never()).save(any(Session.class));

@@ -76,7 +76,7 @@ class SessionControllerTests {
                 .andExpect(jsonPath("$.professionalId").value(sessionDTO.getProfessionalId()))
                 .andExpect(jsonPath("$.professionalName").value(sessionDTO.getProfessionalName()))
                 // Note: LocalDateTime needs custom serializer/deserializer or string comparison for JSON path
-                .andExpect(jsonPath("$.startTime").value(sessionDTO.getStartTime().toString())) 
+                .andExpect(jsonPath("$.startTime").value(sessionDTO.getStartTime().toString()))
                 .andExpect(jsonPath("$.endTime").value(sessionDTO.getEndTime().toString()))
                 .andExpect(jsonPath("$.mode").value(sessionDTO.getMode().toString()))
                 .andExpect(jsonPath("$.status").value(sessionDTO.getStatus().toString()));
@@ -91,7 +91,7 @@ class SessionControllerTests {
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isForbidden());
     }
-    
+
     @Test
     // No @WithMockUser, so anonymous/unauthenticated
     void testScheduleByProfessional_Unauthorized_NoUser() throws Exception {

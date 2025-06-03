@@ -33,7 +33,7 @@ describe('ScheduleSessionComponent', () => {
   let fixture: ComponentFixture<ScheduleSessionComponent>;
   let mockSessionService: jasmine.SpyObj<SessionService>;
   let mockUserService: jasmine.SpyObj<UserService>;
-  
+
   let mockStartTimePickerEl: any;
   let mockEndTimePickerEl: any;
 
@@ -65,7 +65,7 @@ describe('ScheduleSessionComponent', () => {
 
     fixture = TestBed.createComponent(ScheduleSessionComponent);
     component = fixture.componentInstance;
-    
+
     // Mock the elements that Flowbite Datepicker would attach to
     mockStartTimePickerEl = document.createElement('input');
     mockEndTimePickerEl = document.createElement('input');
@@ -145,32 +145,32 @@ describe('ScheduleSessionComponent', () => {
     it('should update startTime form control on "changeDate" event from datepicker', () => {
       mockStartTimePickerEl.value = '2024-03-15'; // Datepicker sets this
       component.scheduleForm.get('startTime')?.setValue('2024-03-10T10:00'); // Existing value with time
-      
+
       // Simulate the 'changeDate' event
       const changeDateEvent = new CustomEvent('changeDate', { detail: { date: new Date(2024, 2, 15) } });
       mockStartTimePickerEl.dispatchEvent(changeDateEvent);
-      
+
       expect(component.scheduleForm.get('startTime')?.value).toBe('2024-03-15T10:00'); // Time should be preserved
     });
 
     it('should update startTime form control on manual "input" event', () => {
       const manualDateTime = '2024-03-15T11:30';
       mockStartTimePickerEl.value = manualDateTime;
-      
+
       // Simulate the 'input' event
       const inputEvent = new Event('input');
       mockStartTimePickerEl.dispatchEvent(inputEvent);
-      
+
       expect(component.scheduleForm.get('startTime')?.value).toBe(manualDateTime);
     });
 
     it('should default time to T00:00 if no prior time exists on "changeDate"', () => {
       mockStartTimePickerEl.value = '2024-03-15'; // Datepicker sets this
       component.scheduleForm.get('startTime')?.setValue(''); // No existing value
-      
+
       const changeDateEvent = new CustomEvent('changeDate', { detail: { date: new Date(2024, 2, 15) } });
       mockStartTimePickerEl.dispatchEvent(changeDateEvent);
-      
+
       expect(component.scheduleForm.get('startTime')?.value).toBe('2024-03-15T00:00');
     });
   });
@@ -197,7 +197,7 @@ describe('ScheduleSessionComponent', () => {
       expect(errorEl).toBeTruthy();
       expect(errorEl.nativeElement.textContent).toContain('User selection is required.');
     });
-    
+
     // Add one for startTime as an example
      it('should display "Start time is required." when startTime is touched and empty', () => {
       setAndTouch('startTime', '');
@@ -240,7 +240,7 @@ describe('ScheduleSessionComponent', () => {
     expect(mockSessionService.scheduleSessionByProfessional).toHaveBeenCalledWith(expectedPayload);
     expect(component.successMessage).toContain('Session scheduled successfully');
   }));
-  
+
     it('should set error message if end time is not after start time during submission', () => {
     component.scheduleForm.setValue({
       userId: '1',
@@ -265,7 +265,7 @@ describe('ScheduleSessionComponent', () => {
     it('should display an error message on sessionService.scheduleSessionByProfessional error during submission', fakeAsync(() => {
     const errorResponse = new HttpErrorResponse({ error: {message: 'Scheduling conflict'}, status: 400, statusText: 'Bad Request' });
     mockSessionService.scheduleSessionByProfessional.and.returnValue(throwError(() => errorResponse));
-    
+
     component.scheduleForm.setValue({
       userId: '1',
       startTime: '2024-01-01T10:00',
@@ -280,7 +280,7 @@ describe('ScheduleSessionComponent', () => {
     expect(mockSessionService.scheduleSessionByProfessional).toHaveBeenCalled();
     expect(component.errorMessage).toContain('Failed to schedule session: Scheduling conflict');
   }));
-  
+
     it('should display a generic error message if error.error.message is not available during submission error', fakeAsync(() => {
     const errorResponse = new HttpErrorResponse({ status: 500, statusText: 'Internal Server Error' });
     mockSessionService.scheduleSessionByProfessional.and.returnValue(throwError(() => errorResponse));

@@ -9,10 +9,10 @@ import { Role } from '../models/enums/role';
 describe('UserService', () => {
   let service: UserService;
   let httpMock: HttpTestingController;
-  // Note: The apiUrl in the service itself is now just environment.apiUrl, 
+  // Note: The apiUrl in the service itself is now just environment.apiUrl,
   // and the full path is constructed in the method.
   // For the test, we'll define the expected endpoint.
-  const expectedBaseUrl = environment.apiUrl; 
+  const expectedBaseUrl = environment.apiUrl;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -60,7 +60,7 @@ describe('UserService', () => {
       // const req = httpMock.expectOne(request => request.url === `${expectedBaseUrl}/professionals/me/connected-users`);
       // expect(req.request.params.get('page')).toEqual('0');
       // expect(req.request.params.get('size')).toEqual('50');
-      
+
       expect(req.request.method).toBe('GET');
       req.flush(mockPagedResponse); // Flush the PagedResponse object
     });
@@ -73,7 +73,7 @@ describe('UserService', () => {
           expect(error.statusText).toEqual(errorMessage);
         }
       });
-      
+
       const expectedUrl = `${expectedBaseUrl}/professionals/me/connected-users?page=0&size=50`;
       const req = httpMock.expectOne(expectedUrl);
       req.flush(errorMessage, { status: 500, statusText: errorMessage });

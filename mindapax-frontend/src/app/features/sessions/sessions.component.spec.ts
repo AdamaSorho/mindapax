@@ -62,13 +62,13 @@ describe('SessionsComponent', () => {
       expect(component.fetchPastSessions).toHaveBeenCalled();
     });
   });
-  
+
   describe('isToday', () => {
     it('should return true if session startTime is today', () => {
       const today = new Date();
-      const session: Session = { 
+      const session: Session = {
         id: 1, userId: 1, mode: SessionMode.VIDEO,
-        startTime: today.toISOString(), 
+        startTime: today.toISOString(),
         endTime: new Date(today.getTime() + 3600000).toISOString() // 1 hour later
       };
       expect(component.isToday(session)).toBeTrue();
@@ -77,9 +77,9 @@ describe('SessionsComponent', () => {
     it('should return false if session startTime is tomorrow', () => {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const session: Session = { 
+      const session: Session = {
         id: 1, userId: 1, mode: SessionMode.VIDEO,
-        startTime: tomorrow.toISOString(), 
+        startTime: tomorrow.toISOString(),
         endTime: new Date(tomorrow.getTime() + 3600000).toISOString()
       };
       expect(component.isToday(session)).toBeFalse();
@@ -88,14 +88,14 @@ describe('SessionsComponent', () => {
     it('should return false if session startTime is yesterday', () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const session: Session = { 
+      const session: Session = {
         id: 1, userId: 1, mode: SessionMode.VIDEO,
-        startTime: yesterday.toISOString(), 
+        startTime: yesterday.toISOString(),
         endTime: new Date(yesterday.getTime() + 3600000).toISOString()
       };
       expect(component.isToday(session)).toBeFalse();
     });
-    
+
     it('should return false if session startTime is null or undefined', () => {
        const sessionWithNullStartTime: Session = {
         id: 1, userId: 1, mode: SessionMode.VIDEO,
@@ -121,7 +121,7 @@ describe('SessionsComponent', () => {
       };
       component.upcomingSessions = [mockSession];
       fixture.detectChanges(); // To process bindings if any logic was in component
-      
+
       // In a real test for component logic transforming data for display:
       // expect(component.processedSessions[0].displayProfessionalName).toBe('Dr. Test');
       // Since it's direct binding, this test is more illustrative.
