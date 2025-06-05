@@ -4,7 +4,7 @@ export enum SessionTimeFilter {
 }
 
 export enum SessionStatus {
-  PENDING = 'PENDING',
+  SCHEDULED = 'SCHEDULED',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
 }

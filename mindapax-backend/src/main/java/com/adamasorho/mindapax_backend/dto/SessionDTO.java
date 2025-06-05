@@ -6,7 +6,6 @@ import com.adamasorho.mindapax_backend.model.enums.SessionMode;
 import com.adamasorho.mindapax_backend.model.enums.SessionStatus;
 
 import jakarta.validation.constraints.Min; // Added Min import
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull; // Added NotNull import
 import lombok.Data;
 

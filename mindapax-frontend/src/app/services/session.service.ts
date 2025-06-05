@@ -34,7 +34,7 @@ export class SessionService {
     if (params.size != null) httpParams = httpParams.set('size', params.size);
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
 
-    return this.http.get(this.baseUrl, { params: httpParams });
+    return this.http.get(`${this.baseUrl}/by-user`, { params: httpParams });
   }
 
   scheduleSessionByProfessional(

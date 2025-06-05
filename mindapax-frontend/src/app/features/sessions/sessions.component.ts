@@ -39,7 +39,7 @@ export class SessionsComponent implements OnInit {
     const startTimeDate = new Date(session.startTime);
     const duration = Number(session.durationMinutes);
     if (isNaN(duration)) {
-        return null;
+      return null;
     }
     return new Date(startTimeDate.getTime() + duration * 60000); // 60000 ms in a minute
   }
@@ -65,7 +65,7 @@ export class SessionsComponent implements OnInit {
         userId: this.authService.getUserId(),
         filter: SessionTimeFilter.UPCOMING,
         date: new Date().toISOString(),
-        status: SessionStatus.PENDING,
+        status: SessionStatus.SCHEDULED,
         page: 1,
         size: 10,
         sort: 'date,asc',
@@ -89,7 +89,7 @@ export class SessionsComponent implements OnInit {
         userId: this.authService.getUserId(),
         filter: SessionTimeFilter.PAST,
         date: new Date().toISOString(),
-        status: SessionStatus.PENDING,
+        status: SessionStatus.SCHEDULED,
         page: 1,
         size: 10,
         sort: 'date,asc',
@@ -134,7 +134,8 @@ export class SessionsComponent implements OnInit {
     this.router.navigate(['/member/schedule-session']);
   }
 
-  formatDateToRelative(dateString: string | Date): string { // Accept string or Date
+  formatDateToRelative(dateString: string | Date): string {
+    // Accept string or Date
     const now = new Date();
     const sessionDate = new Date(dateString); // Works with ISO string or Date object
     const diffTime = Math.abs(sessionDate.getTime() - now.getTime());
