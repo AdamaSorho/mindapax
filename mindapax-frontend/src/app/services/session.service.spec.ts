@@ -28,23 +28,24 @@ describe('SessionService', () => {
   });
 
   describe('scheduleSessionByProfessional', () => {
-    it('should send a POST request to schedule a session', () => {
+    it('should send a POST request to schedule a session with durationMinutes', () => {
+      const startTimeISO = new Date().toISOString();
       const mockPayload: ScheduleSessionPayload = {
         userId: 1,
-        startTime: new Date().toISOString(),
-        endTime: new Date(Date.now() + 3600 * 1000).toISOString(), // 1 hour later
+        startTime: startTimeISO,
+        durationMinutes: 60, // Use durationMinutes
         mode: SessionMode.VIDEO,
         notes: 'Test session'
       };
 
-      const mockResponse: Session = { // Assuming Session model structure
+      const mockResponse: Session = {
         id: 123,
         userId: mockPayload.userId,
         startTime: mockPayload.startTime,
-        endTime: mockPayload.endTime,
+        durationMinutes: mockPayload.durationMinutes, // Use durationMinutes
         mode: mockPayload.mode,
         notes: mockPayload.notes,
-        status: 'SCHEDULED', // Or whatever status is expected
+        status: 'SCHEDULED',
         professionalId: 10,
         professionalName: 'Dr. Who',
         professionalSpecialization: 'Time Travel'
@@ -56,7 +57,7 @@ describe('SessionService', () => {
 
       const req = httpMock.expectOne(`${baseUrl}/professional/schedule`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual(mockPayload);
+      expect(req.request.body).toEqual(mockPayload); // Ensure payload sent matches
       req.flush(mockResponse);
     });
 
@@ -64,7 +65,7 @@ describe('SessionService', () => {
       const mockPayload: ScheduleSessionPayload = {
         userId: 1,
         startTime: new Date().toISOString(),
-        endTime: new Date(Date.now() + 3600 * 1000).toISOString(),
+        durationMinutes: 60, // Use durationMinutes
         mode: SessionMode.VIDEO,
         notes: 'Test session'
       };

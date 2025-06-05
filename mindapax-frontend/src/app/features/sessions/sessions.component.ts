@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Session } from '../../models/session.model';
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf, DatePipe } from '@angular/common'; // Added DatePipe
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
 import {
@@ -10,7 +10,7 @@ import {
 
 @Component({
   selector: 'app-sessions',
-  imports: [NgFor, NgIf, NgClass],
+  imports: [NgFor, NgIf, NgClass, DatePipe], // Added DatePipe to imports
   templateUrl: './sessions.component.html',
   styleUrl: './sessions.component.css',
 })
@@ -28,6 +28,18 @@ export class SessionsComponent implements OnInit {
   ngOnInit(): void {
     this.fetchUpcomingSessions();
     this.fetchPastSessions();
+  }
+
+  public getCalculatedEndTime(session: Session): Date | null {
+    if (!session.startTime || session.durationMinutes == null) {
+      return null;
+    }
+    const startTimeDate = new Date(session.startTime);
+    const duration = Number(session.durationMinutes);
+    if (isNaN(duration)) {
+        return null;
+    }
+    return new Date(startTimeDate.getTime() + duration * 60000); // 60000 ms in a minute
   }
 
   isToday(session: Session): boolean {
@@ -119,9 +131,9 @@ export class SessionsComponent implements OnInit {
     console.log('Navigating to Find a Professional page');
   }
 
-  formatDateToRelative(date: Date): string {
+  formatDateToRelative(dateString: string | Date): string { // Accept string or Date
     const now = new Date();
-    const sessionDate = new Date(date);
+    const sessionDate = new Date(dateString); // Works with ISO string or Date object
     const diffTime = Math.abs(sessionDate.getTime() - now.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 

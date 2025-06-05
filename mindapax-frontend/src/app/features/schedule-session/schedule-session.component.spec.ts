@@ -35,7 +35,7 @@ describe('ScheduleSessionComponent', () => {
   let mockUserService: jasmine.SpyObj<UserService>;
 
   let mockStartTimePickerEl: any;
-  let mockEndTimePickerEl: any;
+  // let mockEndTimePickerEl: any; // Removed
 
   const mockUsers: User[] = [
     { id: 1, firstName: 'Test', lastName: 'UserA', email: 'a@test.com', role: Role.USER, avatar: '', phone: '', location: '' },
@@ -68,16 +68,16 @@ describe('ScheduleSessionComponent', () => {
 
     // Mock the elements that Flowbite Datepicker would attach to
     mockStartTimePickerEl = document.createElement('input');
-    mockEndTimePickerEl = document.createElement('input');
+    // mockEndTimePickerEl = document.createElement('input'); // Removed
     spyOn(document, 'getElementById').and.callFake((id: string) => {
       if (id === 'startTimePicker') return mockStartTimePickerEl;
-      if (id === 'endTimePicker') return mockEndTimePickerEl;
-      return null;
+      // if (id === 'endTimePicker') return mockEndTimePickerEl; // Removed
+      return document.createElement('div'); // Return a generic div for other IDs if getElementById is called elsewhere
     });
     spyOn(mockStartTimePickerEl, 'addEventListener');
     spyOn(mockStartTimePickerEl, 'removeEventListener');
-    spyOn(mockEndTimePickerEl, 'addEventListener');
-    spyOn(mockEndTimePickerEl, 'removeEventListener');
+    // spyOn(mockEndTimePickerEl, 'addEventListener'); // Removed
+    // spyOn(mockEndTimePickerEl, 'removeEventListener'); // Removed
 
     mockUserService.getUsers.and.returnValue(of(mockUsers));
     // fixture.detectChanges() here would call ngOnInit & ngAfterViewInit if component is stable.
@@ -93,10 +93,15 @@ describe('ScheduleSessionComponent', () => {
     fixture.detectChanges(); // Ensure ngOnInit runs
     expect(component.scheduleForm).toBeDefined();
     expect(component.scheduleForm.get('userId')?.value).toBe('');
-    expect(component.scheduleForm.get('mode')?.value).toBe(SessionMode.VIDEO); // Default value
+    expect(component.scheduleForm.get('startTime')?.value).toBe('');
+    expect(component.scheduleForm.get('durationMinutes')?.value).toBe('');
+    expect(component.scheduleForm.get('mode')?.value).toBe(SessionMode.VIDEO);
+    expect(component.scheduleForm.get('notes')?.value).toBe('');
+
     expect(component.scheduleForm.get('userId')?.hasValidator(Validators.required)).toBeTruthy();
     expect(component.scheduleForm.get('startTime')?.hasValidator(Validators.required)).toBeTruthy();
-    expect(component.scheduleForm.get('endTime')?.hasValidator(Validators.required)).toBeTruthy();
+    expect(component.scheduleForm.get('durationMinutes')?.hasValidator(Validators.required)).toBeTruthy();
+    expect(component.scheduleForm.get('durationMinutes')?.hasValidator(Validators.min(15))).toBeTruthy();
     expect(component.scheduleForm.get('mode')?.hasValidator(Validators.required)).toBeTruthy();
   });
 
@@ -114,26 +119,22 @@ describe('ScheduleSessionComponent', () => {
   });
 
   describe('Datepicker Initialization and Cleanup', () => {
-    it('should initialize datepickers in ngAfterViewInit', () => {
+    it('should initialize startTimePicker in ngAfterViewInit', () => {
       fixture.detectChanges(); // ngOnInit + ngAfterViewInit
       expect(document.getElementById).toHaveBeenCalledWith('startTimePicker');
-      expect(document.getElementById).toHaveBeenCalledWith('endTimePicker');
-      expect((window as any).Datepicker).toHaveBeenCalledTimes(2); // Check constructor calls
+      // expect(document.getElementById).not.toHaveBeenCalledWith('endTimePicker'); // Ensure endTimePicker is not sought
+      expect((window as any).Datepicker).toHaveBeenCalledTimes(1); // Only one Datepicker instance
       expect(mockStartTimePickerEl.addEventListener).toHaveBeenCalledWith('changeDate', jasmine.any(Function));
       expect(mockStartTimePickerEl.addEventListener).toHaveBeenCalledWith('input', jasmine.any(Function));
-      expect(mockEndTimePickerEl.addEventListener).toHaveBeenCalledWith('changeDate', jasmine.any(Function));
-      expect(mockEndTimePickerEl.addEventListener).toHaveBeenCalledWith('input', jasmine.any(Function));
+      // expect(mockEndTimePickerEl.addEventListener).not.toHaveBeenCalled(); // Ensure no listeners for endTimePicker
     });
 
-    it('should remove event listeners in ngOnDestroy', () => {
+    it('should remove startTimePicker event listeners in ngOnDestroy', () => {
       fixture.detectChanges(); // Initialize first
       component.ngOnDestroy();
       expect(mockStartTimePickerEl.removeEventListener).toHaveBeenCalledWith('changeDate', jasmine.any(Function));
       expect(mockStartTimePickerEl.removeEventListener).toHaveBeenCalledWith('input', jasmine.any(Function));
-      expect(mockEndTimePickerEl.removeEventListener).toHaveBeenCalledWith('changeDate', jasmine.any(Function));
-      expect(mockEndTimePickerEl.removeEventListener).toHaveBeenCalledWith('input', jasmine.any(Function));
-      // If Datepicker instances had a real destroy method and were stored on component:
-      // expect(mockDatepickerInstance.destroy).toHaveBeenCalledTimes(2);
+      // expect(mockEndTimePickerEl.removeEventListener).not.toHaveBeenCalled();
     });
   });
 
@@ -206,34 +207,58 @@ describe('ScheduleSessionComponent', () => {
       expect(errorEl.nativeElement.textContent).toContain('Start time is required.');
     });
 
+    it('should display "Duration is required." when durationMinutes is touched and empty', () => {
+      setAndTouch('durationMinutes', '');
+      const errorEl = fixture.debugElement.query(By.css('#durationMinutesError'));
+      expect(errorEl).toBeTruthy();
+      expect(errorEl.nativeElement.textContent).toContain('Duration is required.');
+      expect(component.scheduleForm.get('durationMinutes')?.hasError('required')).toBeTrue();
+    });
+
+    it('should display "Duration must be at least X minutes." when durationMinutes is less than min', () => {
+      setAndTouch('durationMinutes', 10); // Assuming min is 15
+      const errorEl = fixture.debugElement.query(By.css('#durationMinutesError'));
+      expect(errorEl).toBeTruthy();
+      expect(errorEl.nativeElement.textContent).toContain('Duration must be at least 15 minutes.');
+      expect(component.scheduleForm.get('durationMinutes')?.hasError('min')).toBeTrue();
+    });
+
   });
 
   describe('Form Submission Logic', () => {
     beforeEach(() => {
         fixture.detectChanges(); // Ensure component is initialized
     });
-    it('should call sessionService.scheduleSessionByProfessional with ISO strings on valid form submission', fakeAsync(() => {
-    const mockScheduledSession: Session = {
-      id: 1, userId: 1, startTime: new Date().toISOString(), endTime: new Date().toISOString(), mode: SessionMode.VIDEO,
-      professionalId: 1, professionalName: 'Dr. Prof', professionalSpecialization: 'Testing'
+    it('should call sessionService.scheduleSessionByProfessional with durationMinutes on valid form submission', fakeAsync(() => {
+    const mockStartTime = new Date();
+    const mockDuration = 60;
+    const mockScheduledSession: Session = { // This is the response from the service
+      id: 1,
+      userId: 1,
+      startTime: mockStartTime.toISOString(),
+      durationMinutes: mockDuration,
+      mode: SessionMode.VIDEO,
+      professionalId: 1,
+      professionalName: 'Dr. Prof',
+      professionalSpecialization: 'Testing'
     };
     mockSessionService.scheduleSessionByProfessional.and.returnValue(of(mockScheduledSession));
 
     component.scheduleForm.setValue({
       userId: '1',
-      startTime: '2024-01-01T10:00', // Valid datetime-local string
-      endTime: '2024-01-01T11:00',
+      startTime: '2024-01-01T10:00',
+      durationMinutes: mockDuration, // Use durationMinutes
       mode: SessionMode.VIDEO,
       notes: 'Test notes'
     });
 
     component.onSubmit();
-    tick(); // Simulate passage of time for async operations like Observables
+    tick();
 
     const expectedPayload: ScheduleSessionPayload = {
       userId: 1,
       startTime: new Date('2024-01-01T10:00').toISOString(),
-      endTime: new Date('2024-01-01T11:00').toISOString(),
+      durationMinutes: mockDuration, // Check for durationMinutes
       mode: SessionMode.VIDEO,
       notes: 'Test notes'
     };
@@ -241,19 +266,8 @@ describe('ScheduleSessionComponent', () => {
     expect(component.successMessage).toContain('Session scheduled successfully');
   }));
 
-    it('should set error message if end time is not after start time during submission', () => {
-    component.scheduleForm.setValue({
-      userId: '1',
-      startTime: '2024-01-01T11:00',
-      endTime: '2024-01-01T10:00', // End time before start time
-      mode: SessionMode.VIDEO,
-      notes: ''
-    });
-    component.onSubmit();
-    expect(component.errorMessage).toBe('End time must be after start time.');
-    expect(mockSessionService.scheduleSessionByProfessional).not.toHaveBeenCalled();
-  });
-
+    // Remove test for: 'should set error message if end time is not after start time during submission'
+    // as this logic is no longer in the component.
 
     it('should display an error message if the form is invalid during submission attempt', () => {
     component.scheduleForm.get('userId')?.setValue(''); // Make form invalid

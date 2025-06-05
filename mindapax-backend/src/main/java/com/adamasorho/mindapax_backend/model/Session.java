@@ -35,7 +35,7 @@ public class Session {
     private LocalDateTime startTime;
 
     @Column(nullable = false)
-    private LocalDateTime endTime;
+    private Integer durationMinutes;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

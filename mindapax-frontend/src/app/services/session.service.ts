@@ -12,7 +12,7 @@ import { SessionMode } from '../models/enums/SessionFilter'; // Added import
 export interface ScheduleSessionPayload {
   userId: number;
   startTime: string; // ISO 8601 format
-  endTime: string;   // ISO 8601 format
+  durationMinutes: number;
   mode: SessionMode;
   notes?: string;
 }

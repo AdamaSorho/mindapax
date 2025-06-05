@@ -149,7 +149,7 @@ public class SessionServiceImpl implements SessionService {
 
     // Manually map fields from DTO
     session.setStartTime(sessionDto.getStartTime());
-    session.setEndTime(sessionDto.getEndTime());
+    session.setDurationMinutes(sessionDto.getDurationMinutes()); // Changed from endTime to durationMinutes
     session.setMode(sessionDto.getMode());
     session.setNotes(sessionDto.getNotes());
     // If DTO can carry a status, map it, otherwise default is fine
@@ -166,8 +166,8 @@ public class SessionServiceImpl implements SessionService {
     // If status wasn't in DTO or needs override:
     session.setStatus(SessionStatus.SCHEDULED); // Explicitly set/override status
 
-    logger.info("Attempting to save session with Professional ID: {} (User ID: {}) and Client User ID: {}",
-            session.getProfessional().getId(), session.getProfessional().getUser().getId(), session.getUser().getId());
+    logger.info("Attempting to save session with Professional ID: {} (User ID: {}), Client User ID: {}, StartTime: {}, Duration: {} mins",
+            session.getProfessional().getId(), session.getProfessional().getUser().getId(), session.getUser().getId(), session.getStartTime(), session.getDurationMinutes());
     if(session.getProfessional().getId() == null) {
         logger.error("CRITICAL: Professional ID is NULL before save for professional email: {}", professionalEmail);
         // Potentially throw an exception here if this condition is unexpected and critical
@@ -177,7 +177,8 @@ public class SessionServiceImpl implements SessionService {
 
     // Save the Session entity
     Session savedSession = sessionRepository.save(session);
-    logger.info("Session saved successfully with ID: {}", savedSession.getId());
+    logger.info("Session saved successfully with ID: {}, StartTime: {}, Duration: {} mins",
+            savedSession.getId(), savedSession.getStartTime(), savedSession.getDurationMinutes());
 
 
     // Return the saved Session mapped back to a SessionDTO
