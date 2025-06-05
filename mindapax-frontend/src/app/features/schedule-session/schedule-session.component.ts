@@ -30,11 +30,9 @@ export class ScheduleSessionComponent implements OnInit, AfterViewInit, OnDestro
   // private endTimepickerInstance: any;
 
   // Store event listener functions to remove them correctly
-  private startTimeChangeDateListener!: (event: any) => void;
-  private startTimeInputListener!: (event: any) => void;
-  // No endTime listeners needed
-  // private endTimeChangeDateListener!: (event: any) => void;
-  // private endTimeInputListener!: (event: any) => void;
+  private startDateChangeDateListener!: (event: any) => void; // Renamed for clarity
+  // No specific input listener needed for datepicker text input if changeDate handles it.
+  // Manual input directly into the text field for date is less common once datepicker is active.
 
 
   constructor(
@@ -47,11 +45,11 @@ export class ScheduleSessionComponent implements OnInit, AfterViewInit, OnDestro
   ngOnInit(): void {
     this.scheduleForm = this.fb.group({
       userId: ['', Validators.required],
-      // Store as full ISO-like string (YYYY-MM-DDTHH:mm)
-      // The datepicker will manage the date part, time is manual.
-      startTime: ['', Validators.required],
-      durationMinutes: ['', [Validators.required, Validators.min(15)]], // Added durationMinutes
-      mode: [SessionMode.VIDEO, Validators.required],
+      userId: ['', Validators.required],
+      startDate: ['', Validators.required],      // New
+      startTimeValue: ['', Validators.required], // New
+      durationMinutes: ['', [Validators.required, Validators.min(15)]],
+      mode: [SessionMode.VIDEO, Validators.required], // Default mode
       notes: ['']
     });
 
@@ -59,60 +57,44 @@ export class ScheduleSessionComponent implements OnInit, AfterViewInit, OnDestro
   }
 
   ngAfterViewInit(): void {
-    this.initDatepickers(); // Only initializes startTimePicker now
+    this.initDatepickers();
   }
 
   ngOnDestroy(): void {
-    // Remove event listeners to prevent memory leaks
-    const startTimePickerEl = document.getElementById('startTimePicker');
-    if (startTimePickerEl) {
-      if (this.startTimeChangeDateListener) {
-        startTimePickerEl.removeEventListener('changeDate', this.startTimeChangeDateListener);
+    const startDatePickerEl = document.getElementById('startDatePicker'); // Use new ID
+    if (startDatePickerEl) {
+      if (this.startDateChangeDateListener) {
+        startDatePickerEl.removeEventListener('changeDate', this.startDateChangeDateListener);
       }
-      if (this.startTimeInputListener) {
-        startTimePickerEl.removeEventListener('input', this.startTimeInputListener);
-      }
+      // No startTimeInputListener to remove if it's not used for the date part
     }
-    // No endTimePicker related cleanup
   }
 
   private initDatepickers(): void {
-    const startTimePickerEl = document.getElementById('startTimePicker') as HTMLInputElement | null;
-    // const endTimePickerEl = document.getElementById('endTimePicker') as HTMLInputElement | null; // Removed
+    const startDatePickerEl = document.getElementById('startDatePicker') as HTMLInputElement | null; // Use new ID
 
     // Options for Flowbite Datepicker
-    // Note: Flowbite's datepicker is primarily for dates. Time needs manual input.
-    // The format 'yyyy-mm-dd' applies to how the datepicker displays/parses the date part.
-    const datepickerOptions = { // Renamed from commonOptions for clarity
+    const datepickerOptions = {
       autohide: true,
       format: 'yyyy-mm-dd',
       todayHighlight: true,
     };
 
-    if (startTimePickerEl) {
-      this.startTimepickerInstance = new Datepicker(startTimePickerEl, { ...datepickerOptions });
+    if (startDatePickerEl) { // Use new ID
+      this.startTimepickerInstance = new Datepicker(startDatePickerEl, { ...datepickerOptions }); // Keep instance name for now, or rename
 
-      this.startTimeChangeDateListener = (event: CustomEvent) => {
-        const newDateValue = startTimePickerEl.value;
-        const existingFormControlValue = this.scheduleForm.get('startTime')?.value || "";
-        let timePart = "00:00";
-        if (existingFormControlValue && existingFormControlValue.includes('T')) {
-            timePart = existingFormControlValue.split('T')[1] || "00:00";
+      this.startDateChangeDateListener = (event: CustomEvent) => { // Renamed listener
+        // Flowbite Datepicker typically provides the selected date directly on the event or via its instance.
+        // The input's value (startDatePickerEl.value) will be the formatted date string "yyyy-mm-dd".
+        if (startDatePickerEl.value) {
+            this.scheduleForm.get('startDate')?.setValue(startDatePickerEl.value);
+            this.scheduleForm.get('startDate')?.markAsDirty();
         }
-        this.scheduleForm.get('startTime')?.setValue(`${newDateValue}T${timePart}`);
-        this.scheduleForm.get('startTime')?.markAsDirty();
       };
-      startTimePickerEl.addEventListener('changeDate', this.startTimeChangeDateListener);
-
-      this.startTimeInputListener = (event: Event) => {
-        const manualValue = (event.target as HTMLInputElement).value;
-        this.scheduleForm.get('startTime')?.setValue(manualValue);
-        this.scheduleForm.get('startTime')?.markAsDirty();
-      };
-      startTimePickerEl.addEventListener('input', this.startTimeInputListener);
+      startDatePickerEl.addEventListener('changeDate', this.startDateChangeDateListener);
+      // No separate 'input' listener needed for the datepicker text field itself if 'changeDate' is sufficient
+      // The 'startTimeValue' input (type="time") will handle its own input via formControlName.
     }
-
-    // No endTimePicker initialization
   }
 
   loadUsers(): void {
@@ -137,24 +119,37 @@ export class ScheduleSessionComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     const formValues = this.scheduleForm.value;
+    const datePart = formValues.startDate;     // e.g., "2023-10-27"
+    const timePart = formValues.startTimeValue; // e.g., "14:30"
 
-    // startTime is already expected to be "YYYY-MM-DDTHH:mm" from input/datepicker logic
-    // No need to parse endTime anymore
-    const startTimeISO = new Date(formValues.startTime).toISOString();
-    // const endTimeISO = new Date(formValues.endTime).toISOString(); // REMOVE
+    if (!datePart || !timePart) {
+      this.errorMessage = 'Start date or start time is missing.';
+      console.error('Start date or start time is missing from form values: ', formValues);
+      return; // Exit if essential parts are missing
+    }
 
-    // Remove validation for endTime vs startTime
-    // if (new Date(endTimeISO) <= new Date(startTimeISO)) {
-    //   this.errorMessage = 'End time must be after start time.';
-    //   return;
-    // }
+    // Combine date and time. HTML input type="time" provides HH:mm.
+    const combinedStartTimeString = `${datePart}T${timePart}`; // Format: "YYYY-MM-DDTHH:mm"
+
+    // It's safer to parse this combined string into a Date object to ensure it's valid
+    // and then convert to ISO string if the backend strictly needs the 'Z' or offset.
+    // If backend handles "YYYY-MM-DDTHH:mm" directly for LocalDateTime, this is fine.
+    // For robustness with potential backend expectations of full ISO:
+    const startTimeDateObject = new Date(combinedStartTimeString);
+    if (isNaN(startTimeDateObject.getTime())) {
+        this.errorMessage = 'Invalid start date or time format.';
+        console.error('Failed to parse combined date-time: ', combinedStartTimeString);
+        return;
+    }
+    const startTimeISO = startTimeDateObject.toISOString();
+
 
     const payload: ScheduleSessionPayload = {
       userId: Number(formValues.userId),
-      startTime: startTimeISO,
-      durationMinutes: Number(formValues.durationMinutes), // ADD durationMinutes
+      startTime: startTimeISO, // Use the combined and then ISO converted string
+      durationMinutes: Number(formValues.durationMinutes),
       mode: formValues.mode,
-      notes: formValues.notes
+      notes: formValues.notes || '' // Ensure notes is not null
     };
 
     this.sessionService.scheduleSessionByProfessional(payload).subscribe({
