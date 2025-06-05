@@ -23,20 +23,28 @@ public class Session {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "professional_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "professional_id", nullable = false)
     private Professional professional;
 
+    @Column(nullable = false)
     private LocalDateTime startTime;
-    private LocalDateTime endTime;
+
+    @Column(nullable = false)
+    private Integer durationMinutes;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private SessionMode mode; // CHAT, VIDEO, MESSAGE
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private SessionStatus status; // SCHEDULED, COMPLETED, CANCELLED
+
     @Column(columnDefinition = "TEXT")
-    private String notes;
+    private String notes; // Notes can remain optional/nullable
 }

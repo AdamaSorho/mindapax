@@ -7,7 +7,7 @@ export interface Session {
   professionalName?: string; // Populated when fetching session details
   professionalSpecialization?: string; // Populated when fetching session details
   startTime: string; // ISO Date string, e.g., "2023-10-27T10:00:00Z"
-  endTime: string;   // ISO Date string
+  durationMinutes: number; // Duration in minutes
   mode: SessionMode;
   notes?: string;
   status?: SessionStatus; // Typically set by backend, or for filtering

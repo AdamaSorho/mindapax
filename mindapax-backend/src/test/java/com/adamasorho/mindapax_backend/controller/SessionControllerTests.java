@@ -43,7 +43,7 @@ class SessionControllerTests {
         requestDTO = new SessionDTO();
         requestDTO.setUserId(2L);
         requestDTO.setStartTime(LocalDateTime.now().plusDays(1).withHour(10).withMinute(0).withSecond(0).withNano(0));
-        requestDTO.setEndTime(LocalDateTime.now().plusDays(1).withHour(11).withMinute(0).withSecond(0).withNano(0));
+        requestDTO.setDurationMinutes(60);
         requestDTO.setMode(SessionMode.VIDEO);
         requestDTO.setNotes("Client consultation");
 
@@ -54,7 +54,7 @@ class SessionControllerTests {
         sessionDTO.setProfessionalName("Dr. Professional");
         sessionDTO.setProfessionalSpecialization("MENTAL_HEALTH");
         sessionDTO.setStartTime(requestDTO.getStartTime());
-        sessionDTO.setEndTime(requestDTO.getEndTime());
+        sessionDTO.setDurationMinutes(requestDTO.getDurationMinutes());
         sessionDTO.setMode(requestDTO.getMode());
         sessionDTO.setNotes(requestDTO.getNotes());
         sessionDTO.setStatus(com.adamasorho.mindapax_backend.model.enums.SessionStatus.SCHEDULED);
@@ -77,7 +77,7 @@ class SessionControllerTests {
                 .andExpect(jsonPath("$.professionalName").value(sessionDTO.getProfessionalName()))
                 // Note: LocalDateTime needs custom serializer/deserializer or string comparison for JSON path
                 .andExpect(jsonPath("$.startTime").value(sessionDTO.getStartTime().toString()))
-                .andExpect(jsonPath("$.endTime").value(sessionDTO.getEndTime().toString()))
+                .andExpect(jsonPath("$.durationMinutes").value(sessionDTO.getDurationMinutes().toString()))
                 .andExpect(jsonPath("$.mode").value(sessionDTO.getMode().toString()))
                 .andExpect(jsonPath("$.status").value(sessionDTO.getStatus().toString()));
     }

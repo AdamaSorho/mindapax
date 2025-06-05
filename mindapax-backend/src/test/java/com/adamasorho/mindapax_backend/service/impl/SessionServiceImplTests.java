@@ -29,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import org.mockito.ArgumentCaptor; // Import ArgumentCaptor
+import org.hibernate.PropertyValueException; // Import for testing null property violations
+
 
 @ExtendWith(MockitoExtension.class)
 class SessionServiceImplTests {
@@ -80,17 +82,18 @@ class SessionServiceImplTests {
 
         sessionDTO = new SessionDTO();
         sessionDTO.setUserId(user.getId());
-        sessionDTO.setStartTime(LocalDateTime.now().plusHours(1));
-        sessionDTO.setEndTime(LocalDateTime.now().plusHours(2));
+        sessionDTO.setStartTime(LocalDateTime.now().plusHours(1).withNano(0)); // Remove nanos for easier comparison
+        sessionDTO.setDurationMinutes(60); // Set duration instead of endTime
         sessionDTO.setMode(SessionMode.VIDEO);
         sessionDTO.setNotes("Test session notes");
+        // sessionDTO.setStatus() is not set here, service will default it.
 
-        session = new Session();
+        session = new Session(); // This mock 'session' object might be less used now if ArgumentCaptor is the focus
         session.setId(1L);
         session.setUser(user);
         session.setProfessional(professional);
         session.setStartTime(sessionDTO.getStartTime());
-        session.setEndTime(sessionDTO.getEndTime());
+        session.setDurationMinutes(sessionDTO.getDurationMinutes()); // Use duration
         session.setMode(sessionDTO.getMode());
         session.setNotes(sessionDTO.getNotes());
         session.setStatus(SessionStatus.SCHEDULED);
@@ -132,7 +135,7 @@ class SessionServiceImplTests {
         mappedDto.setUserId(user.getId());
         mappedDto.setProfessionalId(professional.getId());
         mappedDto.setStartTime(sessionDTO.getStartTime());
-        mappedDto.setEndTime(sessionDTO.getEndTime());
+        mappedDto.setDurationMinutes(sessionDTO.getDurationMinutes()); // Use duration
         mappedDto.setMode(sessionDTO.getMode());
         mappedDto.setNotes(sessionDTO.getNotes());
         mappedDto.setStatus(SessionStatus.SCHEDULED);
@@ -174,13 +177,97 @@ class SessionServiceImplTests {
         assertEquals(user.getId(), capturedSession.getUser().getId(), "User ID should match the mockUser's ID");
 
         assertEquals(SessionStatus.SCHEDULED, capturedSession.getStatus(), "Session status should be SCHEDULED");
+        // Explicitly assert non-null for fields that are non-nullable in the entity
+        assertNotNull(capturedSession.getStartTime(), "StartTime should be set on the session");
+        assertNotNull(capturedSession.getDurationMinutes(), "DurationMinutes should be set on the session"); // Check duration
+        assertNotNull(capturedSession.getMode(), "Mode should be set on the session");
+        assertNotNull(capturedSession.getStatus(), "Status should be set on the session");
+
         assertEquals(sessionDTO.getStartTime(), capturedSession.getStartTime());
-        assertEquals(sessionDTO.getEndTime(), capturedSession.getEndTime());
+        assertEquals(sessionDTO.getDurationMinutes(), capturedSession.getDurationMinutes()); // Check duration
         assertEquals(sessionDTO.getMode(), capturedSession.getMode());
         assertEquals(sessionDTO.getNotes(), capturedSession.getNotes());
 
         verify(sessionMapper).toDTO(capturedSession); // Verify DTO mapping was called with the captured session
     }
+
+    @Test
+    void testScheduleSessionByProfessional_NullStartTimeInDto_ThrowsPropertyValueException() {
+        // Arrange
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(professionalUser.getEmail());
+
+        when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
+        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
+        // Mock re-fetches
+        when(professionalRepository.findById(eq(professional.getId()))).thenReturn(Optional.of(professional));
+        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
+
+
+        SessionDTO dtoWithNullStartTime = new SessionDTO();
+        dtoWithNullStartTime.setUserId(user.getId());
+        dtoWithNullStartTime.setStartTime(null); // Intentionally set to null
+        dtoWithNullStartTime.setDurationMinutes(60); // Set duration
+        dtoWithNullStartTime.setMode(SessionMode.VIDEO);
+
+        // This mock is important: it simulates what happens when Hibernate tries to save
+        // an entity that violates a non-nullable constraint at the entity/ORM level.
+        when(sessionRepository.save(any(Session.class))).thenThrow(
+            new PropertyValueException("startTime is null", Session.class.getName(), "startTime")
+        );
+
+        // Act & Assert
+        PropertyValueException exception = assertThrows(PropertyValueException.class, () -> {
+            sessionService.scheduleSessionByProfessional(dtoWithNullStartTime);
+        });
+
+        // Verify that the exception is about the 'startTime' property
+        assertTrue(exception.getMessage().contains("startTime"));
+        assertEquals("startTime", exception.getPropertyName());
+
+        // Verify that findByUserEmail and findById were called up to the point of failure
+        verify(professionalRepository).findByUserEmail(professionalUser.getEmail());
+        verify(userRepository).findById(eq(user.getId()));
+        verify(professionalRepository).findById(eq(professional.getId()));
+        verify(userRepository, times(2)).findById(eq(user.getId()));
+
+        verify(sessionRepository).save(any(Session.class)); // Save was attempted
+    }
+
+    @Test
+    void testScheduleSessionByProfessional_NullDurationInDto_ThrowsPropertyValueException() {
+        // Arrange
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(professionalUser.getEmail());
+
+        when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
+        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
+        // Mock re-fetches
+        when(professionalRepository.findById(eq(professional.getId()))).thenReturn(Optional.of(professional));
+        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
+
+        SessionDTO dtoWithNullDuration = new SessionDTO();
+        dtoWithNullDuration.setUserId(user.getId());
+        dtoWithNullDuration.setStartTime(LocalDateTime.now().plusHours(1));
+        dtoWithNullDuration.setDurationMinutes(null); // Intentionally set to null
+        dtoWithNullDuration.setMode(SessionMode.VIDEO);
+
+        when(sessionRepository.save(any(Session.class))).thenThrow(
+            new PropertyValueException("durationMinutes is null", Session.class.getName(), "durationMinutes")
+        );
+
+        // Act & Assert
+        PropertyValueException exception = assertThrows(PropertyValueException.class, () -> {
+            sessionService.scheduleSessionByProfessional(dtoWithNullDuration);
+        });
+
+        assertTrue(exception.getMessage().contains("durationMinutes"));
+        assertEquals("durationMinutes", exception.getPropertyName());
+        verify(sessionRepository).save(any(Session.class)); // Save was attempted
+    }
+
 
     @Test
     void testScheduleSessionByProfessional_ProfessionalNotFound() {
@@ -228,6 +315,6 @@ class SessionServiceImplTests {
 
         verify(professionalRepository).findByUserEmail(professionalUser.getEmail());
         verify(userRepository).findById(nonExistentUserId);
-        verify(sessionRepository, never()).save(any(Session.class));
+        verify(sessionRepository, never()).save(any(Session.class)); // Save should not be reached if user not found
     }
 }

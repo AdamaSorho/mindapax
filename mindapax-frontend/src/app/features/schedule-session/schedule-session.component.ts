@@ -38,13 +38,15 @@ export class ScheduleSessionComponent
   successMessage: string | null = null;
 
   private startTimepickerInstance: any;
-  private endTimepickerInstance: any;
+  // No endTimepickerInstance needed
+  // private endTimepickerInstance: any;
 
   // Store event listener functions to remove them correctly
   private startTimeChangeDateListener!: (event: any) => void;
   private startTimeInputListener!: (event: any) => void;
-  private endTimeChangeDateListener!: (event: any) => void;
-  private endTimeInputListener!: (event: any) => void;
+  // No endTime listeners needed
+  // private endTimeChangeDateListener!: (event: any) => void;
+  // private endTimeInputListener!: (event: any) => void;
 
   constructor(
     private fb: FormBuilder,
@@ -59,7 +61,7 @@ export class ScheduleSessionComponent
       // Store as full ISO-like string (YYYY-MM-DDTHH:mm)
       // The datepicker will manage the date part, time is manual.
       startTime: ['', Validators.required],
-      endTime: ['', Validators.required],
+      durationMinutes: ['', [Validators.required, Validators.min(15)]], // Added durationMinutes
       mode: [SessionMode.VIDEO, Validators.required],
       notes: [''],
     });
@@ -68,12 +70,7 @@ export class ScheduleSessionComponent
   }
 
   ngAfterViewInit(): void {
-    // It's possible initFlowbite() needs to be called if data attributes are used for other things
-    // and this component is loaded dynamically. For explicit Datepicker, it's not strictly needed.
-    // if (typeof initFlowbite !== 'undefined') {
-    //   initFlowbite();
-    // }
-    this.initDatepickers();
+    this.initDatepickers(); // Only initializes startTimePicker now
   }
 
   ngOnDestroy(): void {
@@ -93,43 +90,20 @@ export class ScheduleSessionComponent
         );
       }
     }
-
-    const endTimePickerEl = document.getElementById('endTimePicker');
-    if (endTimePickerEl) {
-      if (this.endTimeChangeDateListener) {
-        endTimePickerEl.removeEventListener(
-          'changeDate',
-          this.endTimeChangeDateListener
-        );
-      }
-      if (this.endTimeInputListener) {
-        endTimePickerEl.removeEventListener('input', this.endTimeInputListener);
-      }
-    }
-
-    // If Flowbite Datepicker instances have a destroy method, call it.
-    // This depends on the actual Datepicker library Flowbite uses internally.
-    // Example:
-    // if (this.startTimepickerInstance && typeof this.startTimepickerInstance.destroy === 'function') {
-    //   this.startTimepickerInstance.destroy();
-    // }
-    // if (this.endTimepickerInstance && typeof this.endTimepickerInstance.destroy === 'function') {
-    //   this.endTimepickerInstance.destroy();
-    // }
+    // No endTimePicker related cleanup
   }
 
   private initDatepickers(): void {
     const startTimePickerEl = document.getElementById(
       'startTimePicker'
     ) as HTMLInputElement | null;
-    const endTimePickerEl = document.getElementById(
-      'endTimePicker'
-    ) as HTMLInputElement | null;
+    // const endTimePickerEl = document.getElementById('endTimePicker') as HTMLInputElement | null; // Removed
 
     // Options for Flowbite Datepicker
     // Note: Flowbite's datepicker is primarily for dates. Time needs manual input.
     // The format 'yyyy-mm-dd' applies to how the datepicker displays/parses the date part.
-    const commonOptions = {
+    const datepickerOptions = {
+      // Renamed from commonOptions for clarity
       autohide: true,
       format: 'yyyy-mm-dd',
       todayHighlight: true,
@@ -137,23 +111,20 @@ export class ScheduleSessionComponent
 
     if (startTimePickerEl) {
       this.startTimepickerInstance = new Datepicker(startTimePickerEl, {
-        ...commonOptions,
+        ...datepickerOptions,
       });
 
       this.startTimeChangeDateListener = (event: CustomEvent) => {
-        // event.detail.date is the Date object selected by the datepicker (date part only)
-        // The input field (event.target.value or startTimePickerEl.value) will have "yyyy-mm-dd"
-        const newDateValue = startTimePickerEl.value; // Date part from picker: "YYYY-MM-DD"
+        const newDateValue = startTimePickerEl.value;
         const existingFormControlValue =
           this.scheduleForm.get('startTime')?.value || '';
-        let timePart = '00:00'; // Default time
+        let timePart = '00:00';
         if (
           existingFormControlValue &&
           existingFormControlValue.includes('T')
         ) {
           timePart = existingFormControlValue.split('T')[1] || '00:00';
         }
-
         this.scheduleForm
           .get('startTime')
           ?.setValue(`${newDateValue}T${timePart}`);
@@ -164,7 +135,6 @@ export class ScheduleSessionComponent
         this.startTimeChangeDateListener
       );
 
-      // Listener for manual input changes (e.g., typing time)
       this.startTimeInputListener = (event: Event) => {
         const manualValue = (event.target as HTMLInputElement).value;
         this.scheduleForm.get('startTime')?.setValue(manualValue);
@@ -173,39 +143,7 @@ export class ScheduleSessionComponent
       startTimePickerEl.addEventListener('input', this.startTimeInputListener);
     }
 
-    if (endTimePickerEl) {
-      this.endTimepickerInstance = new Datepicker(endTimePickerEl, {
-        ...commonOptions,
-      });
-
-      this.endTimeChangeDateListener = (event: CustomEvent) => {
-        const newDateValue = endTimePickerEl.value; // Date part from picker: "YYYY-MM-DD"
-        const existingFormControlValue =
-          this.scheduleForm.get('endTime')?.value || '';
-        let timePart = '00:00'; // Default time
-        if (
-          existingFormControlValue &&
-          existingFormControlValue.includes('T')
-        ) {
-          timePart = existingFormControlValue.split('T')[1] || '00:00';
-        }
-        this.scheduleForm
-          .get('endTime')
-          ?.setValue(`${newDateValue}T${timePart}`);
-        this.scheduleForm.get('endTime')?.markAsDirty();
-      };
-      endTimePickerEl.addEventListener(
-        'changeDate',
-        this.endTimeChangeDateListener
-      );
-
-      this.endTimeInputListener = (event: Event) => {
-        const manualValue = (event.target as HTMLInputElement).value;
-        this.scheduleForm.get('endTime')?.setValue(manualValue);
-        this.scheduleForm.get('endTime')?.markAsDirty();
-      };
-      endTimePickerEl.addEventListener('input', this.endTimeInputListener);
-    }
+    // No endTimePicker initialization
   }
 
   loadUsers(): void {
@@ -232,19 +170,21 @@ export class ScheduleSessionComponent
 
     const formValues = this.scheduleForm.value;
 
-    // Values from form controls are already expected to be "YYYY-MM-DDTHH:mm"
+    // startTime is already expected to be "YYYY-MM-DDTHH:mm" from input/datepicker logic
+    // No need to parse endTime anymore
     const startTimeISO = new Date(formValues.startTime).toISOString();
-    const endTimeISO = new Date(formValues.endTime).toISOString();
+    // const endTimeISO = new Date(formValues.endTime).toISOString(); // REMOVE
 
-    if (new Date(endTimeISO) <= new Date(startTimeISO)) {
-      this.errorMessage = 'End time must be after start time.';
-      return;
-    }
+    // Remove validation for endTime vs startTime
+    // if (new Date(endTimeISO) <= new Date(startTimeISO)) {
+    //   this.errorMessage = 'End time must be after start time.';
+    //   return;
+    // }
 
     const payload: ScheduleSessionPayload = {
       userId: Number(formValues.userId),
       startTime: startTimeISO,
-      endTime: endTimeISO,
+      durationMinutes: Number(formValues.durationMinutes), // ADD durationMinutes
       mode: formValues.mode,
       notes: formValues.notes,
     };
