@@ -112,43 +112,25 @@ public class SessionServiceImpl implements SessionService {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String professionalEmail = authentication.getName(); // This is usually the email
 
-    Professional professionalFromAuth = professionalRepository.findByUserEmail(professionalEmail)
+    Professional professional = professionalRepository.findByUserEmail(professionalEmail)
         .orElseThrow(() -> {
             logger.error("Professional not found for email: {}", professionalEmail);
             return new EntityNotFoundException("Professional not found for email: " + professionalEmail);
         });
-    logger.info("Fetched initial professionalFromAuth with ID: {} and User Email: {}", professionalFromAuth.getId(), professionalFromAuth.getUser().getEmail());
 
 
-    User clientUserFromDto = userRepository.findById(sessionDto.getUserId())
+    User clientUser = userRepository.findById(sessionDto.getUserId())
         .orElseThrow(() -> {
             logger.error("User (client) not found with ID: {}", sessionDto.getUserId());
             return new EntityNotFoundException("User (client) not found with ID: " + sessionDto.getUserId());
         });
-    logger.info("Fetched initial clientUserFromDto with ID: {}", clientUserFromDto.getId());
-
-    // Re-fetch to ensure managed state and log details
-    Professional managedProfessional = professionalRepository.findById(professionalFromAuth.getId())
-        .orElseThrow(() -> {
-            logger.error("Failed to re-fetch professional with ID: {}", professionalFromAuth.getId());
-            return new EntityNotFoundException("Professional not found on re-fetch with ID: " + professionalFromAuth.getId());
-        });
-    logger.info("Re-fetched managedProfessional with ID: {} and User Email: {}", managedProfessional.getId(), managedProfessional.getUser().getEmail());
-
-
-    User managedClientUser = userRepository.findById(clientUserFromDto.getId())
-        .orElseThrow(() -> {
-            logger.error("Failed to re-fetch client user with ID: {}", clientUserFromDto.getId());
-            return new EntityNotFoundException("Client user not found on re-fetch with ID: " + clientUserFromDto.getId());
-        });
-    logger.info("Re-fetched managedClientUser with ID: {}", managedClientUser.getId());
 
     // Create a new Session entity
-    Session session = new Session(); // Create new session instance
+    Session session = new Session();
 
     // Manually map fields from DTO
     session.setStartTime(sessionDto.getStartTime());
-    session.setDurationMinutes(sessionDto.getDurationMinutes()); // Changed from endTime to durationMinutes
+    session.setDurationMinutes(sessionDto.getDurationMinutes()); 
     session.setMode(sessionDto.getMode());
     session.setNotes(sessionDto.getNotes());
     // If DTO can carry a status, map it, otherwise default is fine
@@ -159,25 +141,14 @@ public class SessionServiceImpl implements SessionService {
     }
 
     // Set the professional and user fields
-    session.setProfessional(managedProfessional); // Use the re-fetched, managed instance
-    session.setUser(managedClientUser);         // Use the re-fetched, managed instance
+    session.setProfessional(professional); // Use the re-fetched, managed instance
+    session.setUser(clientUser);         // Use the re-fetched, managed instance
 
     // If status wasn't in DTO or needs override:
     session.setStatus(SessionStatus.SCHEDULED); // Explicitly set/override status
 
-    logger.info("Attempting to save session with Professional ID: {} (User ID: {}), Client User ID: {}, StartTime: {}, Duration: {} mins",
-            session.getProfessional().getId(), session.getProfessional().getUser().getId(), session.getUser().getId(), session.getStartTime(), session.getDurationMinutes());
-    if(session.getProfessional().getId() == null) {
-        logger.error("CRITICAL: Professional ID is NULL before save for professional email: {}", professionalEmail);
-        // Potentially throw an exception here if this condition is unexpected and critical
-        throw new IllegalStateException("Professional ID is null before saving session for professional: " + professionalEmail);
-    }
-
-
     // Save the Session entity
     Session savedSession = sessionRepository.save(session);
-    logger.info("Session saved successfully with ID: {}, StartTime: {}, Duration: {} mins",
-            savedSession.getId(), savedSession.getStartTime(), savedSession.getDurationMinutes());
 
 
     // Return the saved Session mapped back to a SessionDTO

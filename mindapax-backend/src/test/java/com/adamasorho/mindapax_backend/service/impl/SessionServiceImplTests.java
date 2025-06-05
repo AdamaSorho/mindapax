@@ -110,11 +110,6 @@ class SessionServiceImplTests {
         when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
         when(userRepository.findById(eq(sessionDTO.getUserId()))).thenReturn(Optional.of(user)); // Use eq() for specific ID
 
-        // Mock re-fetches
-        // Ensure the IDs used here match the IDs of 'professional' and 'user' objects defined in setUp()
-        when(professionalRepository.findById(eq(professional.getId()))).thenReturn(Optional.of(professional));
-        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
-
         // The service now uses 'new Session()' and manually sets fields from DTO.
         // So, no need to mock sessionMapper.toEntity().
 
@@ -160,10 +155,6 @@ class SessionServiceImplTests {
         verify(professionalRepository).findByUserEmail(professionalUser.getEmail()); // Initial fetch
         verify(userRepository).findById(eq(sessionDTO.getUserId())); // Initial fetch for client user
 
-        // Verify re-fetches
-        verify(professionalRepository).findById(eq(professional.getId()));
-        verify(userRepository).findById(eq(user.getId()));
-
 
         ArgumentCaptor<Session> sessionCaptor = ArgumentCaptor.forClass(Session.class);
         verify(sessionRepository).save(sessionCaptor.capture());
@@ -199,9 +190,6 @@ class SessionServiceImplTests {
         when(authentication.getName()).thenReturn(professionalUser.getEmail());
 
         when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
-        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
-        // Mock re-fetches
-        when(professionalRepository.findById(eq(professional.getId()))).thenReturn(Optional.of(professional));
         when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
 
 
@@ -243,9 +231,6 @@ class SessionServiceImplTests {
         when(authentication.getName()).thenReturn(professionalUser.getEmail());
 
         when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
-        when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
-        // Mock re-fetches
-        when(professionalRepository.findById(eq(professional.getId()))).thenReturn(Optional.of(professional));
         when(userRepository.findById(eq(user.getId()))).thenReturn(Optional.of(user));
 
         SessionDTO dtoWithNullDuration = new SessionDTO();

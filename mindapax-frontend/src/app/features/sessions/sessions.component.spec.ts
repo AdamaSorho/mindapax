@@ -6,7 +6,11 @@ import { SessionsComponent } from './sessions.component';
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
 import { Session } from '../../models/session.model';
-import { SessionMode, SessionStatus, SessionTimeFilter } from '../../models/enums/SessionFilter';
+import {
+  SessionMode,
+  SessionStatus,
+  SessionTimeFilter,
+} from '../../models/enums/SessionFilter';
 
 // Mock services
 class MockSessionService {
@@ -32,13 +36,13 @@ describe('SessionsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         HttpClientTestingModule, // SessionService might inject HttpClient
-        SessionsComponent // Import standalone component
+        SessionsComponent, // Import standalone component
       ],
       // No declarations needed for standalone components
       providers: [
         { provide: SessionService, useClass: MockSessionService },
-        { provide: AuthService, useClass: MockAuthService }
-      ]
+        { provide: AuthService, useClass: MockAuthService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SessionsComponent);
@@ -67,9 +71,11 @@ describe('SessionsComponent', () => {
     it('should return true if session startTime is today', () => {
       const today = new Date();
       const session: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: today.toISOString(),
-        durationMinutes: 60
+        durationMinutes: 60,
       };
       expect(component.isToday(session)).toBeTrue();
     });
@@ -78,9 +84,11 @@ describe('SessionsComponent', () => {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       const session: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: tomorrow.toISOString(),
-        durationMinutes: 60
+        durationMinutes: 60,
       };
       expect(component.isToday(session)).toBeFalse();
     });
@@ -89,23 +97,29 @@ describe('SessionsComponent', () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const session: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: yesterday.toISOString(),
-        durationMinutes: 60
+        durationMinutes: 60,
       };
       expect(component.isToday(session)).toBeFalse();
     });
 
     it('should return false if session startTime is null or undefined', () => {
-       const sessionWithNullStartTime: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+      const sessionWithNullStartTime: Session = {
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: null as any,
-        durationMinutes: 60
+        durationMinutes: 60,
       };
       const sessionWithUndefinedStartTime: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: undefined as any,
-        durationMinutes: 60
+        durationMinutes: 60,
       };
       expect(component.isToday(sessionWithNullStartTime)).toBeFalse();
       expect(component.isToday(sessionWithUndefinedStartTime)).toBeFalse();
@@ -117,9 +131,11 @@ describe('SessionsComponent', () => {
       const startTime = new Date('2024-01-01T10:00:00Z');
       const duration = 60;
       const session: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: startTime.toISOString(),
-        durationMinutes: duration
+        durationMinutes: duration,
       };
       const expectedEndTime = new Date(startTime.getTime() + duration * 60000);
       expect(component.getCalculatedEndTime(session)).toEqual(expectedEndTime);
@@ -127,33 +143,43 @@ describe('SessionsComponent', () => {
 
     it('should return null if startTime is missing', () => {
       const session: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: null as any,
-        durationMinutes: 60
+        durationMinutes: 60,
       };
       expect(component.getCalculatedEndTime(session)).toBeNull();
     });
 
     it('should return null if durationMinutes is null or undefined', () => {
       const sessionNullDuration: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: new Date().toISOString(),
-        durationMinutes: null as any
+        durationMinutes: null as any,
       };
       const sessionUndefinedDuration: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: new Date().toISOString(),
-        durationMinutes: undefined as any
+        durationMinutes: undefined as any,
       };
       expect(component.getCalculatedEndTime(sessionNullDuration)).toBeNull();
-      expect(component.getCalculatedEndTime(sessionUndefinedDuration)).toBeNull();
+      expect(
+        component.getCalculatedEndTime(sessionUndefinedDuration)
+      ).toBeNull();
     });
 
     it('should return null if durationMinutes is NaN', () => {
       const session: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: new Date().toISOString(),
-        durationMinutes: Number("abc") // This will be NaN
+        durationMinutes: Number('abc'), // This will be NaN
       };
       expect(component.getCalculatedEndTime(session)).toBeNull();
     });
@@ -161,9 +187,11 @@ describe('SessionsComponent', () => {
     it('should handle durationMinutes of 0 correctly', () => {
       const startTime = new Date('2024-01-01T10:00:00Z');
       const session: Session = {
-        id: 1, userId: 1, mode: SessionMode.VIDEO,
+        id: 1,
+        userId: 1,
+        mode: SessionMode.VIDEO,
         startTime: startTime.toISOString(),
-        durationMinutes: 0
+        durationMinutes: 0,
       };
       expect(component.getCalculatedEndTime(session)).toEqual(startTime);
     });
@@ -173,18 +201,23 @@ describe('SessionsComponent', () => {
   // For now, this is mostly a template concern.
   it('should correctly prepare sessions for display (conceptual)', () => {
     const mockSession: Session = {
-      id: 1, userId: 1, mode: SessionMode.VIDEO,
-      startTime: new Date().toISOString(), durationMinutes: 60, // Use durationMinutes
-      professionalName: 'Dr. Test', professionalSpecialization: 'Testingology'
+      id: 1,
+      userId: 1,
+      mode: SessionMode.VIDEO,
+      startTime: new Date().toISOString(),
+      durationMinutes: 60, // Use durationMinutes
+      professionalName: 'Dr. Test',
+      professionalSpecialization: 'Testingology',
     };
     component.upcomingSessions = [mockSession];
-      fixture.detectChanges(); // To process bindings if any logic was in component
+    fixture.detectChanges(); // To process bindings if any logic was in component
 
-      // In a real test for component logic transforming data for display:
-      // expect(component.processedSessions[0].displayProfessionalName).toBe('Dr. Test');
-      // Since it's direct binding, this test is more illustrative.
-      expect(component.upcomingSessions[0].professionalName).toBe('Dr. Test');
-      expect(component.upcomingSessions[0].professionalSpecialization).toBe('Testingology');
-    });
+    // In a real test for component logic transforming data for display:
+    // expect(component.processedSessions[0].displayProfessionalName).toBe('Dr. Test');
+    // Since it's direct binding, this test is more illustrative.
+    expect(component.upcomingSessions[0].professionalName).toBe('Dr. Test');
+    expect(component.upcomingSessions[0].professionalSpecialization).toBe(
+      'Testingology'
+    );
   });
 });

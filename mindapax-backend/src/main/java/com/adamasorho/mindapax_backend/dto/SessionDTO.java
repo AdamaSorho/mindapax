@@ -6,6 +6,7 @@ import com.adamasorho.mindapax_backend.model.enums.SessionMode;
 import com.adamasorho.mindapax_backend.model.enums.SessionStatus;
 
 import jakarta.validation.constraints.Min; // Added Min import
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull; // Added NotNull import
 import lombok.Data;
 
@@ -20,6 +21,7 @@ public class SessionDTO {
   @Min(value = 15, message = "Duration must be at least 15 minutes")
   private Integer durationMinutes;
 
+  @NotNull(message = "Mode cannot be null")
   private SessionMode mode;
   private SessionStatus status;
   private String notes;

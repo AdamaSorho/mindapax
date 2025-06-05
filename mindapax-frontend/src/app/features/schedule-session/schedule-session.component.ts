@@ -184,6 +184,7 @@ export class ScheduleSessionComponent
       next: (createdSession) => {
         this.successMessage = `Session scheduled successfully with ID: ${createdSession.id}`;
         this.scheduleForm.reset({ mode: SessionMode.VIDEO }); // Reset form with default mode
+        this.router.navigate(['/member/sessions']);
       },
       error: (error: HttpErrorResponse) => {
         this.errorMessage =

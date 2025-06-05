@@ -27,6 +27,7 @@ import com.adamasorho.mindapax_backend.model.Session;
 import com.adamasorho.mindapax_backend.model.enums.SessionStatus;
 import com.adamasorho.mindapax_backend.service.SessionService;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
@@ -86,7 +87,7 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
 
   @PostMapping("/professional/schedule")
   @PreAuthorize("hasRole('PROFESSIONAL')")
-  public ResponseEntity<SessionDTO> scheduleByProfessional(@RequestBody SessionDTO sessionDto) {
+  public ResponseEntity<SessionDTO> scheduleByProfessional(@RequestBody @Valid SessionDTO sessionDto) {
       SessionDTO createdSession = serviceService.scheduleSessionByProfessional(sessionDto);
       return ResponseEntity.status(HttpStatus.CREATED).body(createdSession);
   }
