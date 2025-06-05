@@ -68,7 +68,7 @@ public class SessionController {
     return ResponseEntity.noContent().build();
   }
 
-  @GetMapping("/api/sessions/by-user")
+  @GetMapping("/by-user")
 public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
       @RequestParam Long userId,
       @RequestParam(required = false)
