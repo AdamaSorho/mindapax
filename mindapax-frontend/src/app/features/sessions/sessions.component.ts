@@ -68,7 +68,7 @@ export class SessionsComponent implements OnInit {
         status: SessionStatus.SCHEDULED,
         page: 1,
         size: 10,
-        sort: 'date,asc',
+        sort: 'startTime,asc',
       })
       .subscribe({
         next: (response) => {
@@ -92,7 +92,7 @@ export class SessionsComponent implements OnInit {
         status: SessionStatus.SCHEDULED,
         page: 1,
         size: 10,
-        sort: 'date,asc',
+        sort: 'startTime,asc',
       })
       .subscribe({
         next: (response) => {
