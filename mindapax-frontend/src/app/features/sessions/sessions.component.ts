@@ -139,11 +139,16 @@ export class SessionsComponent implements OnInit {
   }
 
   formatDateToRelative(dateString: string | Date): string {
+    console.log('dateString:', dateString);
     // Accept string or Date
     const now = new Date();
     const sessionDate = new Date(dateString); // Works with ISO string or Date object
     const diffTime = Math.abs(sessionDate.getTime() - now.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    console.log('diffDays:', diffDays);
+    console.log('sessionDate:', sessionDate);
+    console.log('now:', now);
+    console.log('diffTime:', diffTime);
 
     if (diffDays === 0) {
       return 'Today';
