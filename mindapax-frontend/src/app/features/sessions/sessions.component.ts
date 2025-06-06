@@ -8,6 +8,7 @@ import {
   SessionTimeFilter,
 } from '../../models/enums/SessionFilter';
 import { Router } from '@angular/router';
+import { ZoomSignatureResponse } from '../../models/zoom-signature-response.model';
 
 @Component({
   selector: 'app-sessions',
@@ -114,10 +115,71 @@ export class SessionsComponent implements OnInit {
     this.activeTab = tab;
   }
 
-  joinSession(sessionId: number | undefined): void {
-    // In a real app, this would navigate to the video/chat interface
-    console.log(`Joining session with ID: ${sessionId}`);
+  public isJoinable(session: Session): boolean {
+    if (!session || session.mode?.toUpperCase() !== 'VIDEO' || session.status?.toUpperCase() !== 'SCHEDULED') {
+      return false;
+    }
+    const now = new Date().getTime();
+    // Ensure startTime is valid before creating a Date object
+    if (!session.startTime) return false;
+    const startTime = new Date(session.startTime).getTime();
+    if (isNaN(startTime)) return false; // Invalid date for startTime
+
+    // Allow joining if session starts now or in the past (up to its duration), or up to 15 minutes before.
+    const joinWindowStart = startTime - (15 * 60 * 1000); // 15 minutes before
+
+    // Ensure durationMinutes is valid
+    const durationMinutes = Number(session.durationMinutes);
+    if (isNaN(durationMinutes) || durationMinutes <= 0) return false; // Defaulting to 60 if invalid is risky for window end
+
+    const sessionDuration = durationMinutes * 60 * 1000;
+    const joinWindowEnd = startTime + sessionDuration; // Allow joining until session ends
+
+    return now >= joinWindowStart && now <= joinWindowEnd;
   }
+
+  public joinVideoCall(session: Session): void {
+    if (!session || !session.id) {
+      console.error('Session or Session ID is undefined.');
+      // TODO: Show user-friendly error
+      return;
+    }
+
+    this.loading = true; // Show loading indicator
+    this.sessionService.getZoomMeetingSignature(session.id.toString()).subscribe({
+      next: (zoomResponse: ZoomSignatureResponse) => {
+        this.loading = false;
+        // TODO: Get actual userName and userEmail from AuthService
+        // const currentUser = this.authService.getCurrentUser(); // Assuming AuthService has such a method
+        const userName = this.authService.getUserName ? this.authService.getUserName() : 'Mindapax User'; // Placeholder
+        const userEmail = this.authService.getUserEmail ? this.authService.getUserEmail() : ''; // Placeholder - Zoom SDK might need it
+
+        this.router.navigate(['/member/zoom-call'], {
+          queryParams: {
+            sdkKey: zoomResponse.apiKey,
+            meetingNumber: zoomResponse.meetingNumber,
+            signature: zoomResponse.signature,
+            userName: userName,
+            userEmail: userEmail
+          }
+        });
+      },
+      error: (error) => {
+        this.loading = false;
+        console.error('Failed to get Zoom meeting signature:', error);
+        // TODO: Show user-friendly error (e.g., using a toast notification service)
+        alert('Failed to start video call. Please try again later.');
+      }
+    });
+  }
+
+  // The old joinSession can be removed or adapted if it was meant for other session types.
+  // For this subtask, we are focusing on adding joinVideoCall.
+  // joinSession(sessionId: number | undefined): void {
+  //   // In a real app, this would navigate to the video/chat interface
+  //   console.log(`Joining session with ID: ${sessionId}`);
+  // }
+
 
   rescheduleSession(sessionId: number | undefined): void {
     // In a real app, this would open a rescheduling modal/page

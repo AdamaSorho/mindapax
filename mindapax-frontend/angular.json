@@ -22,10 +22,25 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              "src/assets", // Ensure src/assets is generally included
+              {
+                "glob": "**/*",
+                "input": "src/assets/zoom-sdk/",
+                "output": "/assets/zoom-sdk/"
               }
             ],
-            "styles": ["src/styles.css"],
-            "scripts": ["node_modules/flowbite/dist/flowbite.min.js"],
+            "styles": [
+              "src/styles.css",
+              "src/assets/zoom-sdk/css/bootstrap.css",
+              "src/assets/zoom-sdk/css/react-select.css"
+            ],
+            "scripts": [
+              "node_modules/flowbite/dist/flowbite.min.js",
+              "src/assets/zoom-sdk/lib/zoom-mlib.min.js",
+              "src/assets/zoom-sdk/lib/webim.min.js",
+              "src/assets/zoom-sdk/zoomus-websdk.umd.min.js"
+            ],
             "externalDependencies": ["src/input.css"]
           },
           "configurations": {
@@ -82,10 +97,24 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              "src/assets", // Ensure src/assets is generally included for tests
+              {
+                "glob": "**/*",
+                "input": "src/assets/zoom-sdk/",
+                "output": "/assets/zoom-sdk/"
               }
             ],
-            "styles": ["src/styles.css"],
-            "scripts": []
+            "styles": [
+              "src/styles.css",
+              "src/assets/zoom-sdk/css/bootstrap.css",
+              "src/assets/zoom-sdk/css/react-select.css"
+            ],
+            "scripts": [
+              "src/assets/zoom-sdk/lib/zoom-mlib.min.js",
+              "src/assets/zoom-sdk/lib/webim.min.js",
+              "src/assets/zoom-sdk/zoomus-websdk.umd.min.js"
+            ]
           }
         }
       }

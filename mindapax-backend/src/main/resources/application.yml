@@ -39,3 +39,8 @@ app:
       expiration-ms: 604800000
   file-storage:
     upload-dir: uploads
+
+# Zoom API Credentials (replace with actual credentials)
+zoom:
+  sdk_key: YOUR_ZOOM_SDK_KEY_MOCK
+  sdk_secret: YOUR_ZOOM_SDK_SECRET_MOCK

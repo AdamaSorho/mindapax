@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { Session } from '../models/session.model'; // Added import
 import { SessionMode } from '../models/enums/SessionFilter'; // Added import
 import { PagedResponse } from '../models/network/pagedResponse';
+import { ZoomSignatureResponse } from '../models/zoom-signature-response.model';
 
 // Define the payload interface
 export interface ScheduleSessionPayload {
@@ -48,5 +49,16 @@ export class SessionService {
       `${this.baseUrl}/professional/schedule`,
       payload
     );
+  }
+
+  /**
+   * Fetches the signature and parameters required to join a Zoom video session.
+   * @param sessionId The ID of the session to join.
+   * @returns An Observable of ZoomSignatureResponse.
+   */
+  public getZoomMeetingSignature(sessionId: string): Observable<ZoomSignatureResponse> {
+    // The backend endpoint is POST /api/v1/sessions/{sessionId}/join-video
+    // this.baseUrl is environment.apiUrl + '/sessions'
+    return this.http.post<ZoomSignatureResponse>(`${this.baseUrl}/${sessionId}/join-video`, {});
   }
 }
