@@ -5,6 +5,7 @@ import { SessionQueryParams } from '../models/network/SessionQueryParams';
 import { Observable } from 'rxjs';
 import { Session } from '../models/session.model'; // Added import
 import { SessionMode } from '../models/enums/SessionFilter'; // Added import
+import { PagedResponse } from '../models/network/pagedResponse';
 
 // Define the payload interface
 export interface ScheduleSessionPayload {
@@ -23,7 +24,7 @@ export class SessionService {
 
   constructor(private http: HttpClient) {}
 
-  getSessions(params: SessionQueryParams): Observable<any> {
+  getSessions(params: SessionQueryParams): Observable<PagedResponse<Session>> {
     let httpParams = new HttpParams()
       .set('userId', params.userId)
       .set('filter', params.filter);
@@ -33,8 +34,11 @@ export class SessionService {
     if (params.page != null) httpParams = httpParams.set('page', params.page);
     if (params.size != null) httpParams = httpParams.set('size', params.size);
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
+    console.log('params: ', params);
 
-    return this.http.get(`${this.baseUrl}/by-user`, { params: httpParams });
+    return this.http.get<PagedResponse<Session>>(`${this.baseUrl}/by-user`, {
+      params: httpParams,
+    });
   }
 
   scheduleSessionByProfessional(

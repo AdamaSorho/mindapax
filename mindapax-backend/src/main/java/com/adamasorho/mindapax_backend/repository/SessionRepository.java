@@ -17,4 +17,10 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
 
   Page<Session> findByUserIdAndStartTimeGreaterThanEqualAndStatus(Long userId, LocalDateTime startTime, SessionStatus status, Pageable pageable);
   Page<Session> findByUserIdAndStartTimeGreaterThanEqual(Long userId, LocalDateTime startTime, Pageable pageable);
+
+  Page<Session> findByProfessionalIdAndStartTimeBeforeAndStatus(Long professionalId, LocalDateTime startTime, SessionStatus status, Pageable pageable);
+  Page<Session> findByProfessionalIdAndStartTimeBefore(Long professionalId, LocalDateTime startTime, Pageable pageable);
+
+  Page<Session> findByProfessionalIdAndStartTimeGreaterThanEqualAndStatus(Long professionalId, LocalDateTime startTime, SessionStatus status, Pageable pageable);
+  Page<Session> findByProfessionalIdAndStartTimeGreaterThanEqual(Long professionalId, LocalDateTime startTime, Pageable pageable);
 }

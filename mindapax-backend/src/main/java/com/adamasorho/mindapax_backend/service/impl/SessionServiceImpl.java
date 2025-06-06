@@ -94,16 +94,39 @@ public class SessionServiceImpl implements SessionService {
         SessionTimeFilter filter,
         SessionStatus status,
         Pageable pageable) {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      // is professional
+      if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PROFESSIONAL"))) {
+          return getSessionsFromProfessional(userId, date, filter, status, pageable);
+      } else {
+          return getSessionsFromClient(userId, date, filter, status, pageable);
+      }
+}
 
+private Page<Session> getSessionsFromProfessional(Long professionalId, LocalDateTime date, 
+  SessionTimeFilter filter, SessionStatus status, Pageable pageable) {
     if (filter == SessionTimeFilter.PAST) {
-        return (status != null)
-                ? sessionRepository.findByUserIdAndStartTimeBeforeAndStatus(userId, date, status, pageable)
-                : sessionRepository.findByUserIdAndStartTimeBefore(userId, date, pageable);
-    } else {
-        return (status != null)
-                ? sessionRepository.findByUserIdAndStartTimeGreaterThanEqualAndStatus(userId, date, status, pageable)
-                : sessionRepository.findByUserIdAndStartTimeGreaterThanEqual(userId, date, pageable);
-    }
+      return (status != null)
+              ? sessionRepository.findByProfessionalIdAndStartTimeBeforeAndStatus(professionalId, date, status, pageable)
+              : sessionRepository.findByProfessionalIdAndStartTimeBefore(professionalId, date, pageable);
+  } else {
+      return (status != null)
+              ? sessionRepository.findByProfessionalIdAndStartTimeGreaterThanEqualAndStatus(professionalId, date, status, pageable)
+              : sessionRepository.findByProfessionalIdAndStartTimeGreaterThanEqual(professionalId, date, pageable);
+  }
+}
+
+private Page<Session> getSessionsFromClient(Long clientId, LocalDateTime date, 
+  SessionTimeFilter filter, SessionStatus status, Pageable pageable) {
+  if (filter == SessionTimeFilter.PAST) {
+    return (status != null)
+            ? sessionRepository.findByUserIdAndStartTimeBeforeAndStatus(clientId, date, status, pageable)
+              : sessionRepository.findByUserIdAndStartTimeBefore(clientId, date, pageable);
+  } else {
+      return (status != null)
+              ? sessionRepository.findByUserIdAndStartTimeGreaterThanEqualAndStatus(clientId, date, status, pageable)
+              : sessionRepository.findByUserIdAndStartTimeGreaterThanEqual(clientId, date, pageable);
+  }
 }
 
   @Override

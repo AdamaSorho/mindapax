@@ -21,6 +21,9 @@ export class SessionsComponent implements OnInit {
   activeTab: 'upcoming' | 'past' = 'upcoming';
   loading: boolean = true;
 
+  currentPage = 0;
+  pageSize = 10;
+
   constructor(
     private sessionService: SessionService,
     private authService: AuthService,
@@ -66,13 +69,14 @@ export class SessionsComponent implements OnInit {
         filter: SessionTimeFilter.UPCOMING,
         date: new Date().toISOString(),
         status: SessionStatus.SCHEDULED,
-        page: 1,
-        size: 10,
+        page: this.currentPage,
+        size: this.pageSize,
         sort: 'startTime,asc',
       })
       .subscribe({
         next: (response) => {
-          this.upcomingSessions = response;
+          this.upcomingSessions = response.content;
+          console.log('Upcoming sessions:', this.upcomingSessions);
           this.loading = false;
         },
         error: (error) => {
@@ -90,13 +94,13 @@ export class SessionsComponent implements OnInit {
         filter: SessionTimeFilter.PAST,
         date: new Date().toISOString(),
         status: SessionStatus.SCHEDULED,
-        page: 1,
-        size: 10,
+        page: this.currentPage,
+        size: this.pageSize,
         sort: 'startTime,asc',
       })
       .subscribe({
         next: (response) => {
-          this.pastSessions = response;
+          this.pastSessions = response.content;
           this.loading = false;
         },
         error: (error) => {
