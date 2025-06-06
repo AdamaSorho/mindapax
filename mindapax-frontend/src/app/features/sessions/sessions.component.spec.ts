@@ -1,59 +1,89 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { Router } from '@angular/router';
+import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
 
 import { SessionsComponent } from './sessions.component';
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
 import { Session } from '../../models/session.model';
+import { ZoomSignatureResponse } from '../../models/zoom-signature-response.model';
 import {
   SessionMode,
   SessionStatus,
-  SessionTimeFilter,
+  // SessionTimeFilter, // Not directly used in new tests, but keep if other tests need
 } from '../../models/enums/SessionFilter';
 
 // Mock services
 class MockSessionService {
-  getSessions() {
-    return of([]); // Default to empty array, can be overridden with spy
-  }
+  getSessions = jasmine.createSpy('getSessions').and.returnValue(of({ content: [] }));
+  getZoomMeetingSignature = jasmine.createSpy('getZoomMeetingSignature');
 }
 
 class MockAuthService {
-  getUserId() {
-    return 1; // Mock user ID
-  }
-  // Add other methods if needed by component
+  getUserId = jasmine.createSpy('getUserId').and.returnValue('mockUserId'); // String ID if used as such
+  getUserName = jasmine.createSpy('getUserName').and.returnValue('Mock User');
+  getUserEmail = jasmine.createSpy('getUserEmail').and.returnValue('mock@example.com');
+}
+
+class MockRouter {
+  navigate = jasmine.createSpy('navigate');
 }
 
 describe('SessionsComponent', () => {
   let component: SessionsComponent;
   let fixture: ComponentFixture<SessionsComponent>;
-  let sessionService: SessionService;
-  // let authService: AuthService; // Not strictly needed for isToday tests unless methods are called
+  let sessionService: MockSessionService;
+  let authService: MockAuthService;
+  let router: MockRouter;
+
+  const mockVideoSession: Session = {
+    id: '1',
+    professionalName: 'Dr. Zoom',
+    startTime: new Date().toISOString(),
+    durationMinutes: 60,
+    mode: 'VIDEO',
+    status: 'SCHEDULED',
+    userId: 'client1',
+    professionalId: 'prof1',
+    professionalImage: 'img.jpg',
+    professionalSpecialization: 'Zoomology',
+    notes: 'Test notes',
+    // date: new Date(), // if your model has this separate from startTime
+  };
+
+  const mockNonVideoSession: Session = { ...mockVideoSession, id: '2', mode: 'CHAT' };
+  const mockNotScheduledSession: Session = { ...mockVideoSession, id: '3', status: 'COMPLETED' };
+
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      // SessionsComponent is standalone, so it's in imports.
+      // No 'declarations' array needed here for standalone.
       imports: [
-        HttpClientTestingModule, // SessionService might inject HttpClient
-        SessionsComponent, // Import standalone component
+        HttpClientTestingModule,
+        SessionsComponent, // Import standalone component itself
+        // NgIf, NgFor, NgClass, DatePipe are implicitly imported by SessionsComponent
       ],
-      // No declarations needed for standalone components
       providers: [
         { provide: SessionService, useClass: MockSessionService },
         { provide: AuthService, useClass: MockAuthService },
+        { provide: Router, useClass: MockRouter },
+        DatePipe // Provide DatePipe as SessionsComponent uses it in template
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SessionsComponent);
     component = fixture.componentInstance;
-    sessionService = TestBed.inject(SessionService); // Get instance for potential spying
-    // authService = TestBed.inject(AuthService);
-    // fixture.detectChanges(); // ngOnInit is called here
+    sessionService = TestBed.inject(SessionService) as unknown as MockSessionService;
+    authService = TestBed.inject(AuthService) as unknown as MockAuthService;
+    router = TestBed.inject(Router) as unknown as MockRouter;
   });
 
   it('should create', () => {
-    fixture.detectChanges(); // Call ngOnInit
+    // fixture.detectChanges(); // Call ngOnInit - moved to specific tests or after setup if needed
     expect(component).toBeTruthy();
   });
 
@@ -220,4 +250,146 @@ describe('SessionsComponent', () => {
       'Testingology'
     );
   });
+
+  describe('isJoinable', () => {
+    it('should return true for a joinable video session (starts now)', () => {
+      const now = new Date();
+      const joinableSession: Session = {
+        ...mockVideoSession,
+        startTime: now.toISOString()
+      };
+      expect(component.isJoinable(joinableSession)).toBeTrue();
+    });
+
+    it('should return true for a video session starting in 10 minutes', () => {
+      const futureTime = new Date(new Date().getTime() + 10 * 60000);
+      const joinableSession: Session = { ...mockVideoSession, startTime: futureTime.toISOString() };
+      expect(component.isJoinable(joinableSession)).toBeTrue();
+    });
+
+    it('should return true for an ongoing video session (started 5 mins ago, duration 60 mins)', () => {
+      const pastTime = new Date(new Date().getTime() - 5 * 60000);
+      const joinableSession: Session = { ...mockVideoSession, startTime: pastTime.toISOString(), durationMinutes: 60 };
+      expect(component.isJoinable(joinableSession)).toBeTrue();
+    });
+
+    it('should return false if session mode is not VIDEO', () => {
+      expect(component.isJoinable(mockNonVideoSession)).toBeFalse();
+    });
+
+    it('should return false if session status is not SCHEDULED', () => {
+      expect(component.isJoinable(mockNotScheduledSession)).toBeFalse();
+    });
+
+    it('should return false if session started long ago and is over', () => {
+      const pastTime = new Date(new Date().getTime() - 90 * 60000);
+      const oldSession: Session = { ...mockVideoSession, startTime: pastTime.toISOString(), durationMinutes: 60 };
+      expect(component.isJoinable(oldSession)).toBeFalse();
+    });
+
+    it('should return false if session is too far in the future (e.g., > 15 mins)', () => {
+      const futureTime = new Date(new Date().getTime() + 30 * 60000);
+      const farFutureSession: Session = { ...mockVideoSession, startTime: futureTime.toISOString() };
+      expect(component.isJoinable(farFutureSession)).toBeFalse();
+    });
+
+    it('should return false if startTime is invalid', () => {
+      const invalidStartTimeSession: Session = { ...mockVideoSession, startTime: 'invalid-date' };
+      expect(component.isJoinable(invalidStartTimeSession)).toBeFalse();
+    });
+
+    it('should return false if durationMinutes is invalid or zero', () => {
+      const zeroDurationSession: Session = { ...mockVideoSession, durationMinutes: 0 };
+      const nanDurationSession: Session = { ...mockVideoSession, durationMinutes: NaN };
+      expect(component.isJoinable(zeroDurationSession)).toBeFalse();
+      expect(component.isJoinable(nanDurationSession)).toBeFalse();
+    });
+  });
+
+  describe('joinVideoCall', () => {
+    const mockZoomResponse: ZoomSignatureResponse = {
+      apiKey: 'key', signature: 'sig', meetingNumber: 'mn'
+    };
+
+    beforeEach(() => {
+        // Reset spies for each test in this describe block
+        sessionService.getZoomMeetingSignature.calls.reset();
+        router.navigate.calls.reset();
+        // Ensure spies on authService methods are reset if they are called multiple times across tests
+        authService.getUserName.calls.reset().and.returnValue('Mock User');
+        authService.getUserEmail.calls.reset().and.returnValue('mock@example.com');
+        component.loading = false; // Reset loading state
+    });
+
+    it('should navigate to zoom-call route on successful signature fetch', fakeAsync(() => {
+      sessionService.getZoomMeetingSignature.and.returnValue(of(mockZoomResponse));
+
+      component.joinVideoCall(mockVideoSession);
+
+      expect(component.loading).toBeTrue(); // Check loading state after call
+      tick(); // Complete observable
+
+      expect(sessionService.getZoomMeetingSignature).toHaveBeenCalledWith(mockVideoSession.id!.toString());
+      expect(router.navigate).toHaveBeenCalledWith(['/member/zoom-call'], {
+        queryParams: {
+          sdkKey: mockZoomResponse.apiKey,
+          meetingNumber: mockZoomResponse.meetingNumber,
+          signature: mockZoomResponse.signature,
+          userName: 'Mock User',
+          userEmail: 'mock@example.com'
+        }
+      });
+      expect(component.loading).toBeFalse(); // Check loading state after observable completes
+    }));
+
+    it('should handle error from getZoomMeetingSignature', fakeAsync(() => {
+      sessionService.getZoomMeetingSignature.and.returnValue(throwError(() => new Error('API Error')));
+      spyOn(console, 'error');
+      spyOn(window, 'alert');
+
+      component.joinVideoCall(mockVideoSession);
+      expect(component.loading).toBeTrue();
+      tick();
+
+      expect(sessionService.getZoomMeetingSignature).toHaveBeenCalledWith(mockVideoSession.id!.toString());
+      expect(router.navigate).not.toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalledWith('Failed to get Zoom meeting signature:', jasmine.any(Error));
+      expect(window.alert).toHaveBeenCalledWith('Failed to start video call. Please try again later.');
+      expect(component.loading).toBeFalse();
+    }));
+
+    it('should not proceed if session or session.id is null/undefined', () => {
+      spyOn(console, 'error');
+      const nullIdSession : Session = {...mockVideoSession, id: undefined };
+
+      component.joinVideoCall(nullIdSession);
+      expect(console.error).toHaveBeenCalledWith('Session or Session ID is undefined.');
+      expect(sessionService.getZoomMeetingSignature).not.toHaveBeenCalled();
+
+      component.joinVideoCall(null as any);
+      expect(console.error).toHaveBeenCalledWith('Session or Session ID is undefined.');
+      expect(sessionService.getZoomMeetingSignature).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should set loading to true when fetching upcoming sessions and false on completion/error', fakeAsync(() => {
+    // component.ngOnInit calls fetchUpcomingSessions and fetchPastSessions
+    // Ensure getSessions is spied on for both calls if they happen in ngOnInit
+    sessionService.getSessions.and.returnValue(of({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 0  }));
+
+    fixture.detectChanges(); // Calls ngOnInit
+
+    // ngOnInit calls fetchUpcomingSessions then fetchPastSessions.
+    // Loading is set to true at the start of each.
+    // It's set to false at the end of each.
+    // The final state depends on the sequence.
+    // Let's assume fetchUpcomingSessions sets it to true, then completes.
+    // Then fetchPastSessions sets it to true, then completes.
+    // So, after all ticks, it should be false.
+
+    expect(component.loading).toBeTrue(); // After first call in ngOnInit
+    tick(); // Complete all observables
+    expect(component.loading).toBeFalse();
+  }));
+
 });

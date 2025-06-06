@@ -12,6 +12,7 @@ import { authGuard } from '../guards/auth.guard';
 import { ProfessionalListComponent } from './professional-list/professional-list.component';
 import { ConnectionsComponent } from './connections/connections.component';
 import { ScheduleSessionComponent } from './schedule-session/schedule-session.component'; // Import new component
+import { ZoomMeetingComponent } from './zoom-meeting/zoom-meeting.component';
 
 export const featuresRoutes: Routes = [
   {
@@ -39,6 +40,13 @@ export const featuresRoutes: Routes = [
         // canActivate: [authGuard, roleGuard], // If roleGuard is separate
         canActivate: [authGuard], // If authGuard itself can check roles or a combined guard is used
         data: { roles: ['PROFESSIONAL'] }, // Data for RoleGuard if it uses it
+      },
+      {
+        path: 'zoom-call', // Path for the zoom meeting page
+        component: ZoomMeetingComponent
+        // All parameters (sdkKey, meetingNumber, signature, userName, userEmail)
+        // will be passed as query parameters during navigation.
+        // authGuard is implicitly applied due to parent.
       },
     ],
   },

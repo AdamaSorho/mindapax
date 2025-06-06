@@ -3,6 +3,11 @@ package com.adamasorho.mindapax_backend.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.adamasorho.mindapax_backend.dto.ZoomSignatureResponse;
+import com.adamasorho.mindapax_backend.model.User;
+import com.adamasorho.mindapax_backend.model.enums.SessionMode;
+import com.adamasorho.mindapax_backend.security.CustomUserDetails;
+import com.adamasorho.mindapax_backend.service.ZoomService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -10,6 +15,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.adamasorho.mindapax_backend.dto.SessionDTO;
 import com.adamasorho.mindapax_backend.dto.SessionTimeFilter;
@@ -36,6 +44,7 @@ import lombok.AllArgsConstructor;
 public class SessionController {
   private final SessionService serviceService;
   private final SessionMapper sessionMapper;
+  private final ZoomService zoomService;
 
   @PostMapping
   public ResponseEntity<SessionDTO> create(@RequestBody SessionDTO dto) {
@@ -91,4 +100,58 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
       SessionDTO createdSession = serviceService.scheduleSessionByProfessional(sessionDto);
       return ResponseEntity.status(HttpStatus.CREATED).body(createdSession);
   }
+
+    @PostMapping("/{sessionId}/join-video")
+    @PreAuthorize("hasAnyRole('USER', 'PROFESSIONAL')") // Ensure only authenticated users can access
+    public ResponseEntity<ZoomSignatureResponse> joinVideoSession(@PathVariable Long sessionId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+        CustomUserDetails currentUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long currentUserId = currentUserDetails.getId();
+
+        SessionDTO sessionDto = serviceService.getSessionById(sessionId); // Uses existing service method
+        if (sessionDto == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found");
+        }
+
+        // Assuming SessionDTO has 'mode' field. If not, this needs adjustment or fetch entity.
+        // Let's check SessionDTO structure first. If it's simple, map to entity.
+        Session session = sessionMapper.toEntity(sessionDto);
+        if (session == null) { // Mapper might return null if DTO is insufficient for full entity
+             // Alternative: Add a service method to fetch the Session entity directly
+             // For now, assume mapper can construct a usable Session or DTO has mode
+             // If SessionDTO has getMode(), use sessionDto.getMode() directly.
+             // For this example, we proceed with the mapped entity.
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session entity could not be resolved from DTO");
+        }
+
+
+        if (session.getMode() != SessionMode.VIDEO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session is not a video session");
+        }
+
+        // Validate user is part of the session
+        Long clientUserId = session.getUser().getId();
+        Long professionalUserId = session.getProfessional().getUser().getId();
+
+        boolean isClient = currentUserId.equals(clientUserId);
+        boolean isProfessional = currentUserId.equals(professionalUserId);
+
+        if (!isClient && !isProfessional) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User not part of this session");
+        }
+
+        // Determine Zoom role (e.g., Professional is host (1), Client is attendee (0))
+        int zoomRole = isProfessional ? 1 : 0;
+
+        // Use session ID as the meeting number for simplicity.
+        String meetingNumber = String.valueOf(sessionId);
+
+        String signature = zoomService.generateSignature(meetingNumber, zoomRole);
+        String sdkKey = zoomService.getSdkKey();
+
+        return ResponseEntity.ok(new ZoomSignatureResponse(sdkKey, meetingNumber, signature));
+    }
 }
