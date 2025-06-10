@@ -25,4 +25,6 @@ public interface SessionService {
     Pageable pageable);
 
     SessionDTO scheduleSessionByProfessional(SessionDTO sessionDto);
+
+    Session getSessionEntityById(Long id);
 }

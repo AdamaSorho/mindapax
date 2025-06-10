@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,8 +57,8 @@ public class SessionControllerTest {
 
     @BeforeEach
     void setUp() {
-        clientUser = new User();
-        clientUser.setId(1L);
+        // clientUser = new User(); // Initialized below for clarity
+        // clientUser.setId(1L); // Initialized below for clarity
         clientUser.setEmail("client@example.com");
         clientUser.setRole(UserRole.USER);
 
@@ -67,7 +68,7 @@ public class SessionControllerTest {
         professionalUser.setRole(UserRole.PROFESSIONAL);
 
         professional = new Professional();
-        professional.setId(2L); // Assuming Professional ID is same as User ID for simplicity here
+        professional.setId(2L);
         professional.setUser(professionalUser);
 
         videoSession = new Session();
@@ -76,24 +77,35 @@ public class SessionControllerTest {
         videoSession.setProfessional(professional);
         videoSession.setMode(SessionMode.VIDEO);
 
-        videoSessionDTO = new SessionDTO(); // Populate this DTO as your mapper would
-        videoSessionDTO.setId(100L);
-        videoSessionDTO.setUserId(clientUser.getId());
-        // Assuming SessionDTO has a way to get professional's user ID or Professional object/ID
-        // For this test, let's assume it has professionalId which maps to Professional entity's ID.
-        // And that mapper can reconstruct the Professional entity with its User.
-        videoSessionDTO.setProfessionalId(professional.getId());
-        videoSessionDTO.setMode(SessionMode.VIDEO);
+        // videoSessionDTO is no longer directly needed in setUp for these tests after controller changes
+        // videoSessionDTO = new SessionDTO();
+        // videoSessionDTO.setId(100L);
+        // videoSessionDTO.setUserId(clientUser.getId());
+        // videoSessionDTO.setProfessionalId(professional.getId());
+        // videoSessionDTO.setMode(SessionMode.VIDEO);
 
-
-        // Mock security context
-        // No specific authorities needed for hasAnyRole('USER', 'PROFESSIONAL') beyond authentication
-        CustomUserDetails userDetails = new CustomUserDetails(clientUser);
-        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        // Initial security context can be set here if a default user is mostly used,
+        // or set specifically in each test method via mockSecurityContext.
+        // For clarity, we'll ensure it's explicitly set in test methods.
+        // CustomUserDetails userDetails = new CustomUserDetails(clientUser);
+        // Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        // SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     private void mockSecurityContext(User user, UserRole role) {
+        // Ensure clientUser is initialized before being used by CustomUserDetails
+        if (user == null) { // Basic initialization if user is null
+            user = new User();
+            user.setId(0L); // Default ID or ensure it's set before use
+            user.setRole(UserRole.USER); // Default role
+            user.setEmail("default@example.com");
+        } else {
+             // Ensure the user object, especially clientUser, is fully initialized
+            if (user.getId() == null) user.setId(0L); // Example default
+            if (user.getRole() == null) user.setRole(UserRole.USER); // Example default
+            if (user.getEmail() == null) user.setEmail("default@example.com"); // Example default
+        }
+
         CustomUserDetails userDetails = new CustomUserDetails(user);
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -101,10 +113,20 @@ public class SessionControllerTest {
 
     @Test
     void joinVideoSession_asClient_success() {
+        // Initialize clientUser for this specific test context if not already done in setUp
+        clientUser = new User(); // Ensure clientUser is what's expected for THIS test
+        clientUser.setId(1L);
+        clientUser.setEmail("client@example.com");
+        clientUser.setRole(UserRole.USER);
+         // Re-initialize videoSession to use this test-specific clientUser
+        professionalUser = new User(); professionalUser.setId(2L); professionalUser.setEmail("prof@example.com"); professionalUser.setRole(UserRole.PROFESSIONAL);
+        professional = new Professional(); professional.setId(2L); professional.setUser(professionalUser);
+        videoSession = new Session(); videoSession.setId(100L); videoSession.setUser(clientUser); videoSession.setProfessional(professional); videoSession.setMode(SessionMode.VIDEO);
+
+
         mockSecurityContext(clientUser, UserRole.USER);
 
-        when(sessionService.getSessionById(videoSession.getId())).thenReturn(videoSessionDTO);
-        when(sessionMapper.toEntity(videoSessionDTO)).thenReturn(videoSession); // Ensure mapper returns the full entity
+        when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession); // Use new service method
         when(zoomService.getSdkKey()).thenReturn("testSdkKey");
         when(zoomService.generateSignature(String.valueOf(videoSession.getId()), 0)).thenReturn("testSignature");
 
@@ -115,14 +137,23 @@ public class SessionControllerTest {
         assertEquals("testSdkKey", response.getBody().getApiKey());
         assertEquals(String.valueOf(videoSession.getId()), response.getBody().getMeetingNumber());
         assertEquals("testSignature", response.getBody().getSignature());
+        verify(sessionService).getSessionEntityById(videoSession.getId()); // Verify the new method call
     }
 
     @Test
     void joinVideoSession_asProfessional_success() {
+        // Initialize professionalUser for this specific test context
+        professionalUser = new User(); // Ensure professionalUser is what's expected for THIS test
+        professionalUser.setId(2L);
+        professionalUser.setEmail("prof@example.com");
+        professionalUser.setRole(UserRole.PROFESSIONAL);
+        clientUser = new User(); clientUser.setId(1L); clientUser.setEmail("client@example.com"); clientUser.setRole(UserRole.USER);
+        professional = new Professional(); professional.setId(2L); professional.setUser(professionalUser);
+        videoSession = new Session(); videoSession.setId(100L); videoSession.setUser(clientUser); videoSession.setProfessional(professional); videoSession.setMode(SessionMode.VIDEO);
+
         mockSecurityContext(professionalUser, UserRole.PROFESSIONAL);
 
-        when(sessionService.getSessionById(videoSession.getId())).thenReturn(videoSessionDTO);
-        when(sessionMapper.toEntity(videoSessionDTO)).thenReturn(videoSession);
+        when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession); // Use new service method
         when(zoomService.getSdkKey()).thenReturn("testSdkKey");
         when(zoomService.generateSignature(String.valueOf(videoSession.getId()), 1)).thenReturn("testSignatureProf");
 
@@ -132,57 +163,71 @@ public class SessionControllerTest {
         assertNotNull(response.getBody());
         assertEquals("testSdkKey", response.getBody().getApiKey());
         assertEquals("testSignatureProf", response.getBody().getSignature());
+        verify(sessionService).getSessionEntityById(videoSession.getId()); // Verify the new method call
     }
 
     @Test
     void joinVideoSession_sessionNotFound() {
+        clientUser = new User(); clientUser.setId(1L); clientUser.setEmail("client@example.com"); clientUser.setRole(UserRole.USER);
         mockSecurityContext(clientUser, UserRole.USER);
-        when(sessionService.getSessionById(anyLong())).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        // Ensure getSessionEntityById is mocked for this path
+        when(sessionService.getSessionEntityById(anyLong())).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
             sessionController.joinVideoSession(999L);
         });
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        verify(sessionService).getSessionEntityById(999L);
     }
 
     @Test
     void joinVideoSession_notVideoSession() {
+        clientUser = new User(); clientUser.setId(1L); clientUser.setEmail("client@example.com"); clientUser.setRole(UserRole.USER);
+        professionalUser = new User(); professionalUser.setId(2L); professionalUser.setEmail("prof@example.com"); professionalUser.setRole(UserRole.PROFESSIONAL);
+        professional = new Professional(); professional.setId(2L); professional.setUser(professionalUser);
         mockSecurityContext(clientUser, UserRole.USER);
+
         Session chatSession = new Session();
         chatSession.setId(101L);
         chatSession.setUser(clientUser);
         chatSession.setProfessional(professional);
         chatSession.setMode(SessionMode.CHAT); // Not a video session
 
-        SessionDTO chatSessionDTO = new SessionDTO();
-        chatSessionDTO.setId(101L);
-        chatSessionDTO.setMode(SessionMode.CHAT);
+        // SessionDTO chatSessionDTO = new SessionDTO(); // DTO not needed for this path anymore
+        // chatSessionDTO.setId(101L);
+        // chatSessionDTO.setMode(SessionMode.CHAT);
 
-        when(sessionService.getSessionById(chatSession.getId())).thenReturn(chatSessionDTO);
-        when(sessionMapper.toEntity(chatSessionDTO)).thenReturn(chatSession);
+        when(sessionService.getSessionEntityById(chatSession.getId())).thenReturn(chatSession); // Mock new service method
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
             sessionController.joinVideoSession(chatSession.getId());
         });
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
         assertTrue(exception.getReason().contains("Session is not a video session"));
+        verify(sessionService).getSessionEntityById(chatSession.getId());
     }
 
     @Test
     void joinVideoSession_userNotPartOfSession() {
+        clientUser = new User(); clientUser.setId(1L); clientUser.setEmail("client@example.com"); clientUser.setRole(UserRole.USER);
+        professionalUser = new User(); professionalUser.setId(2L); professionalUser.setEmail("prof@example.com"); professionalUser.setRole(UserRole.PROFESSIONAL);
+        professional = new Professional(); professional.setId(2L); professional.setUser(professionalUser);
+        videoSession = new Session(); videoSession.setId(100L); videoSession.setUser(clientUser); videoSession.setProfessional(professional); videoSession.setMode(SessionMode.VIDEO);
+
         User otherUser = new User();
         otherUser.setId(3L);
         otherUser.setRole(UserRole.USER);
+        otherUser.setEmail("other@example.com");
         mockSecurityContext(otherUser, UserRole.USER); // Authenticated as a different user
 
-        when(sessionService.getSessionById(videoSession.getId())).thenReturn(videoSessionDTO);
-        when(sessionMapper.toEntity(videoSessionDTO)).thenReturn(videoSession);
+        when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession); // Mock new service method
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
             sessionController.joinVideoSession(videoSession.getId());
         });
         assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
         assertTrue(exception.getReason().contains("User not part of this session"));
+        verify(sessionService).getSessionEntityById(videoSession.getId());
     }
 
     @Test
