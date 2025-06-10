@@ -172,6 +172,22 @@ private Page<Session> getSessionsFromClient(Long clientId, OffsetDateTime date,
     // If status wasn't in DTO or needs override:
     session.setStatus(SessionStatus.SCHEDULED); // Explicitly set/override status
 
+    // Populate Zoom Meeting ID for video sessions from the professional's stored ID
+    if (session.getMode() == com.adamasorho.mindapax_backend.model.enums.SessionMode.VIDEO) {
+        if (professional.getZoomMeetingId() != null && !professional.getZoomMeetingId().trim().isEmpty()) {
+            session.setZoomMeetingId(professional.getZoomMeetingId());
+            logger.info("Scheduled VIDEO session. Using Professional's Zoom Meeting ID: {} for session.", professional.getZoomMeetingId());
+        } else {
+            // This case should ideally not happen if a professional approved for video sessions always has a Zoom ID.
+            // If it does, joinVideoSession will throw an error, which is an existing safeguard.
+            logger.warn("Professional {} {} is scheduling a VIDEO session but does not have a Zoom Meeting ID configured. Session zoomMeetingId will be null.",
+                        professional.getUser().getFirstName(), professional.getUser().getLastName());
+            // Session.zoomMeetingId will remain null.
+            // The SessionController.joinVideoSession method already has a check for null/empty session.getZoomMeetingId()
+            // and throws an error, which will prevent joining.
+        }
+    }
+
     // Save the Session entity
     Session savedSession = sessionRepository.save(session);
 

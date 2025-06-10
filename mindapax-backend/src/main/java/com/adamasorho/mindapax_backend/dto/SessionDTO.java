@@ -24,6 +24,7 @@ public class SessionDTO {
   private SessionMode mode;
   private SessionStatus status;
   private String notes;
+  private String zoomMeetingId;
 
   private String professionalName;
   private String professionalSpecialization;
