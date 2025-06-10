@@ -1,6 +1,6 @@
 package com.adamasorho.mindapax_backend.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import com.adamasorho.mindapax_backend.model.enums.SessionMode;
 import com.adamasorho.mindapax_backend.model.enums.SessionStatus;
@@ -33,7 +33,7 @@ public class Session {
     private Professional professional;
 
     @Column(nullable = false)
-    private LocalDateTime startTime;
+    private OffsetDateTime startTime;
 
     @Column(nullable = false)
     private Integer durationMinutes;

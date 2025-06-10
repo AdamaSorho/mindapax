@@ -1,6 +1,6 @@
 package com.adamasorho.mindapax_backend.controller;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import com.adamasorho.mindapax_backend.dto.ZoomSignatureResponse;

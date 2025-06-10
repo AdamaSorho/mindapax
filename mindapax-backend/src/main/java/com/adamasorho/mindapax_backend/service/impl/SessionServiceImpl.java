@@ -1,6 +1,6 @@
 package com.adamasorho.mindapax_backend.service.impl;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -90,7 +90,7 @@ public class SessionServiceImpl implements SessionService {
   @Override
   public Page<Session> getSessionsByUserAndTime(
         Long userId,
-        LocalDateTime date,
+        OffsetDateTime date,
         SessionTimeFilter filter,
         SessionStatus status,
         Pageable pageable) {
@@ -103,7 +103,7 @@ public class SessionServiceImpl implements SessionService {
       }
 }
 
-private Page<Session> getSessionsFromProfessional(Long professionalId, LocalDateTime date, 
+private Page<Session> getSessionsFromProfessional(Long professionalId, OffsetDateTime date,
   SessionTimeFilter filter, SessionStatus status, Pageable pageable) {
     if (filter == SessionTimeFilter.PAST) {
       return (status != null)
@@ -116,7 +116,7 @@ private Page<Session> getSessionsFromProfessional(Long professionalId, LocalDate
   }
 }
 
-private Page<Session> getSessionsFromClient(Long clientId, LocalDateTime date, 
+private Page<Session> getSessionsFromClient(Long clientId, OffsetDateTime date,
   SessionTimeFilter filter, SessionStatus status, Pageable pageable) {
   if (filter == SessionTimeFilter.PAST) {
     return (status != null)
