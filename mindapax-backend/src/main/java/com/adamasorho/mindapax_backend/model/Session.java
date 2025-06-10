@@ -48,4 +48,6 @@ public class Session {
 
     @Column(columnDefinition = "TEXT")
     private String notes; // Notes can remain optional/nullable
+
+    private String zoomMeetingId;
 }
