@@ -113,20 +113,9 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
         CustomUserDetails currentUserDetails = (CustomUserDetails) authentication.getPrincipal();
         Long currentUserId = currentUserDetails.getUser().getId();
 
-        SessionDTO sessionDto = serviceService.getSessionById(sessionId); // Uses existing service method
-        if (sessionDto == null) {
+        Session session = serviceService.getSessionEntityById(sessionId); // Uses new service method
+        if (session == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found");
-        }
-
-        // Assuming SessionDTO has 'mode' field. If not, this needs adjustment or fetch entity.
-        // Let's check SessionDTO structure first. If it's simple, map to entity.
-        Session session = sessionMapper.toEntity(sessionDto);
-        if (session == null) { // Mapper might return null if DTO is insufficient for full entity
-             // Alternative: Add a service method to fetch the Session entity directly
-             // For now, assume mapper can construct a usable Session or DTO has mode
-             // If SessionDTO has getMode(), use sessionDto.getMode() directly.
-             // For this example, we proceed with the mapped entity.
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session entity could not be resolved from DTO");
         }
 
         if (session.getMode() != SessionMode.VIDEO) {

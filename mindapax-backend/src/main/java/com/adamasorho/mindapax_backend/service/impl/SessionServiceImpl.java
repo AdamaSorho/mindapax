@@ -25,9 +25,11 @@ import jakarta.persistence.EntityNotFoundException;
 
 import org.slf4j.Logger; // Added Logger
 import org.slf4j.LoggerFactory; // Added LoggerFactory
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class SessionServiceImpl implements SessionService {
@@ -176,5 +178,11 @@ private Page<Session> getSessionsFromClient(Long clientId, OffsetDateTime date,
 
     // Return the saved Session mapped back to a SessionDTO
     return mapper.toDTO(savedSession);
+  }
+
+  @Override
+  public Session getSessionEntityById(Long id) {
+      return sessionRepository.findById(id)
+              .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
   }
 }
