@@ -116,7 +116,11 @@ export class SessionsComponent implements OnInit {
   }
 
   public isJoinable(session: Session): boolean {
-    if (!session || session.mode?.toUpperCase() !== 'VIDEO' || session.status?.toUpperCase() !== 'SCHEDULED') {
+    if (
+      !session ||
+      session.mode?.toUpperCase() !== 'VIDEO' ||
+      session.status?.toUpperCase() !== 'SCHEDULED'
+    ) {
       return false;
     }
     const now = new Date().getTime();
@@ -126,7 +130,7 @@ export class SessionsComponent implements OnInit {
     if (isNaN(startTime)) return false; // Invalid date for startTime
 
     // Allow joining if session starts now or in the past (up to its duration), or up to 15 minutes before.
-    const joinWindowStart = startTime - (15 * 60 * 1000); // 15 minutes before
+    const joinWindowStart = startTime - 15 * 60 * 1000; // 15 minutes before
 
     // Ensure durationMinutes is valid
     const durationMinutes = Number(session.durationMinutes);
@@ -141,36 +145,43 @@ export class SessionsComponent implements OnInit {
   public joinVideoCall(session: Session): void {
     if (!session || !session.id) {
       console.error('Session or Session ID is undefined.');
+      alert('Session or Session ID is undefined.');
       // TODO: Show user-friendly error
       return;
     }
 
     this.loading = true; // Show loading indicator
-    this.sessionService.getZoomMeetingSignature(session.id.toString()).subscribe({
-      next: (zoomResponse: ZoomSignatureResponse) => {
-        this.loading = false;
-        // TODO: Get actual userName and userEmail from AuthService
-        // const currentUser = this.authService.getCurrentUser(); // Assuming AuthService has such a method
-        const userName = this.authService.getUserName ? this.authService.getUserName() : 'Mindapax User'; // Placeholder
-        const userEmail = this.authService.getUserEmail ? this.authService.getUserEmail() : ''; // Placeholder - Zoom SDK might need it
+    this.sessionService
+      .getZoomMeetingSignature(session.id.toString())
+      .subscribe({
+        next: (zoomResponse: ZoomSignatureResponse) => {
+          this.loading = false;
+          // TODO: Get actual userName and userEmail from AuthService
+          // const currentUser = this.authService.getCurrentUser(); // Assuming AuthService has such a method
+          const userName = this.authService.getUsername()
+            ? this.authService.getUsername()
+            : 'Mindapax User'; // Placeholder
+          const userEmail = this.authService.getUserEmail
+            ? this.authService.getUserEmail()
+            : ''; // Placeholder - Zoom SDK might need it
 
-        this.router.navigate(['/member/zoom-call'], {
-          queryParams: {
-            sdkKey: zoomResponse.apiKey,
-            meetingNumber: zoomResponse.meetingNumber,
-            signature: zoomResponse.signature,
-            userName: userName,
-            userEmail: userEmail
-          }
-        });
-      },
-      error: (error) => {
-        this.loading = false;
-        console.error('Failed to get Zoom meeting signature:', error);
-        // TODO: Show user-friendly error (e.g., using a toast notification service)
-        alert('Failed to start video call. Please try again later.');
-      }
-    });
+          this.router.navigate(['/member/zoom-call'], {
+            queryParams: {
+              sdkKey: zoomResponse.apiKey,
+              meetingNumber: zoomResponse.meetingNumber,
+              signature: zoomResponse.signature,
+              userName: userName,
+              userEmail: userEmail,
+            },
+          });
+        },
+        error: (error) => {
+          this.loading = false;
+          console.error('Failed to get Zoom meeting signature:', error);
+          // TODO: Show user-friendly error (e.g., using a toast notification service)
+          alert('Failed to start video call. Please try again later.');
+        },
+      });
   }
 
   // The old joinSession can be removed or adapted if it was meant for other session types.
@@ -179,7 +190,6 @@ export class SessionsComponent implements OnInit {
   //   // In a real app, this would navigate to the video/chat interface
   //   console.log(`Joining session with ID: ${sessionId}`);
   // }
-
 
   rescheduleSession(sessionId: number | undefined): void {
     // In a real app, this would open a rescheduling modal/page
@@ -239,94 +249,4 @@ export class SessionsComponent implements OnInit {
         return 'question-mark-circle';
     }
   }
-
-  // Helper method to generate mock data
-  // private getMockSessions(): Session[] {
-  //   const today = new Date();
-  //   const yesterday = new Date(today);
-  //   yesterday.setDate(yesterday.getDate() - 1);
-
-  //   const tomorrow = new Date(today);
-  //   tomorrow.setDate(tomorrow.getDate() + 1);
-
-  //   const nextWeek = new Date(today);
-  //   nextWeek.setDate(nextWeek.getDate() + 7);
-
-  //   const lastWeek = new Date(today);
-  //   lastWeek.setDate(lastWeek.getDate() - 7);
-
-  //   const twoWeeksAgo = new Date(today);
-  //   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
-  //   return [
-  //     {
-  //       id: 1,
-  //       professionalName: 'Dr. Sarah Johnson',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Mental Health',
-  //       date: tomorrow,
-  //       startTime: '10:00 AM',
-  //       endTime: '11:00 AM',
-  //       status: 'upcoming',
-  //       type: 'video',
-  //       notes: 'Follow-up on stress management techniques',
-  //     },
-  //     {
-  //       id: 2,
-  //       professionalName: 'Michael Chang, CFA',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Financial Coaching',
-  //       date: nextWeek,
-  //       startTime: '3:00 PM',
-  //       endTime: '4:00 PM',
-  //       status: 'upcoming',
-  //       type: 'video',
-  //     },
-  //     {
-  //       id: 3,
-  //       professionalName: 'Emma Martinez',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Physical Wellness',
-  //       date: yesterday,
-  //       startTime: '2:00 PM',
-  //       endTime: '3:00 PM',
-  //       status: 'completed',
-  //       type: 'video',
-  //       notes: 'Discussed new exercise routine',
-  //     },
-  //     {
-  //       id: 4,
-  //       professionalName: 'Dr. Sarah Johnson',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Mental Health',
-  //       date: lastWeek,
-  //       startTime: '11:00 AM',
-  //       endTime: '12:00 PM',
-  //       status: 'completed',
-  //       type: 'chat',
-  //     },
-  //     {
-  //       id: 5,
-  //       professionalName: 'Robert Davis',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Career Counseling',
-  //       date: twoWeeksAgo,
-  //       startTime: '4:00 PM',
-  //       endTime: '5:00 PM',
-  //       status: 'canceled',
-  //       type: 'messaging',
-  //     },
-  //     {
-  //       id: 6,
-  //       professionalName: 'Sophia Lee',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Nutrition',
-  //       date: today,
-  //       startTime: '5:00 PM',
-  //       endTime: '6:00 PM',
-  //       status: 'upcoming',
-  //       type: 'video',
-  //     },
-  //   ];
-  // }
 }

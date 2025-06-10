@@ -16,12 +16,6 @@ import { SessionMode } from '../../models/enums/SessionFilter';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 
-// If you have specific types for Flowbite's Datepicker:
-// import { Datepicker, DatepickerOptions, DatepickerInterface } from 'flowbite-datepicker';
-// Otherwise, declare it to inform TypeScript that it's a global variable:
-declare var Datepicker: any;
-declare var initFlowbite: any; // If you were to use global init
-
 @Component({
   selector: 'app-schedule-session',
   imports: [CommonModule, ReactiveFormsModule],
@@ -36,15 +30,6 @@ export class ScheduleSessionComponent
   sessionModes = Object.values(SessionMode);
   errorMessage: string | null = null;
   successMessage: string | null = null;
-
-  private startTimepickerInstance: any;
-  // No endTimepickerInstance needed
-  // private endTimepickerInstance: any;
-
-  // Store event listener functions to remove them correctly
-  private startDateChangeDateListener!: (event: any) => void; // Renamed for clarity
-  // No specific input listener needed for datepicker text input if changeDate handles it.
-  // Manual input directly into the text field for date is less common once datepicker is active.
 
   constructor(
     private fb: FormBuilder,
@@ -67,57 +52,57 @@ export class ScheduleSessionComponent
   }
 
   ngAfterViewInit(): void {
-    this.initDatepickers();
+    // this.initDatepickers();
   }
 
   ngOnDestroy(): void {
-    const startDatePickerEl = document.getElementById('startDatePicker'); // Use new ID
-    if (startDatePickerEl) {
-      if (this.startDateChangeDateListener) {
-        startDatePickerEl.removeEventListener(
-          'changeDate',
-          this.startDateChangeDateListener
-        );
-      }
-      // No startTimeInputListener to remove if it's not used for the date part
-    }
+    // const startDatePickerEl = document.getElementById('startDatePicker'); // Use new ID
+    // if (startDatePickerEl) {
+    //   if (this.startDateChangeDateListener) {
+    //     startDatePickerEl.removeEventListener(
+    //       'changeDate',
+    //       this.startDateChangeDateListener
+    //     );
+    //   }
+    //   // No startTimeInputListener to remove if it's not used for the date part
+    // }
   }
 
-  private initDatepickers(): void {
-    const startDatePickerEl = document.getElementById(
-      'startDatePicker'
-    ) as HTMLInputElement | null; // Use new ID
+  // private initDatepickers(): void {
+  //   const startDatePickerEl = document.getElementById(
+  //     'startDatePicker'
+  //   ) as HTMLInputElement | null; // Use new ID
 
-    // Options for Flowbite Datepicker
-    const datepickerOptions = {
-      autohide: true,
-      format: 'yyyy-mm-dd',
-      todayHighlight: true,
-    };
+  //   // Options for Flowbite Datepicker
+  //   const datepickerOptions = {
+  //     autohide: true,
+  //     format: 'yyyy-mm-dd',
+  //     todayHighlight: true,
+  //   };
 
-    if (startDatePickerEl) {
-      // Use new ID
-      this.startTimepickerInstance = new Datepicker(startDatePickerEl, {
-        ...datepickerOptions,
-      }); // Keep instance name for now, or rename
+  //   if (startDatePickerEl) {
+  //     // Use new ID
+  //     this.startTimepickerInstance = new Datepicker(startDatePickerEl, {
+  //       ...datepickerOptions,
+  //     }); // Keep instance name for now, or rename
 
-      this.startDateChangeDateListener = (event: CustomEvent) => {
-        // Renamed listener
-        // Flowbite Datepicker typically provides the selected date directly on the event or via its instance.
-        // The input's value (startDatePickerEl.value) will be the formatted date string "yyyy-mm-dd".
-        if (startDatePickerEl.value) {
-          this.scheduleForm.get('startDate')?.setValue(startDatePickerEl.value);
-          this.scheduleForm.get('startDate')?.markAsDirty();
-        }
-      };
-      startDatePickerEl.addEventListener(
-        'changeDate',
-        this.startDateChangeDateListener
-      );
-      // No separate 'input' listener needed for the datepicker text field itself if 'changeDate' is sufficient
-      // The 'startTimeValue' input (type="time") will handle its own input via formControlName.
-    }
-  }
+  //     this.startDateChangeDateListener = (event: CustomEvent) => {
+  //       // Renamed listener
+  //       // Flowbite Datepicker typically provides the selected date directly on the event or via its instance.
+  //       // The input's value (startDatePickerEl.value) will be the formatted date string "yyyy-mm-dd".
+  //       if (startDatePickerEl.value) {
+  //         this.scheduleForm.get('startDate')?.setValue(startDatePickerEl.value);
+  //         this.scheduleForm.get('startDate')?.markAsDirty();
+  //       }
+  //     };
+  //     startDatePickerEl.addEventListener(
+  //       'changeDate',
+  //       this.startDateChangeDateListener
+  //     );
+  //     // No separate 'input' listener needed for the datepicker text field itself if 'changeDate' is sufficient
+  //     // The 'startTimeValue' input (type="time") will handle its own input via formControlName.
+  //   }
+  // }
 
   loadUsers(): void {
     this.userService.getProfessionalConnectedUsers().subscribe({

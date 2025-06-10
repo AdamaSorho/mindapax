@@ -3,14 +3,11 @@ package com.adamasorho.mindapax_backend.service.impl;
 import com.adamasorho.mindapax_backend.service.ZoomService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.UUID;
 
 @Service
 public class ZoomServiceImpl implements ZoomService {
@@ -43,7 +40,7 @@ public class ZoomServiceImpl implements ZoomService {
             // https://developers.zoom.us/docs/meeting-sdk/auth/
             String payload = Jwts.builder()
                 .claim("appKey", zoomSdkKey) // Use appKey or sdkKey based on Zoom's current terminology
-                .claim("sdkKey", zoomSdkKey) // Some docs show sdkKey
+                // .claim("sdkKey", zoomSdkKey) // Some docs show sdkKey
                 .claim("mn", meetingNumber)
                 .claim("role", role)
                 .claim("iat", timestamp)

@@ -88,13 +88,13 @@ public class SessionControllerTest {
 
         // Mock security context
         // No specific authorities needed for hasAnyRole('USER', 'PROFESSIONAL') beyond authentication
-        CustomUserDetails userDetails = new CustomUserDetails(clientUser.getId(), clientUser.getEmail(), "password", Collections.emptyList(), UserRole.USER);
+        CustomUserDetails userDetails = new CustomUserDetails(clientUser);
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     private void mockSecurityContext(User user, UserRole role) {
-        CustomUserDetails userDetails = new CustomUserDetails(user.getId(), user.getEmail(), "password", Collections.emptyList(), role);
+        CustomUserDetails userDetails = new CustomUserDetails(user);
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }

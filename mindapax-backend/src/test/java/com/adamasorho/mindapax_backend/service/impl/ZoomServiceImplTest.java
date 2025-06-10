@@ -36,7 +36,7 @@ public class ZoomServiceImplTest {
 
         String signature = zoomService.generateSignature(meetingNumber, role);
         assertNotNull(signature);
-        assertTrue(signature.split("\.").length == 3, "Signature should be a valid JWT format");
+        assertTrue(signature.split("\\.").length == 3, "Signature should be a valid JWT format");
 
         // Verify JWT claims
         Jws<Claims> parsedJwt = Jwts.parserBuilder()

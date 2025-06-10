@@ -4,10 +4,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.adamasorho.mindapax_backend.dto.ZoomSignatureResponse;
-import com.adamasorho.mindapax_backend.model.User;
 import com.adamasorho.mindapax_backend.model.enums.SessionMode;
 import com.adamasorho.mindapax_backend.security.CustomUserDetails;
 import com.adamasorho.mindapax_backend.service.ZoomService;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -37,10 +37,12 @@ import com.adamasorho.mindapax_backend.service.SessionService;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/v1/sessions")
 @AllArgsConstructor
+@Slf4j
 public class SessionController {
   private final SessionService serviceService;
   private final SessionMapper sessionMapper;
@@ -95,21 +97,21 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
 }
 
   @PostMapping("/professional/schedule")
-  @PreAuthorize("hasRole('PROFESSIONAL')")
+  @PreAuthorize("hasRole('ROLE_PROFESSIONAL')")
   public ResponseEntity<SessionDTO> scheduleByProfessional(@RequestBody @Valid SessionDTO sessionDto) {
       SessionDTO createdSession = serviceService.scheduleSessionByProfessional(sessionDto);
       return ResponseEntity.status(HttpStatus.CREATED).body(createdSession);
   }
 
     @PostMapping("/{sessionId}/join-video")
-    @PreAuthorize("hasAnyRole('USER', 'PROFESSIONAL')") // Ensure only authenticated users can access
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_PROFESSIONAL')") // Ensure only authenticated users can access
     public ResponseEntity<ZoomSignatureResponse> joinVideoSession(@PathVariable Long sessionId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
         }
         CustomUserDetails currentUserDetails = (CustomUserDetails) authentication.getPrincipal();
-        Long currentUserId = currentUserDetails.getId();
+        Long currentUserId = currentUserDetails.getUser().getId();
 
         SessionDTO sessionDto = serviceService.getSessionById(sessionId); // Uses existing service method
         if (sessionDto == null) {
@@ -127,12 +129,12 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session entity could not be resolved from DTO");
         }
 
-
         if (session.getMode() != SessionMode.VIDEO) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Session is not a video session");
         }
 
         // Validate user is part of the session
+        log.info ("Session user: {}", session.getUser());
         Long clientUserId = session.getUser().getId();
         Long professionalUserId = session.getProfessional().getUser().getId();
 

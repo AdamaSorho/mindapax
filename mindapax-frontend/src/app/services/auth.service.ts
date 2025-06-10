@@ -125,6 +125,10 @@ export class AuthService {
     return decoded?.lastName || null;
   }
 
+  getUserEmail(): string | null {
+    return this.getUsername();
+  }
+
   getRoles(): string[] {
     const decoded = this.getDecodedAccessToken();
     return decoded?.roles || [];
