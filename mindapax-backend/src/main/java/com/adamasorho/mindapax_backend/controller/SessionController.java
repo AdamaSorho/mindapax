@@ -138,7 +138,10 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
         int zoomRole = isProfessional ? 1 : 0;
 
         // Use session ID as the meeting number for simplicity.
-        String meetingNumber = String.valueOf(sessionId);
+        if (session.getZoomMeetingId() == null || session.getZoomMeetingId().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zoom meeting ID is not configured for this session.");
+        }
+        String meetingNumber = session.getZoomMeetingId();
 
         String signature = zoomService.generateSignature(meetingNumber, zoomRole);
         String sdkKey = zoomService.getSdkKey();
