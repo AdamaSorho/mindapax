@@ -83,12 +83,12 @@ public class SessionController {
 public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
       @RequestParam Long userId,
       @RequestParam(required = false)
-      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime date,
       @RequestParam SessionTimeFilter filter,
       @RequestParam(required = false) SessionStatus status,
       @PageableDefault(size = 10) Pageable pageable) {
 
-  LocalDateTime effectiveDate = (date != null) ? date : LocalDateTime.now();
+  OffsetDateTime effectiveDate = (date != null) ? date : OffsetDateTime.now();
 
   Page<Session> sessions = serviceService.getSessionsByUserAndTime(userId, effectiveDate, filter, status, pageable);
   Page<SessionDTO> dtos = sessions.map(sessionMapper::toDTO);

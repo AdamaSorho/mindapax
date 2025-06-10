@@ -1,6 +1,6 @@
 package com.adamasorho.mindapax_backend.service;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -19,7 +19,7 @@ public interface SessionService {
     SessionDTO updateSessionStatus(Long id, SessionDTO dto);
     void deleteSession(Long id);
     Page<Session> getSessionsByUserAndTime(Long userId,
-    LocalDateTime date,
+    OffsetDateTime date,
     SessionTimeFilter filter,
     SessionStatus status,
     Pageable pageable);
