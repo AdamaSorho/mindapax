@@ -23,6 +23,8 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -82,7 +84,7 @@ class SessionServiceImplTests {
 
         sessionDTO = new SessionDTO();
         sessionDTO.setUserId(user.getId());
-        sessionDTO.setStartTime(LocalDateTime.now().plusHours(1).withNano(0)); // Remove nanos for easier comparison
+        sessionDTO.setStartTime(OffsetDateTime.now().plusHours(1).withNano(0)); // Remove nanos for easier comparison
         sessionDTO.setDurationMinutes(60); // Set duration instead of endTime
         sessionDTO.setMode(SessionMode.VIDEO);
         sessionDTO.setNotes("Test session notes");
@@ -92,7 +94,7 @@ class SessionServiceImplTests {
         session.setId(1L);
         session.setUser(user);
         session.setProfessional(professional);
-        session.setStartTime(sessionDTO.getStartTime());
+        session.setStartTime(sessionDTO.getStartTime()); // This will now be OffsetDateTime
         session.setDurationMinutes(sessionDTO.getDurationMinutes()); // Use duration
         session.setMode(sessionDTO.getMode());
         session.setNotes(sessionDTO.getNotes());
@@ -129,7 +131,7 @@ class SessionServiceImplTests {
         mappedDto.setId(1L); // Assuming ID is set by save
         mappedDto.setUserId(user.getId());
         mappedDto.setProfessionalId(professional.getId());
-        mappedDto.setStartTime(sessionDTO.getStartTime());
+        mappedDto.setStartTime(sessionDTO.getStartTime()); // This will now be OffsetDateTime
         mappedDto.setDurationMinutes(sessionDTO.getDurationMinutes()); // Use duration
         mappedDto.setMode(sessionDTO.getMode());
         mappedDto.setNotes(sessionDTO.getNotes());
@@ -235,7 +237,7 @@ class SessionServiceImplTests {
 
         SessionDTO dtoWithNullDuration = new SessionDTO();
         dtoWithNullDuration.setUserId(user.getId());
-        dtoWithNullDuration.setStartTime(LocalDateTime.now().plusHours(1));
+        dtoWithNullDuration.setStartTime(OffsetDateTime.now().plusHours(1));
         dtoWithNullDuration.setDurationMinutes(null); // Intentionally set to null
         dtoWithNullDuration.setMode(SessionMode.VIDEO);
 
@@ -301,5 +303,100 @@ class SessionServiceImplTests {
         verify(professionalRepository).findByUserEmail(professionalUser.getEmail());
         verify(userRepository).findById(nonExistentUserId);
         verify(sessionRepository, never()).save(any(Session.class)); // Save should not be reached if user not found
+    }
+
+    @Test
+    void testScheduleSessionWithDifferentOffsets() {
+        // Arrange
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(professionalUser.getEmail());
+
+        when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(user)); // Assume client user always found for simplicity
+
+        OffsetDateTime startTimeEST = OffsetDateTime.of(2023, 12, 1, 10, 0, 0, 0, ZoneOffset.ofHours(-5));
+        OffsetDateTime startTimePST = OffsetDateTime.of(2023, 12, 1, 7, 0, 0, 0, ZoneOffset.ofHours(-8));
+
+        SessionDTO dto1 = new SessionDTO();
+        dto1.setUserId(user.getId());
+        dto1.setStartTime(startTimeEST);
+        dto1.setDurationMinutes(60);
+        dto1.setMode(SessionMode.VIDEO);
+
+        SessionDTO dto2 = new SessionDTO();
+        dto2.setUserId(user.getId());
+        dto2.setStartTime(startTimePST);
+        dto2.setDurationMinutes(60);
+        dto2.setMode(SessionMode.VIDEO);
+
+        // Mock save to return the session passed, potentially with an ID
+        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> {
+            Session s = invocation.getArgument(0);
+            s.setId(System.currentTimeMillis()); // Assign a unique ID for differentiation if needed
+            return s;
+        });
+
+        // Mock mapper to return a DTO reflecting the saved session's state
+        when(sessionMapper.toDTO(any(Session.class))).thenAnswer(invocation -> {
+            Session s = invocation.getArgument(0);
+            SessionDTO resultDto = new SessionDTO();
+            resultDto.setId(s.getId());
+            resultDto.setStartTime(s.getStartTime());
+            // copy other relevant fields
+            return resultDto;
+        });
+
+        // Act
+        sessionService.scheduleSessionByProfessional(dto1);
+        sessionService.scheduleSessionByProfessional(dto2);
+
+        // Assert
+        ArgumentCaptor<Session> sessionCaptor = ArgumentCaptor.forClass(Session.class);
+        verify(sessionRepository, times(2)).save(sessionCaptor.capture());
+        List<Session> capturedSessions = sessionCaptor.getAllValues();
+
+        assertEquals(2, capturedSessions.size());
+        Session capturedSession1 = capturedSessions.get(0);
+        Session capturedSession2 = capturedSessions.get(1);
+
+        // Assert that start times represent the same instant
+        assertTrue(capturedSession1.getStartTime().isEqual(capturedSession2.getStartTime()),
+                "Start times should be equal despite different offsets.");
+        assertEquals(capturedSession1.getStartTime().toInstant(), capturedSession2.getStartTime().toInstant(),
+                "Start times should represent the same instant in time.");
+    }
+
+    @Test
+    void testGetSessionsByUserAndTime_FiltersCorrectlyWithOffsetDateTime() {
+        // Arrange
+        Long userId = 123L; // Example client user ID
+        OffsetDateTime queryDate = OffsetDateTime.of(2023, 12, 15, 12, 0, 0, 0, ZoneOffset.ofHours(-5)); // 12:00 PM EST
+
+        // Simulate a client user (not professional)
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        // Ensure authentication.getAuthorities() does not contain "ROLE_PROFESSIONAL"
+        // For simplicity, assume it's configured correctly or mock it explicitly if needed.
+        // when(authentication.getAuthorities()).thenReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+
+
+        // Mock repository calls
+        // For UPCOMING
+        sessionService.getSessionsByUserAndTime(userId, queryDate, com.adamasorho.mindapax_backend.dto.SessionTimeFilter.UPCOMING, null, org.springframework.data.domain.Pageable.unpaged());
+        // For PAST
+        sessionService.getSessionsByUserAndTime(userId, queryDate, com.adamasorho.mindapax_backend.dto.SessionTimeFilter.PAST, null, org.springframework.data.domain.Pageable.unpaged());
+
+
+        // Assert
+        ArgumentCaptor<OffsetDateTime> dateCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+
+        // Verify for UPCOMING
+        verify(sessionRepository).findByUserIdAndStartTimeGreaterThanEqual(eq(userId), dateCaptor.capture(), any(org.springframework.data.domain.Pageable.class));
+        assertTrue(queryDate.isEqual(dateCaptor.getValue()), "Query date for UPCOMING sessions should match.");
+
+        // Verify for PAST
+        verify(sessionRepository).findByUserIdAndStartTimeBefore(eq(userId), dateCaptor.capture(), any(org.springframework.data.domain.Pageable.class));
+        assertTrue(queryDate.isEqual(dateCaptor.getValue()), "Query date for PAST sessions should match.");
     }
 }
