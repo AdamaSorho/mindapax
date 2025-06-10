@@ -3,10 +3,10 @@ spring:
     name: mindapax-backend
 
   datasource:
-    url: jdbc:mysql://localhost:3306/mindapax_db?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${DB_NAME:mindapax_db}?useSSL=false&serverTimezone=UTC
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password:
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
 
   jpa:
     hibernate:
@@ -30,7 +30,7 @@ logging:
               annotation: DEBUG
 
 jwt:
-  secret: byzedcoachingsecretkey123hdt252tsayd456789012345678901234567890
+  secret: ${JWT_SECRET:byzedcoachingsecretkey123hdt252tsayd456789012345678901234567890}
   expiration: 86400000
 
 app:
@@ -42,5 +42,5 @@ app:
 
 # Zoom API Credentials (replace with actual credentials)
 zoom:
-  sdk_key: YOUR_ZOOM_SDK_KEY_MOCK
-  sdk_secret: YOUR_ZOOM_SDK_SECRET_MOCK
+  sdk_key: ${ZOOM_SDK_KEY:YOUR_ZOOM_SDK_KEY_MOCK}
+  sdk_secret: ${ZOOM_SDK_SECRET:YOUR_ZOOM_SDK_SECRET_MOCK}

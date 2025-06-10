@@ -75,27 +75,25 @@ export class ZoomMeetingComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadZoomSdkAndJoinMeeting(): void {
-    // Dynamically set the Zoom Web SDK resource path (points to the /lib folder within your assets)
-    // This path should correspond to where you copied the 'lib' folder from the Zoom SDK dist.
-    // ZoomMtg.setZoomJSLib('/assets/zoom-sdk/lib', '/av'); // Adjust path as needed
-
-    // ZoomMtg.preLoadWasm(); // Preload WebAssembly resources
-    // ZoomMtg.prepareWebSDK(); // Prepare the SDK
-
-    ZoomMtg.init({
-      leaveUrl: '/member/sessions', // URL to redirect to after leaving meeting. TODO: Make this more dynamic, e.g., back to session list or dashboard.
-      isSupportAV: true, // Enable audio/video
-      success: (success: any) => {
-        console.log('Zoom SDK initialized successfully:', success);
-        this.joinMeeting();
-      },
-      error: (error: any) => {
-        console.error('Zoom SDK initialization failed:', error);
-      },
+    document.getElementById('zmmtg-root')!.style.display = 'block';
+    this.ngZone.runOutsideAngular(() => {
+      ZoomMtg.init({
+        leaveUrl: '/member/sessions',
+        patchJsMedia: true,
+        leaveOnPageUnload: true,
+        success: (success: any) => {
+          console.log('Zoom SDK initialized successfully:', success);
+          this.joinMeeting();
+        },
+        error: (error: any) => {
+          console.error('Zoom SDK initialization failed:', error);
+        },
+      });
     });
   }
 
   joinMeeting(): void {
+    console.log('meeting number', this.meetingNumber);
     ZoomMtg.join({
       sdkKey: this.sdkKey,
       signature: this.signature,
@@ -107,7 +105,8 @@ export class ZoomMeetingComponent implements OnInit, OnDestroy, AfterViewInit {
       success: (success: any) => {
         console.log('Joined Zoom meeting successfully:', success);
         // Make the Zoom meeting UI visible if it was hidden
-        document.getElementById('zmmtg-root')!.style.display = 'block';
+        // document.getElementById('zmmtg-root')!.style.display = 'block';
+        console.log('Joined Zoom meeting successfully:', success);
       },
       error: (error: any) => {
         console.error('Error joining Zoom meeting:', error);
