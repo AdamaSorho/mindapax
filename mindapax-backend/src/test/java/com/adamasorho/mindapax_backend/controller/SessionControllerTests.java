@@ -31,6 +31,10 @@ import org.springframework.data.domain.Pageable;
 import com.adamasorho.mindapax_backend.dto.SessionTimeFilter;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.time.Duration;
+import org.springframework.data.domain.PageRequest;
 
 @WebMvcTest(SessionController.class)
 class SessionControllerTests {
@@ -177,5 +181,138 @@ class SessionControllerTests {
 
         assertEquals("testuser@example.com", userIdCaptor.getValue()); // Verify username from @WithMockUser
         assertEquals(parsedRequestDate, dateTimeCaptor.getValue());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser", roles = {"USER"})
+    void testGetSessionsByUser_WithUTCDateParameter() throws Exception {
+        // Arrange
+        String requestDateStr = "2023-12-01T15:00:00Z"; // UTC 'Z'
+        OffsetDateTime expectedDateTime = OffsetDateTime.parse(requestDateStr);
+
+        when(sessionService.getSessionsByUserAndTime(
+                any(String.class),
+                any(OffsetDateTime.class),
+                any(SessionTimeFilter.class),
+                any(), // status
+                any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0));
+
+        // Act
+        mockMvc.perform(get("/api/v1/sessions/by-user")
+                        .param("date", requestDateStr)
+                        // .param("filter", "UPCOMING") // Rely on controller default if any
+                        // .param("userId", "testuser") // Handled by @WithMockUser
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Assert
+        ArgumentCaptor<OffsetDateTime> dateTimeCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        ArgumentCaptor<String> userIdCaptor = ArgumentCaptor.forClass(String.class);
+
+        verify(sessionService).getSessionsByUserAndTime(
+                userIdCaptor.capture(),
+                dateTimeCaptor.capture(),
+                any(SessionTimeFilter.class), // Or specific default like UPCOMING
+                any(), // status
+                any(Pageable.class)
+        );
+        assertEquals("testuser", userIdCaptor.getValue());
+        assertTrue(expectedDateTime.isEqual(dateTimeCaptor.getValue()),
+                "Captured OffsetDateTime should be equal to the parsed UTC input string.");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser", roles = {"USER"})
+    void testGetSessionsByUser_WithDateParameterWithoutOffset() throws Exception {
+        // Arrange
+        String requestDateStr = "2023-12-01T10:00:00"; // No offset
+        // Spring's @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) for OffsetDateTime
+        // when no offset is provided, typically uses the system's default zone offset.
+        // For testing consistency, we can't rely on a specific system default.
+        // However, the parsing mechanism of OffsetDateTime.parse(text) itself would throw
+        // DateTimeParseException if no offset found and no default can be inferred.
+        // The @RequestParam binding with ISO.DATE_TIME might behave differently.
+        // This test will observe Spring's behavior.
+        // Let's assume for now Spring might parse it by attaching system's default offset.
+        // Or it might fail, or it might parse as LocalDateTime then convert with default offset.
+
+        when(sessionService.getSessionsByUserAndTime(
+                any(String.class),
+                any(OffsetDateTime.class),
+                any(SessionTimeFilter.class),
+                any(),
+                any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0));
+
+        // Act
+        mockMvc.perform(get("/api/v1/sessions/by-user")
+                        .param("date", requestDateStr)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Assert
+        ArgumentCaptor<OffsetDateTime> dateTimeCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        verify(sessionService).getSessionsByUserAndTime(
+                anyString(),
+                dateTimeCaptor.capture(),
+                any(SessionTimeFilter.class),
+                any(),
+                any(Pageable.class)
+        );
+
+        OffsetDateTime capturedDateTime = dateTimeCaptor.getValue();
+        // The key is what OffsetDateTime Spring creates from "2023-12-01T10:00:00".
+        // It *should* be parsed as a LocalDateTime and then the system default offset applied.
+        // For example, if system default is UTC, it would be 2023-12-01T10:00:00Z.
+        // If system default is -05:00, it would be 2023-12-01T10:00:00-05:00.
+        // We can check that the local part matches.
+        assertEquals(10, capturedDateTime.getHour());
+        assertEquals(0, capturedDateTime.getMinute());
+        assertEquals(2023, capturedDateTime.getYear());
+        assertEquals(12, capturedDateTime.getMonthValue());
+        assertEquals(1, capturedDateTime.getDayOfMonth());
+        // The offset itself would depend on the test environment's system zone.
+        // This assertion is mainly to confirm it *was* parsed.
+        assertNotNull(capturedDateTime.getOffset());
+    }
+
+
+    @Test
+    @WithMockUser(username = "testuser", roles = {"USER"})
+    void testGetSessionsByUser_WithNoDateParameter() throws Exception {
+        // Arrange
+        when(sessionService.getSessionsByUserAndTime(
+                any(String.class),
+                any(OffsetDateTime.class),
+                any(SessionTimeFilter.class),
+                any(), // status
+                any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0));
+
+        // Act
+        mockMvc.perform(get("/api/v1/sessions/by-user")
+                        // No "date" parameter
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Assert
+        ArgumentCaptor<OffsetDateTime> dateTimeCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        ArgumentCaptor<String> userIdCaptor = ArgumentCaptor.forClass(String.class);
+
+        verify(sessionService).getSessionsByUserAndTime(
+                userIdCaptor.capture(),
+                dateTimeCaptor.capture(),
+                any(SessionTimeFilter.class),
+                any(), // status
+                any(Pageable.class)
+        );
+
+        OffsetDateTime capturedEffectiveDate = dateTimeCaptor.getValue();
+        assertEquals("testuser", userIdCaptor.getValue());
+        assertNotNull(capturedEffectiveDate);
+        // Check if the captured date is very recent (e.g., within the last 5 seconds)
+        assertTrue(Duration.between(capturedEffectiveDate, OffsetDateTime.now()).abs().getSeconds() < 5,
+                "Captured OffsetDateTime should be close to OffsetDateTime.now().");
     }
 }
