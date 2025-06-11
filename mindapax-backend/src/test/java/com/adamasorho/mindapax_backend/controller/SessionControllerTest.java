@@ -76,6 +76,7 @@ public class SessionControllerTest {
         videoSession.setUser(clientUser);
         videoSession.setProfessional(professional);
         videoSession.setMode(SessionMode.VIDEO);
+        videoSession.setZoomMeetingId("defaultZoomId123"); // Added default zoomMeetingId
 
         // videoSessionDTO is no longer directly needed in setUp for these tests after controller changes
         // videoSessionDTO = new SessionDTO();
@@ -125,19 +126,24 @@ public class SessionControllerTest {
 
 
         mockSecurityContext(clientUser, UserRole.USER);
+        // videoSession already has zoomMeetingId set in setUp or test-specific setup
+        videoSession.setZoomMeetingId("clientZoomSuccess123");
 
-        when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession); // Use new service method
+
+        when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession);
         when(zoomService.getSdkKey()).thenReturn("testSdkKey");
-        when(zoomService.generateSignature(String.valueOf(videoSession.getId()), 0)).thenReturn("testSignature");
+        // Use zoomMeetingId from the session object
+        when(zoomService.generateSignature(eq(videoSession.getZoomMeetingId()), eq(0))).thenReturn("testSignature");
 
         ResponseEntity<ZoomSignatureResponse> response = sessionController.joinVideoSession(videoSession.getId());
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("testSdkKey", response.getBody().getApiKey());
-        assertEquals(String.valueOf(videoSession.getId()), response.getBody().getMeetingNumber());
+        assertEquals(videoSession.getZoomMeetingId(), response.getBody().getMeetingNumber()); // Verify zoomMeetingId
         assertEquals("testSignature", response.getBody().getSignature());
-        verify(sessionService).getSessionEntityById(videoSession.getId()); // Verify the new method call
+        verify(sessionService).getSessionEntityById(videoSession.getId());
+        verify(zoomService).generateSignature(eq(videoSession.getZoomMeetingId()), eq(0)); // Verify correct meetingNumber used
     }
 
     @Test
@@ -152,18 +158,51 @@ public class SessionControllerTest {
         videoSession = new Session(); videoSession.setId(100L); videoSession.setUser(clientUser); videoSession.setProfessional(professional); videoSession.setMode(SessionMode.VIDEO);
 
         mockSecurityContext(professionalUser, UserRole.PROFESSIONAL);
+        // videoSession already has zoomMeetingId set in setUp or test-specific setup
+        videoSession.setZoomMeetingId("profZoomSuccess456");
 
-        when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession); // Use new service method
+
+        when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession);
         when(zoomService.getSdkKey()).thenReturn("testSdkKey");
-        when(zoomService.generateSignature(String.valueOf(videoSession.getId()), 1)).thenReturn("testSignatureProf");
+        // Use zoomMeetingId from the session object
+        when(zoomService.generateSignature(eq(videoSession.getZoomMeetingId()), eq(1))).thenReturn("testSignatureProf");
 
         ResponseEntity<ZoomSignatureResponse> response = sessionController.joinVideoSession(videoSession.getId());
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("testSdkKey", response.getBody().getApiKey());
+        assertEquals(videoSession.getZoomMeetingId(), response.getBody().getMeetingNumber()); // Verify zoomMeetingId
         assertEquals("testSignatureProf", response.getBody().getSignature());
-        verify(sessionService).getSessionEntityById(videoSession.getId()); // Verify the new method call
+        verify(sessionService).getSessionEntityById(videoSession.getId());
+        verify(zoomService).generateSignature(eq(videoSession.getZoomMeetingId()), eq(1)); // Verify correct meetingNumber used
+    }
+
+    @Test
+    void joinVideoSession_nullZoomMeetingId_throwsBadRequest() {
+        clientUser = new User(); clientUser.setId(1L); clientUser.setEmail("client@example.com"); clientUser.setRole(UserRole.USER);
+        professionalUser = new User(); professionalUser.setId(2L); professionalUser.setEmail("prof@example.com"); professionalUser.setRole(UserRole.PROFESSIONAL);
+        professional = new Professional(); professional.setId(2L); professional.setUser(professionalUser);
+
+        videoSession = new Session();
+        videoSession.setId(100L);
+        videoSession.setUser(clientUser);
+        videoSession.setProfessional(professional);
+        videoSession.setMode(SessionMode.VIDEO);
+        videoSession.setZoomMeetingId(null); // Explicitly set to null
+
+        mockSecurityContext(clientUser, UserRole.USER);
+
+        when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+            sessionController.joinVideoSession(videoSession.getId());
+        });
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertTrue(exception.getReason().contains("Zoom Meeting ID is missing for this session"));
+        verify(sessionService).getSessionEntityById(videoSession.getId());
+        verify(zoomService, never()).generateSignature(anyString(), anyInt()); // Ensure signature generation was not attempted
     }
 
     @Test
@@ -233,6 +272,14 @@ public class SessionControllerTest {
     @Test
     void joinVideoSession_unauthenticatedUser() {
         SecurityContextHolder.getContext().setAuthentication(null); // Simulate unauthenticated
+        // videoSession might not be fully initialized here if setUp relies on other mocks that aren't called
+        // However, the primary check here is for authentication, which happens before session loading.
+        // For robustness, ensure videoSession.getId() is valid if any preliminary controller logic uses it,
+        // though for this specific test, it might not be strictly necessary if authentication check is early.
+        // Let's assume videoSession.getId() is called for consistency in the controller method signature.
+        // We can use a default ID like 100L as used elsewhere.
+        final Long testSessionId = 100L;
+
 
         // Note: @PreAuthorize might handle this before method execution,
         // leading to a Spring Security exception rather than our ResponseStatusException.
@@ -243,7 +290,7 @@ public class SessionControllerTest {
 
         // The controller code itself throws ResponseStatusException if auth is null or principal isn't CustomUserDetails
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
-             sessionController.joinVideoSession(videoSession.getId());
+             sessionController.joinVideoSession(testSessionId); // Use testSessionId
         });
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
     }

@@ -67,6 +67,7 @@ public class Professional {
     private boolean verified = false;
 
     private String rejectionNote;
+    private String zoomMeetingId;
     
     @CreationTimestamp
     private LocalDateTime createdAt;
