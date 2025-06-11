@@ -41,10 +41,14 @@ class ProfessionalServiceImplTests {
     @Mock
     private UserMapper userMapper;
 
+    @Mock // Added ZoomService mock
+    private ZoomService zoomService;
+
     @InjectMocks
     private ProfessionalServiceImpl professionalService;
 
     private Professional professional;
+    private User professionalUser; // Added for professional's user details
     private User connectedUser1;
     private UserDTO connectedUserDTO1;
     private Connection connection1;
@@ -52,9 +56,16 @@ class ProfessionalServiceImplTests {
 
     @BeforeEach
     void setUp() {
+        professionalUser = new User(); // Initialize professional's user
+        professionalUser.setId(1L);
+        professionalUser.setFirstName("Test");
+        professionalUser.setLastName("Professional");
+
         professional = new Professional();
         professional.setId(1L);
-        // professional.setUser(...); // Not strictly needed for these tests unless email lookup is also part of this service method
+        professional.setUser(professionalUser); // Set user for professional
+        professional.setStatus(com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.PENDING); // Default status
+        professional.setZoomMeetingId(null); // Default zoomMeetingId
 
         connectedUser1 = new User();
         connectedUser1.setId(10L);
@@ -137,5 +148,187 @@ class ProfessionalServiceImplTests {
         verify(professionalRepository).findById(professional.getId());
         verify(connectionRepository).findByProfessionalAndStatus(professional, ConnectionStatus.ACCEPTED, pageable);
         verify(userMapper, never()).toDTO(any(User.class));
+    }
+
+    // --- Tests for updateProfessionalStatus ---
+
+    @Test
+    void updateProfessionalStatus_toActive_zoomIdNull_createsZoomMeeting() {
+        // Arrange
+        Long professionalId = professional.getId();
+        com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus newStatus = com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.ACTIVE;
+        professional.setStatus(com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.PENDING); // Ensure initial status is not ACTIVE
+        professional.setZoomMeetingId(null);
+        String expectedZoomMeetingId = "zoom123";
+        java.util.Set<org.springframework.security.core.GrantedAuthority> authorities = java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+
+
+        when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
+        when(zoomService.createPermanentMeetingForProfessional(professionalUser.getFirstName() + " " + professionalUser.getLastName()))
+                .thenReturn(expectedZoomMeetingId);
+        when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        professionalService.updateProfessionalStatus(professionalId, newStatus, null, authorities);
+
+        // Assert
+        ArgumentCaptor<Professional> professionalCaptor = ArgumentCaptor.forClass(Professional.class);
+        verify(professionalRepository).save(professionalCaptor.capture());
+        Professional savedProfessional = professionalCaptor.getValue();
+
+        assertEquals(newStatus, savedProfessional.getStatus());
+        assertEquals(expectedZoomMeetingId, savedProfessional.getZoomMeetingId());
+        assertNotNull(savedProfessional.getStatusUpdatedAt());
+        verify(zoomService, times(1)).createPermanentMeetingForProfessional(anyString());
+    }
+
+    @Test
+    void updateProfessionalStatus_toActive_zoomIdExists_doesNotCreateZoomMeeting() {
+        // Arrange
+        Long professionalId = professional.getId();
+        com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus newStatus = com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.ACTIVE;
+        professional.setStatus(com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.PENDING);
+        professional.setZoomMeetingId("existingZoomId");
+        java.util.Set<org.springframework.security.core.GrantedAuthority> authorities = java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+
+
+        when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
+        when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        professionalService.updateProfessionalStatus(professionalId, newStatus, null, authorities);
+
+        // Assert
+        ArgumentCaptor<Professional> professionalCaptor = ArgumentCaptor.forClass(Professional.class);
+        verify(professionalRepository).save(professionalCaptor.capture());
+        Professional savedProfessional = professionalCaptor.getValue();
+
+        assertEquals(newStatus, savedProfessional.getStatus());
+        assertEquals("existingZoomId", savedProfessional.getZoomMeetingId()); // Should remain unchanged
+        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString());
+    }
+
+    @Test
+    void updateProfessionalStatus_toActive_alreadyActive_zoomIdNull_doesNotCreateZoomMeeting() {
+        // Arrange
+        Long professionalId = professional.getId();
+        com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus newStatus = com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.ACTIVE;
+        professional.setStatus(com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.ACTIVE); // Already ACTIVE
+        professional.setZoomMeetingId(null); // Zoom ID is null
+        java.util.Set<org.springframework.security.core.GrantedAuthority> authorities = java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+
+        when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
+        when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        professionalService.updateProfessionalStatus(professionalId, newStatus, null, authorities);
+
+        // Assert
+        ArgumentCaptor<Professional> professionalCaptor = ArgumentCaptor.forClass(Professional.class);
+        verify(professionalRepository).save(professionalCaptor.capture());
+        Professional savedProfessional = professionalCaptor.getValue();
+
+        assertEquals(newStatus, savedProfessional.getStatus());
+        assertNull(savedProfessional.getZoomMeetingId()); // Should remain null
+        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString());
+    }
+
+    @Test
+    void updateProfessionalStatus_toActive_zoomServiceThrowsException_zoomIdNull() {
+        // Arrange
+        Long professionalId = professional.getId();
+        com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus newStatus = com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.ACTIVE;
+        professional.setStatus(com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.PENDING);
+        professional.setZoomMeetingId(null);
+        java.util.Set<org.springframework.security.core.GrantedAuthority> authorities = java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+
+
+        when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
+        when(zoomService.createPermanentMeetingForProfessional(anyString())).thenThrow(new RuntimeException("Zoom API error"));
+        when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        professionalService.updateProfessionalStatus(professionalId, newStatus, null, authorities);
+
+        // Assert
+        ArgumentCaptor<Professional> professionalCaptor = ArgumentCaptor.forClass(Professional.class);
+        verify(professionalRepository).save(professionalCaptor.capture());
+        Professional savedProfessional = professionalCaptor.getValue();
+
+        assertEquals(newStatus, savedProfessional.getStatus());
+        assertNull(savedProfessional.getZoomMeetingId()); // Should be null as Zoom call failed
+        verify(zoomService, times(1)).createPermanentMeetingForProfessional(anyString());
+    }
+
+    @Test
+    void updateProfessionalStatus_toRejected_doesNotCreateZoomMeeting() {
+        // Arrange
+        Long professionalId = professional.getId();
+        com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus newStatus = com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.REJECTED;
+        String rejectionNote = "Not qualified";
+        professional.setStatus(com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.PENDING);
+        java.util.Set<org.springframework.security.core.GrantedAuthority> authorities = java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+
+
+        when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
+        when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        professionalService.updateProfessionalStatus(professionalId, newStatus, rejectionNote, authorities);
+
+        // Assert
+        ArgumentCaptor<Professional> professionalCaptor = ArgumentCaptor.forClass(Professional.class);
+        verify(professionalRepository).save(professionalCaptor.capture());
+        Professional savedProfessional = professionalCaptor.getValue();
+
+        assertEquals(newStatus, savedProfessional.getStatus());
+        assertEquals(rejectionNote, savedProfessional.getRejectionNote());
+        assertNull(savedProfessional.getZoomMeetingId()); // Should remain unchanged (null in this setup)
+        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString());
+    }
+
+    @Test
+    void updateProfessionalStatus_toActive_nonAdmin_throwsAccessDenied() {
+        // Arrange
+        Long professionalId = professional.getId();
+        com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus newStatus = com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.ACTIVE;
+        java.util.Set<org.springframework.security.core.GrantedAuthority> authorities = java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")); // Non-admin
+
+        // No need to mock repository or zoomService as it should fail before that
+
+        // Act & Assert
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
+            professionalService.updateProfessionalStatus(professionalId, newStatus, null, authorities);
+        });
+        assertEquals("Only ADMIN can set ACTIVE status.", exception.getMessage());
+        verify(professionalRepository, never()).findById(anyLong());
+        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString());
+        verify(professionalRepository, never()).save(any(Professional.class));
+    }
+
+     @Test
+    void updateProfessionalStatus_clearRejectionNoteWhenNotRejectedOrPending() {
+        // Arrange
+        Long professionalId = professional.getId();
+        professional.setStatus(com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.REJECTED); // Start with a status that has a rejection note
+        professional.setRejectionNote("Initial note");
+        com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus newStatus = com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.ACTIVE;
+        java.util.Set<org.springframework.security.core.GrantedAuthority> authorities = java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+
+
+        when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
+        when(zoomService.createPermanentMeetingForProfessional(anyString())).thenReturn("zoom789"); // Assume zoom creation succeeds
+        when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        professionalService.updateProfessionalStatus(professionalId, newStatus, "This note should be cleared", authorities);
+
+        // Assert
+        ArgumentCaptor<Professional> professionalCaptor = ArgumentCaptor.forClass(Professional.class);
+        verify(professionalRepository).save(professionalCaptor.capture());
+        Professional savedProfessional = professionalCaptor.getValue();
+
+        assertEquals(newStatus, savedProfessional.getStatus());
+        assertNull(savedProfessional.getRejectionNote(), "Rejection note should be cleared for ACTIVE status");
     }
 }
