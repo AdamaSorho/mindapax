@@ -50,4 +50,5 @@ public class Session {
     private String notes; // Notes can remain optional/nullable
 
     private String zoomMeetingId;
+    private String zoomMeetingPassword;
 }

@@ -77,7 +77,8 @@ class SessionServiceImplTests {
         professional.setId(1L);
         professional.setUser(professionalUser);
         professional.setSpecialization(Specialization.MENTAL_HEALTH);
-        // professional.setZoomMeetingId(null); // Set in individual tests for clarity
+        // professional.setZoomMeetingId(null); // Set in individual tests
+        // professional.setZoomMeetingPassword(null); // Set in individual tests
 
         user = new User();
         user.setId(2L);
@@ -287,8 +288,10 @@ class SessionServiceImplTests {
     void scheduleSessionByProfessional_videoMode_professionalHasZoomId_setsSessionZoomId() {
         // Arrange
         professional.setZoomMeetingId("profZoomId789");
+        professional.setZoomMeetingPassword("profPassword123"); // Set professional's password
         sessionDTO.setMode(SessionMode.VIDEO);
-        sessionDTO.setZoomMeetingId(null); // Ensure DTO does not provide it, to test professional's ID usage
+        sessionDTO.setZoomMeetingId(null); // Ensure DTO does not provide it
+        sessionDTO.setZoomMeetingPassword(null); // Ensure DTO does not provide it
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getName()).thenReturn(professionalUser.getEmail());
@@ -297,8 +300,9 @@ class SessionServiceImplTests {
         when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SessionDTO mappedDto = new SessionDTO(); // DTO returned by mapper
-        // This DTO should reflect the session state AFTER professional's zoomId is copied
+        // This DTO should reflect the session state AFTER professional's zoomId and password are copied
         mappedDto.setZoomMeetingId(professional.getZoomMeetingId());
+        mappedDto.setZoomMeetingPassword(professional.getZoomMeetingPassword());
         // ... copy other relevant fields for the mapped DTO ...
         mappedDto.setId(4L);
         mappedDto.setUserId(user.getId());
@@ -319,17 +323,21 @@ class SessionServiceImplTests {
         Session capturedSession = sessionCaptor.getValue();
 
         assertEquals("profZoomId789", capturedSession.getZoomMeetingId());
+        assertEquals("profPassword123", capturedSession.getZoomMeetingPassword()); // Verify password
         assertEquals(SessionMode.VIDEO, capturedSession.getMode());
         assertNotNull(resultDTO);
         assertEquals("profZoomId789", resultDTO.getZoomMeetingId());
+        assertEquals("profPassword123", resultDTO.getZoomMeetingPassword());
     }
 
     @Test
-    void scheduleSessionByProfessional_videoMode_professionalZoomIdNull_sessionZoomIdNull() {
+    void scheduleSessionByProfessional_videoMode_professionalZoomId_noPassword_sessionPasswordNull() {
         // Arrange
-        professional.setZoomMeetingId(null); // Professional has no Zoom ID
+        professional.setZoomMeetingId("profZoomIdOnly789");
+        professional.setZoomMeetingPassword(null); // Professional has Zoom ID but no password
         sessionDTO.setMode(SessionMode.VIDEO);
-        sessionDTO.setZoomMeetingId("thisShouldBeIgnored"); // DTO has one, but it should be ignored for VIDEO mode if prof's is null
+        sessionDTO.setZoomMeetingId(null);
+        sessionDTO.setZoomMeetingPassword(null);
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getName()).thenReturn(professionalUser.getEmail());
@@ -341,6 +349,51 @@ class SessionServiceImplTests {
         mappedDto.setZoomMeetingId(null); // Expect null because professional's ID is null
         // ... copy other relevant fields for the mapped DTO ...
          mappedDto.setId(5L);
+        mappedDto.setZoomMeetingId(professional.getZoomMeetingId()); // ID is copied
+        mappedDto.setZoomMeetingPassword(null); // Password remains null
+        mappedDto.setUserId(user.getId());
+        mappedDto.setProfessionalId(professional.getId());
+        mappedDto.setStartTime(sessionDTO.getStartTime());
+        mappedDto.setDurationMinutes(sessionDTO.getDurationMinutes());
+        mappedDto.setMode(SessionMode.VIDEO);
+        mappedDto.setStatus(SessionStatus.SCHEDULED);
+        when(sessionMapper.toDTO(any(Session.class))).thenReturn(mappedDto);
+
+        // Act
+        SessionDTO resultDTO = sessionService.scheduleSessionByProfessional(sessionDTO);
+
+        // Assert
+        ArgumentCaptor<Session> sessionCaptor = ArgumentCaptor.forClass(Session.class);
+        verify(sessionRepository).save(sessionCaptor.capture());
+        Session capturedSession = sessionCaptor.getValue();
+
+        assertEquals("profZoomIdOnly789", capturedSession.getZoomMeetingId());
+        assertNull(capturedSession.getZoomMeetingPassword(), "Session password should be null as professional's password was null");
+        assertNotNull(resultDTO);
+        assertEquals("profZoomIdOnly789", resultDTO.getZoomMeetingId());
+        assertNull(resultDTO.getZoomMeetingPassword());
+    }
+
+    @Test
+    void scheduleSessionByProfessional_videoMode_professionalZoomIdNull_sessionZoomIdAndPasswordNull() {
+        // Arrange
+        professional.setZoomMeetingId(null); // Professional has no Zoom ID
+        professional.setZoomMeetingPassword(null);
+        sessionDTO.setMode(SessionMode.VIDEO);
+        sessionDTO.setZoomMeetingId("thisShouldBeIgnored");
+        sessionDTO.setZoomMeetingPassword("thisAlsoIgnored");
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn(professionalUser.getEmail());
+        when(professionalRepository.findByUserEmail(professionalUser.getEmail())).thenReturn(Optional.of(professional));
+        when(userRepository.findById(sessionDTO.getUserId())).thenReturn(Optional.of(user));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SessionDTO mappedDto = new SessionDTO();
+        mappedDto.setZoomMeetingId(null);
+        mappedDto.setZoomMeetingPassword(null);
+        // ... copy other relevant fields ...
+         mappedDto.setId(6L);
         mappedDto.setUserId(user.getId());
         mappedDto.setProfessionalId(professional.getId());
         mappedDto.setStartTime(sessionDTO.getStartTime());
@@ -358,16 +411,20 @@ class SessionServiceImplTests {
         Session capturedSession = sessionCaptor.getValue();
 
         assertNull(capturedSession.getZoomMeetingId());
+        assertNull(capturedSession.getZoomMeetingPassword());
         assertNotNull(resultDTO);
         assertNull(resultDTO.getZoomMeetingId());
+        assertNull(resultDTO.getZoomMeetingPassword());
     }
 
     @Test
     void scheduleSessionByProfessional_chatMode_professionalHasZoomId_sessionZoomIdNullOrFromDTO() {
         // Arrange
         professional.setZoomMeetingId("profZoomIdChat");
+        professional.setZoomMeetingPassword("profPasswordChat"); // Professional has password
         sessionDTO.setMode(SessionMode.CHAT); // Non-VIDEO mode
         sessionDTO.setZoomMeetingId("dtoZoomForChat"); // DTO might have its own, which should be preserved
+        sessionDTO.setZoomMeetingPassword("dtoPasswordForChat");
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
@@ -402,7 +459,18 @@ class SessionServiceImplTests {
 
         // Assertions on the returned DTO
         assertNotNull(resultDTO);
-        assertNull(resultDTO.getZoomMeetingId());
+        // For CHAT mode, the DTO's values (if mapped by mapper) or null (if not explicitly mapped from DTO) should be used.
+        // The new logic for copying from professional only applies to VIDEO mode.
+        // Assuming mapper passes through DTO's zoomId and password if they exist on SessionDTO and Session entity.
+        // The current SessionDTO does not have zoomMeetingPassword, so it would be null unless mapper has other source.
+        // For this test, we'll assert based on the DTO provided to scheduleSessionByProfessional if it was expected to pass through.
+        // However, the new logic specifically DOES NOT copy professional's zoom details for CHAT mode.
+        // So, if DTO had a zoomId, it would be on the session. If DTO had password, it would too.
+        // Let's assume the mappedDTO reflects what would happen if these came from the DTO.
+        // The key is that professional's "profZoomIdChat" and "profPasswordChat" are NOT used.
+        assertEquals("dtoZoomForChat", resultDTO.getZoomMeetingId()); // From DTO as mode is CHAT
+        assertEquals("dtoPasswordForChat", resultDTO.getZoomMeetingPassword()); // From DTO
+
 
         // Verify interactions and capture the saved session
         ArgumentCaptor<Session> sessionCaptor = ArgumentCaptor.forClass(Session.class);
@@ -410,7 +478,8 @@ class SessionServiceImplTests {
         Session capturedSession = sessionCaptor.getValue();
 
         // Assertions on the captured Session entity
-        assertNull(capturedSession.getZoomMeetingId());
+        assertEquals("dtoZoomForChat", capturedSession.getZoomMeetingId()); // From DTO
+        assertEquals("dtoPasswordForChat", capturedSession.getZoomMeetingPassword()); // From DTO
         assertEquals(sessionDTO.getStartTime(), capturedSession.getStartTime());
         assertEquals(sessionDTO.getDurationMinutes(), capturedSession.getDurationMinutes());
         assertEquals(SessionMode.CHAT, capturedSession.getMode());

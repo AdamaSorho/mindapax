@@ -145,7 +145,8 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
 
         String signature = zoomService.generateSignature(meetingNumber, zoomRole);
         String sdkKey = zoomService.getSdkKey();
+        String meetingPassword = session.getZoomMeetingPassword(); // This might be null if not set
 
-        return ResponseEntity.ok(new ZoomSignatureResponse(sdkKey, meetingNumber, signature));
+        return ResponseEntity.ok(new ZoomSignatureResponse(sdkKey, meetingNumber, signature, meetingPassword));
     }
 }
