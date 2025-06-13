@@ -10,13 +10,14 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { ZoomMtg } from '@zoom/meetingsdk';
+import ZoomMtgEmbedded from '@zoom/meetingsdk/embedded';
 
 @Component({
   selector: 'app-zoom-meeting',
   templateUrl: './zoom-meeting.component.html',
   styleUrls: ['./zoom-meeting.component.css'],
 })
-export class ZoomMeetingComponent implements OnInit, OnDestroy, AfterViewInit {
+export class ZoomMeetingComponent implements OnInit {
   // These will be passed via route query parameters or state
   // Or, ideally, fetched securely if not passed via route.
   // For this implementation, we'll use route snapshot query params.
@@ -28,21 +29,16 @@ export class ZoomMeetingComponent implements OnInit, OnDestroy, AfterViewInit {
   passWord = ''; // Zoom Meeting Password, if any. Not used in JWT auth usually for joining.
   role = 0; // 0 for attendee, 1 for host. Passed in signature, but SDK might use it.
 
-  private isBrowser: boolean;
+  client = ZoomMtgEmbedded.createClient();
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private ngZone: NgZone,
     @Inject(PLATFORM_ID) platformId: Object
-  ) {
-    this.isBrowser = isPlatformBrowser(platformId);
-  }
+  ) {}
 
   ngOnInit(): void {
-    if (!this.isBrowser) {
-      return;
-    }
     // Retrieve parameters from route query params
     this.route.queryParams.subscribe((params) => {
       this.sdkKey = params['sdkKey'];
@@ -50,7 +46,7 @@ export class ZoomMeetingComponent implements OnInit, OnDestroy, AfterViewInit {
       this.signature = params['signature'];
       this.userName = params['userName'] || 'Mindapax User'; // TODO: Get from AuthService
       this.userEmail = params['userEmail'] || ''; // TODO: Get from AuthService (optional for some SDK setups)
-      // this.passWord = params['passWord'] || ''; // If you use meeting passwords
+      this.passWord = params['passWord'] || ''; // If you use meeting passwords
 
       if (!this.sdkKey || !this.meetingNumber || !this.signature) {
         console.error('Zoom meeting parameters are missing!');
@@ -59,37 +55,59 @@ export class ZoomMeetingComponent implements OnInit, OnDestroy, AfterViewInit {
         return;
       }
     });
-  }
-
-  ngAfterViewInit(): void {
-    if (!this.isBrowser) {
-      return;
-    }
-    if (this.sdkKey && this.meetingNumber && this.signature) {
-      this.loadZoomSdkAndJoinMeeting();
-    } else {
-      console.error(
-        'Cannot join Zoom meeting due to missing parameters in ngAfterViewInit.'
-      );
-    }
+    this.loadZoomSdkAndJoinMeeting();
   }
 
   loadZoomSdkAndJoinMeeting(): void {
-    document.getElementById('zmmtg-root')!.style.display = 'block';
+    // document.getElementById('zmmtg-root')!.style.display = 'block';
+    let meetingSdkElement = document.getElementById('zmmtg-root') ?? undefined;
+
     this.ngZone.runOutsideAngular(() => {
-      ZoomMtg.init({
-        leaveUrl: '/member/sessions',
-        patchJsMedia: true,
-        leaveOnPageUnload: true,
-        success: (success: any) => {
-          console.log('Zoom SDK initialized successfully:', success);
-          this.joinMeeting();
-        },
-        error: (error: any) => {
-          console.error('Zoom SDK initialization failed:', error);
-        },
-      });
+      this.client
+        .init({
+          zoomAppRoot: meetingSdkElement,
+          language: 'en-US',
+          patchJsMedia: true,
+          leaveOnPageUnload: true,
+        })
+        .then(() => {
+          this.client.join({
+            sdkKey: this.sdkKey,
+            signature: this.signature,
+            meetingNumber: this.meetingNumber,
+            userName: this.userName,
+            userEmail: this.userEmail, // Optional: email of the user
+            password: this.passWord,
+            // role: this.role, // Role is part of signature, not typically set here for JWT
+            success: (success: any) => {
+              console.log('Joined Zoom meeting successfully:', success);
+              // Make the Zoom meeting UI visible if it was hidden
+              // document.getElementById('zmmtg-root')!.style.display = 'block';
+              console.log('Joined Zoom meeting successfully:', success);
+            },
+            error: (error: any) => {
+              console.error('Error joining Zoom meeting:', error);
+              // Handle error, e.g., show message to user, navigate away
+              // this.router.navigate(['/sessions'], { queryParams: { error: 'join_failed' } });
+            },
+          });
+        });
     });
+
+    // this.ngZone.runOutsideAngular(() => {
+    //   ZoomMtg.init({
+    //     leaveUrl: '/member/sessions',
+    //     patchJsMedia: true,
+    //     leaveOnPageUnload: true,
+    //     success: (success: any) => {
+    //       console.log('Zoom SDK initialized successfully:', success);
+    //       this.joinMeeting();
+    //     },
+    //     error: (error: any) => {
+    //       console.error('Zoom SDK initialization failed:', error);
+    //     },
+    //   });
+    // });
   }
 
   joinMeeting(): void {
@@ -114,25 +132,5 @@ export class ZoomMeetingComponent implements OnInit, OnDestroy, AfterViewInit {
         // this.router.navigate(['/sessions'], { queryParams: { error: 'join_failed' } });
       },
     });
-  }
-
-  ngOnDestroy(): void {
-    if (this.isBrowser && typeof ZoomMtg !== 'undefined' && ZoomMtg) {
-      ZoomMtg.inMeetingServiceListener('onMeetingStatus', (status: number) => {
-        console.log('Meeting Status:', status);
-        // Handle status changes here
-        if (status === 3 || status === 2) {
-          ZoomMtg.leaveMeeting({});
-        }
-      });
-      // // Check if in a meeting before trying to leave
-      // const meetingStatus = ZoomMtg.getMeetingStatus();
-      // // MEETING_STATUS_IDLE = 0, MEETING_STATUS_CONNECTING = 1, MEETING_STATUS_WAITINGFORHOST = 2,
-      // // MEETING_STATUS_INMEETING = 3, MEETING_STATUS_RECONNECTING = 4
-      // if (meetingStatus === 3 || meetingStatus === 2) {
-      //   ZoomMtg.leaveMeeting({});
-      //   console.log('Left Zoom meeting on component destroy.');
-      // }
-    }
   }
 }

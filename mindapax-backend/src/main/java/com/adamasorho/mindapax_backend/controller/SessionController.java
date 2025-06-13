@@ -123,7 +123,6 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
         }
 
         // Validate user is part of the session
-        log.info ("Session user: {}", session.getUser());
         Long clientUserId = session.getUser().getId();
         Long professionalUserId = session.getProfessional().getUser().getId();
 
