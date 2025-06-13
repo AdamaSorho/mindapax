@@ -3,6 +3,7 @@ package com.adamasorho.mindapax_backend.mapper;
 import com.adamasorho.mindapax_backend.dto.SessionDTO;
 import com.adamasorho.mindapax_backend.model.Session;
 import com.adamasorho.mindapax_backend.model.User;
+import com.adamasorho.mindapax_backend.model.enums.Specialization;
 import com.adamasorho.mindapax_backend.model.Professional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class SessionMapperTest {
         profUser.setFirstName("Test");
         profUser.setLastName("Professional");
         professional.setUser(profUser);
-        professional.setSpecialization("Test Specialization");
+        professional.setSpecialization(Specialization.MENTAL_HEALTH);
         session.setProfessional(professional);
 
 
@@ -55,7 +56,7 @@ class SessionMapperTest {
         profUser.setFirstName("Test");
         profUser.setLastName("Professional");
         professional.setUser(profUser);
-        professional.setSpecialization("Test Specialization");
+        professional.setSpecialization(Specialization.MENTAL_HEALTH);
         session.setProfessional(professional);
 
         SessionDTO dto = sessionMapper.toDTO(session);

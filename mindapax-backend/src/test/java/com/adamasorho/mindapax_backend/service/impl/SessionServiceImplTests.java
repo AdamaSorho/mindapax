@@ -269,6 +269,9 @@ class SessionServiceImplTests {
         sessionDTO.setMode(SessionMode.CHAT); // Ensure mode is not VIDEO
         sessionDTO.setZoomMeetingId(null); // Explicitly set to null in DTO
 
+        ArgumentCaptor<Session> sessionCaptor = ArgumentCaptor.forClass(Session.class);
+        Session capturedSession = sessionCaptor.getValue();
+
         when(securityContext.getAuthentication()).thenReturn(authentication);
         assertEquals(SessionMode.CHAT, capturedSession.getMode()); // Verify mode
         assertEquals(sessionDTO.getNotes(), capturedSession.getNotes());
