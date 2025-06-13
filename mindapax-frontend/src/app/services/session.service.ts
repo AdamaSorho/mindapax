@@ -3,6 +3,7 @@ import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { SessionQueryParams } from '../models/network/SessionQueryParams';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { Session } from '../models/session.model'; // Added import
 import { SessionMode } from '../models/enums/SessionFilter'; // Added import
 import { PagedResponse } from '../models/network/pagedResponse';
@@ -59,6 +60,8 @@ export class SessionService {
   public getZoomMeetingSignature(sessionId: string): Observable<ZoomSignatureResponse> {
     // The backend endpoint is POST /api/v1/sessions/{sessionId}/join-video
     // this.baseUrl is environment.apiUrl + '/sessions'
-    return this.http.post<ZoomSignatureResponse>(`${this.baseUrl}/${sessionId}/join-video`, {});
+    return this.http.post<ZoomSignatureResponse>(`${this.baseUrl}/${sessionId}/join-video`, {}).pipe(
+      tap(response => console.log('Backend response for getZoomMeetingSignature:', response))
+    );
   }
 }
