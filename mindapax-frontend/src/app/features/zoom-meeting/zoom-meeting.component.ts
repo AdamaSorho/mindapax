@@ -27,7 +27,9 @@ export class ZoomMeetingComponent implements OnInit {
   userName: string = 'User'; // Placeholder, fetch from auth service or route
   userEmail: string = ''; // Placeholder, fetch from auth service or route
   passWord = ''; // Zoom Meeting Password, if any. Not used in JWT auth usually for joining.
-  role = 0; // 0 for attendee, 1 for host. Passed in signature, but SDK might use it.
+
+  registrantToken = '';
+  zakToken = '';
 
   client = ZoomMtgEmbedded.createClient();
 
@@ -59,6 +61,7 @@ export class ZoomMeetingComponent implements OnInit {
   }
 
   loadZoomSdkAndJoinMeeting(): void {
+    console.log('passWord', this.passWord);
     // document.getElementById('zmmtg-root')!.style.display = 'block';
     let meetingSdkElement = document.getElementById('zmmtg-root') ?? undefined;
 
@@ -78,7 +81,8 @@ export class ZoomMeetingComponent implements OnInit {
             userName: this.userName,
             userEmail: this.userEmail, // Optional: email of the user
             password: this.passWord,
-            // role: this.role, // Role is part of signature, not typically set here for JWT
+            tk: this.registrantToken,
+            zak: this.zakToken,
             success: (success: any) => {
               console.log('Joined Zoom meeting successfully:', success);
               // Make the Zoom meeting UI visible if it was hidden
@@ -119,7 +123,6 @@ export class ZoomMeetingComponent implements OnInit {
       userName: this.userName,
       userEmail: this.userEmail, // Optional: email of the user
       passWord: this.passWord, // Optional: meeting password
-      // role: this.role, // Role is part of signature, not typically set here for JWT
       success: (success: any) => {
         console.log('Joined Zoom meeting successfully:', success);
         // Make the Zoom meeting UI visible if it was hidden

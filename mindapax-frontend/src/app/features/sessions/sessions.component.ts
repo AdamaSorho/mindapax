@@ -170,6 +170,7 @@ export class SessionsComponent implements OnInit {
               sdkKey: zoomResponse.apiKey,
               meetingNumber: zoomResponse.meetingNumber,
               signature: zoomResponse.signature,
+              passWord: zoomResponse.password,
               userName: userName,
               userEmail: userEmail,
             },

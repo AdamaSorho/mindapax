@@ -3,9 +3,12 @@ package com.adamasorho.mindapax_backend.service.impl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.security.SecureRandom; // Added import
+import java.util.stream.Collectors; // Added import
+import java.util.stream.IntStream;  // Added import
 
-import org.slf4j.Logger; // Added import
-import org.slf4j.LoggerFactory; // Added import
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +29,7 @@ import com.adamasorho.mindapax_backend.model.enums.Specialization;
 import com.adamasorho.mindapax_backend.repository.ConnectionRepository;
 import com.adamasorho.mindapax_backend.repository.ProfessionalRepository;
 import com.adamasorho.mindapax_backend.service.ProfessionalService;
-import com.adamasorho.mindapax_backend.service.ZoomService; // Added import
+import com.adamasorho.mindapax_backend.service.ZoomService;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -34,23 +37,32 @@ import jakarta.transaction.Transactional;
 @Service
 @Transactional
 public class ProfessionalServiceImpl implements ProfessionalService {
-  private static final Logger logger = LoggerFactory.getLogger(ProfessionalServiceImpl.class); // Added logger
+  private static final Logger logger = LoggerFactory.getLogger(ProfessionalServiceImpl.class);
 
   private final ProfessionalRepository professionalRepository;
   private final ConnectionRepository connectionRepository;
   private final UserMapper userMapper;
-  private final ZoomService zoomService; // Added ZoomService field
+  private final ZoomService zoomService;
 
   @Autowired
   public ProfessionalServiceImpl(
       ProfessionalRepository professionalRepository,
       ConnectionRepository connectionRepository,
       UserMapper userMapper,
-      ZoomService zoomService) { // Added ZoomService to constructor
+      ZoomService zoomService) {
     this.professionalRepository = professionalRepository;
     this.connectionRepository = connectionRepository;
     this.userMapper = userMapper;
-    this.zoomService = zoomService; // Assigned ZoomService
+    this.zoomService = zoomService;
+  }
+
+  private String generateRandomPassword(int length) {
+      final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      SecureRandom random = new SecureRandom();
+      return IntStream.range(0, length)
+          .map(i -> random.nextInt(CHARS.length()))
+          .mapToObj(randomIndex -> String.valueOf(CHARS.charAt(randomIndex)))
+          .collect(Collectors.joining());
   }
 
   @Override
@@ -72,7 +84,7 @@ public class ProfessionalServiceImpl implements ProfessionalService {
   @Override
   public Professional getProfessionalById(Long id) {
     return professionalRepository.findById(id)
-      .orElseThrow(() -> new EntityNotFoundException("Professional not found with ID: " + id)); // Enhanced message
+      .orElseThrow(() -> new EntityNotFoundException("Professional not found with ID: " + id));
   }
 
   @Override
@@ -96,15 +108,22 @@ public class ProfessionalServiceImpl implements ProfessionalService {
   }
 
   @Override
-  public Professional updateProfessional(Long id, Professional professional) {
+  public Professional updateProfessional(Long id, Professional professionalUpdates) { // Renamed for clarity
     Professional existing = professionalRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Professional not found with ID: " + id)); // Enhanced message
+            .orElseThrow(() -> new EntityNotFoundException("Professional not found with ID: " + id));
 
-    existing.setBio(professional.getBio());
-    existing.setCertifications(professional.getCertifications());
-    existing.setSpecialization(professional.getSpecialization());
-    existing.setHourlyRate(professional.getHourlyRate());
-    // Consider other fields that might be updatable by the professional themselves
+    existing.setBio(professionalUpdates.getBio());
+    // Ensure certifications are handled correctly (e.g., clearing old ones if needed or merging)
+    // This might require more complex logic depending on desired behavior.
+    // For simplicity, assuming replacement or that DTO handles this.
+    if (professionalUpdates.getCertifications() != null) {
+        existing.getCertifications().clear();
+        existing.getCertifications().addAll(professionalUpdates.getCertifications());
+        existing.getCertifications().forEach(cert -> cert.setProfessional(existing)); // Ensure bidirectional link
+    }
+    existing.setSpecialization(professionalUpdates.getSpecialization());
+    existing.setHourlyRate(professionalUpdates.getHourlyRate());
+    existing.setYearsOfExperience(professionalUpdates.getYearsOfExperience()); // Added years of experience
 
     return professionalRepository.save(existing);
   }
@@ -112,41 +131,40 @@ public class ProfessionalServiceImpl implements ProfessionalService {
   @Override
   public void deleteProfessional(Long id) {
     if (!professionalRepository.existsById(id)) {
-        throw new EntityNotFoundException("Professional not found with ID: " + id); // Enhanced message
+        throw new EntityNotFoundException("Professional not found with ID: " + id);
     }
     professionalRepository.deleteById(id);
   }
 
   @Override
   public void updateProfessionalStatus(Long professionalId, ProfessionalStatus status, String rejectionNote, Set<GrantedAuthority> authorities) {
-    // Admin role check for ACTIVE status
     if (!authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN")) && status == ProfessionalStatus.ACTIVE) {
         logger.warn("Non-admin user attempted to set professional status to ACTIVE for ID: {}. User authorities: {}", professionalId, authorities);
         throw new AccessDeniedException("Only ADMIN can set ACTIVE status.");
     }
-    // Consider adding more role checks if other status transitions need to be restricted.
 
-    Professional professional = this.getProfessionalById(professionalId); // Uses enhanced message if not found
+    Professional professional = this.getProfessionalById(professionalId);
 
-    // Logic for creating Zoom meeting ID if status is changing to ACTIVE
     if (status == ProfessionalStatus.ACTIVE && professional.getStatus() != ProfessionalStatus.ACTIVE && professional.getZoomMeetingId() == null) {
-        // Check current status to ensure this logic only runs when transitioning TO ACTIVE
-        // and if they don't already have a zoomMeetingId
         try {
             String professionalFullName = professional.getUser().getFirstName() + " " + professional.getUser().getLastName();
-            logger.info("Professional {} {} (ID: {}) is being approved. Attempting to create Zoom meeting.",
+
+            String generatedPassword = generateRandomPassword(10);
+            logger.info("Generated Zoom meeting password for professional {} {} (ID: {})",
                         professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId);
-            String meetingId = zoomService.createPermanentMeetingForProfessional(professionalFullName);
+
+            logger.info("Professional {} {} (ID: {}) is being approved. Attempting to create Zoom meeting with password.",
+                        professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId);
+
+            String meetingId = zoomService.createPermanentMeetingForProfessional(professionalFullName, generatedPassword);
             professional.setZoomMeetingId(meetingId);
-            logger.info("Successfully created and set Zoom Meeting ID {} for professional {} {} (ID: {})",
+            professional.setZoomMeetingPassword(generatedPassword); // Store the generated password
+
+            logger.info("Successfully created Zoom meeting (ID: {}) and password, and set them for professional {} {} (ID: {})",
                         meetingId, professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId);
         } catch (Exception e) {
-            // Log the error. Decide if the approval process should halt or continue.
-            // For now, log and continue with status update. Professional will not have a meeting ID.
-            logger.error("Failed to create Zoom meeting for professional {} {} (ID: {}): {}. Professional status will be updated without a Zoom ID.",
+            logger.error("Failed to create Zoom meeting for professional {} {} (ID: {}): {}. Professional status will be updated without a Zoom ID/password.",
                          professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId, e.getMessage(), e);
-            // Potentially, you might want to throw a specific application exception here
-            // or set a flag on the professional indicating Zoom setup failed.
         }
     }
 
@@ -154,7 +172,7 @@ public class ProfessionalServiceImpl implements ProfessionalService {
     if (status == ProfessionalStatus.REJECTED || status == ProfessionalStatus.PENDING) {
          professional.setRejectionNote(rejectionNote);
     } else {
-         professional.setRejectionNote(null); // Clear rejection note if status is not REJECTED/PENDING
+         professional.setRejectionNote(null);
     }
     professional.setStatusUpdatedAt(LocalDateTime.now());
     professionalRepository.save(professional);

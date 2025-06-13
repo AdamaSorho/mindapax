@@ -177,6 +177,17 @@ private Page<Session> getSessionsFromClient(Long clientId, OffsetDateTime date,
         if (professional.getZoomMeetingId() != null && !professional.getZoomMeetingId().trim().isEmpty()) {
             session.setZoomMeetingId(professional.getZoomMeetingId());
             logger.info("Scheduled VIDEO session. Using Professional's Zoom Meeting ID: {} for session.", professional.getZoomMeetingId());
+
+            if (professional.getZoomMeetingPassword() != null && !professional.getZoomMeetingPassword().trim().isEmpty()) {
+                session.setZoomMeetingPassword(professional.getZoomMeetingPassword());
+                logger.info("Scheduled VIDEO session. Using Professional's Zoom Meeting Password for session ID: {}.", session.getZoomMeetingId());
+            } else {
+                // This case might occur if password generation/storage failed earlier for the professional,
+                // but they still had a meeting ID.
+                logger.warn("Professional {} {} has a Zoom Meeting ID ({}) but no Zoom Meeting Password configured for it. Session zoomMeetingPassword will be null.",
+                            professional.getUser().getFirstName(), professional.getUser().getLastName(), professional.getZoomMeetingId());
+                // Session.zoomMeetingPassword will remain null. The frontend will need to handle this (e.g., not prompt for a password).
+            }
         } else {
             // This case should ideally not happen if a professional approved for video sessions always has a Zoom ID.
             // If it does, joinVideoSession will throw an error, which is an existing safeguard.

@@ -76,7 +76,7 @@ public class ZoomServiceImpl implements ZoomService {
     }
 
     @Override
-    public String createPermanentMeetingForProfessional(String professionalName) {
+    public String createPermanentMeetingForProfessional(String professionalName, String password) {
         logger.info("Attempting to create a permanent Zoom meeting for professional: {}", professionalName);
 
         String accessToken = getS2SAccessToken().block();
@@ -91,6 +91,7 @@ public class ZoomServiceImpl implements ZoomService {
         ZoomMeetingRequest requestBody = new ZoomMeetingRequest();
         requestBody.setTopic("Consultation Room for " + professionalName);
         requestBody.setType(2); // Scheduled meeting
+        requestBody.setPassword(password);
         ZoomMeetingSettings settings = new ZoomMeetingSettings();
         settings.setJoinBeforeHost(true);
         settings.setWaitingRoom(true);
@@ -151,6 +152,7 @@ public class ZoomServiceImpl implements ZoomService {
         private String topic;
         private int type;
         private ZoomMeetingSettings settings;
+        private String password;
 
         public String getTopic() { return topic; }
         public void setTopic(String topic) { this.topic = topic; }
@@ -158,6 +160,8 @@ public class ZoomServiceImpl implements ZoomService {
         public void setType(int type) { this.type = type; }
         public ZoomMeetingSettings getSettings() { return settings; }
         public void setSettings(ZoomMeetingSettings settings) { this.settings = settings; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
     }
 
     static class ZoomMeetingSettings {

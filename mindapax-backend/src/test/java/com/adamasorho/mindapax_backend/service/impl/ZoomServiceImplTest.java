@@ -188,6 +188,7 @@ public class ZoomServiceImplTest {
     @Test
     void createPermanentMeetingForProfessional_success() throws JsonProcessingException {
         String professionalName = "Dr. Test";
+        String testPassword = "testPassword123"; // Added test password
         String mockAccessToken = "s2sMockAccessToken";
         Long expectedMeetingId = 123456789L;
 
@@ -216,7 +217,8 @@ public class ZoomServiceImplTest {
 
         when(responseSpec.bodyToMono(ZoomServiceImpl.ZoomMeetingResponse.class)).thenReturn(Mono.just(mockMeetingResponse));
 
-        String meetingId = spiedZoomService.createPermanentMeetingForProfessional(professionalName);
+        // Call with password
+        String meetingId = spiedZoomService.createPermanentMeetingForProfessional(professionalName, testPassword);
 
         assertEquals(String.valueOf(expectedMeetingId), meetingId);
         // verify(spiedZoomService, times(1)).getS2SAccessToken(); // Verify S2S token was fetched
@@ -230,6 +232,7 @@ public class ZoomServiceImplTest {
         ZoomServiceImpl.ZoomMeetingRequest capturedRequest = meetingRequestCaptor.getValue();
         assertEquals("Consultation Room for " + professionalName, capturedRequest.getTopic());
         assertEquals(2, capturedRequest.getType());
+        assertEquals(capturedRequest.getPassword(), testPassword);
         assertTrue(capturedRequest.getSettings().isJoinBeforeHost());
         assertTrue(capturedRequest.getSettings().isWaitingRoom());
         assertFalse(capturedRequest.getSettings().isMeetingAuthentication());
@@ -239,9 +242,10 @@ public class ZoomServiceImplTest {
     void createPermanentMeetingForProfessional_tokenFailure_throwsException() {
         ZoomServiceImpl spiedZoomService = Mockito.spy(zoomService);
         // Mockito.doReturn(Mono.error(new RuntimeException("Token fetch failed"))).when(spiedZoomService).getS2SAccessToken();
+        String testPassword = "testPassword123";
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
-            spiedZoomService.createPermanentMeetingForProfessional("Dr. Test");
+            spiedZoomService.createPermanentMeetingForProfessional("Dr. Test", testPassword);
         });
         assertTrue(exception.getMessage().contains("Token fetch failed"));
         verify(webClient, never()).post().uri("/users/me/meetings"); // Ensure meeting creation was not attempted
@@ -250,6 +254,7 @@ public class ZoomServiceImplTest {
     @Test
     void createPermanentMeetingForProfessional_meetingCreationApiError_throwsException() {
         String professionalName = "Dr. Test";
+        String testPassword = "testPassword123";
         String mockAccessToken = "s2sMockAccessToken";
 
         ZoomServiceImpl spiedZoomService = Mockito.spy(zoomService);
@@ -263,7 +268,7 @@ public class ZoomServiceImplTest {
             .thenReturn(Mono.error(new RuntimeException("Zoom Meeting API Error")));
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
-            spiedZoomService.createPermanentMeetingForProfessional(professionalName);
+            spiedZoomService.createPermanentMeetingForProfessional(professionalName, testPassword);
         });
         assertTrue(exception.getMessage().contains("Exception during Zoom meeting creation"));
     }
@@ -271,6 +276,7 @@ public class ZoomServiceImplTest {
     @Test
     void createPermanentMeetingForProfessional_nullResponseFromZoom_throwsException() {
         String professionalName = "Dr. Test";
+        String testPassword = "testPassword123";
         String mockAccessToken = "s2sMockAccessToken";
 
         ZoomServiceImpl spiedZoomService = Mockito.spy(zoomService);
@@ -283,7 +289,7 @@ public class ZoomServiceImplTest {
         when(responseSpec.bodyToMono(ZoomServiceImpl.ZoomMeetingResponse.class)).thenReturn(Mono.empty()); // Simulate null/empty response
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
-            spiedZoomService.createPermanentMeetingForProfessional(professionalName);
+            spiedZoomService.createPermanentMeetingForProfessional(professionalName, testPassword);
         });
         assertTrue(exception.getMessage().contains("Invalid response from Zoom."));
     }

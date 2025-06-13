@@ -170,8 +170,12 @@ class ProfessionalServiceImplTests {
 
 
         when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
-        when(zoomService.createPermanentMeetingForProfessional(professionalUser.getFirstName() + " " + professionalUser.getLastName()))
-                .thenReturn(expectedZoomMeetingId);
+        // Update mock to accept two arguments and capture the password
+        ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
+        when(zoomService.createPermanentMeetingForProfessional(
+            eq(professionalUser.getFirstName() + " " + professionalUser.getLastName()),
+            passwordCaptor.capture()
+        )).thenReturn(expectedZoomMeetingId);
         when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -185,7 +189,14 @@ class ProfessionalServiceImplTests {
         assertEquals(newStatus, savedProfessional.getStatus());
         assertEquals(expectedZoomMeetingId, savedProfessional.getZoomMeetingId());
         assertNotNull(savedProfessional.getStatusUpdatedAt());
-        verify(zoomService, times(1)).createPermanentMeetingForProfessional(anyString());
+
+        // Verify password handling
+        String capturedPassword = passwordCaptor.getValue();
+        assertNotNull(capturedPassword);
+        assertEquals(10, capturedPassword.length()); // As per implementation
+        assertEquals(capturedPassword, savedProfessional.getZoomMeetingPassword());
+
+        verify(zoomService, times(1)).createPermanentMeetingForProfessional(anyString(), anyString());
     }
 
     @Test
@@ -211,7 +222,8 @@ class ProfessionalServiceImplTests {
 
         assertEquals(newStatus, savedProfessional.getStatus());
         assertEquals("existingZoomId", savedProfessional.getZoomMeetingId()); // Should remain unchanged
-        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString());
+        assertNull(savedProfessional.getZoomMeetingPassword()); // Password should remain null if not newly created
+        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString(), anyString());
     }
 
     @Test
@@ -236,7 +248,8 @@ class ProfessionalServiceImplTests {
 
         assertEquals(newStatus, savedProfessional.getStatus());
         assertNull(savedProfessional.getZoomMeetingId()); // Should remain null
-        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString());
+        assertNull(savedProfessional.getZoomMeetingPassword()); // Password should also remain null
+        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString(), anyString());
     }
 
     @Test
@@ -250,7 +263,8 @@ class ProfessionalServiceImplTests {
 
 
         when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
-        when(zoomService.createPermanentMeetingForProfessional(anyString())).thenThrow(new RuntimeException("Zoom API error"));
+        // Update mock to accept two arguments
+        when(zoomService.createPermanentMeetingForProfessional(anyString(), anyString())).thenThrow(new RuntimeException("Zoom API error"));
         when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -263,7 +277,8 @@ class ProfessionalServiceImplTests {
 
         assertEquals(newStatus, savedProfessional.getStatus());
         assertNull(savedProfessional.getZoomMeetingId()); // Should be null as Zoom call failed
-        verify(zoomService, times(1)).createPermanentMeetingForProfessional(anyString());
+        assertNull(savedProfessional.getZoomMeetingPassword()); // Password should also be null
+        verify(zoomService, times(1)).createPermanentMeetingForProfessional(anyString(), anyString());
     }
 
     @Test
@@ -290,7 +305,8 @@ class ProfessionalServiceImplTests {
         assertEquals(newStatus, savedProfessional.getStatus());
         assertEquals(rejectionNote, savedProfessional.getRejectionNote());
         assertNull(savedProfessional.getZoomMeetingId()); // Should remain unchanged (null in this setup)
-        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString());
+        assertNull(savedProfessional.getZoomMeetingPassword());
+        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString(), anyString());
     }
 
     @Test
@@ -308,7 +324,7 @@ class ProfessionalServiceImplTests {
         });
         assertEquals("Only ADMIN can set ACTIVE status.", exception.getMessage());
         verify(professionalRepository, never()).findById(anyLong());
-        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString());
+        verify(zoomService, never()).createPermanentMeetingForProfessional(anyString(), anyString());
         verify(professionalRepository, never()).save(any(Professional.class));
     }
 
@@ -323,7 +339,9 @@ class ProfessionalServiceImplTests {
 
 
         when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
-        when(zoomService.createPermanentMeetingForProfessional(anyString())).thenReturn("zoom789"); // Assume zoom creation succeeds
+        // Update mock to accept two arguments
+        ArgumentCaptor<String> passwordCaptorForClearNote = ArgumentCaptor.forClass(String.class);
+        when(zoomService.createPermanentMeetingForProfessional(anyString(), passwordCaptorForClearNote.capture())).thenReturn("zoom789");
         when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -336,5 +354,8 @@ class ProfessionalServiceImplTests {
 
         assertEquals(newStatus, savedProfessional.getStatus());
         assertNull(savedProfessional.getRejectionNote(), "Rejection note should be cleared for ACTIVE status");
+        assertEquals("zoom789", savedProfessional.getZoomMeetingId());
+        assertEquals(passwordCaptorForClearNote.getValue(), savedProfessional.getZoomMeetingPassword()); // Ensure password was set
+        assertEquals(10, passwordCaptorForClearNote.getValue().length());
     }
 }

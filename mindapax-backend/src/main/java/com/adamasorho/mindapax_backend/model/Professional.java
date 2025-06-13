@@ -68,6 +68,7 @@ public class Professional {
 
     private String rejectionNote;
     private String zoomMeetingId;
+    private String zoomMeetingPassword;
     
     @CreationTimestamp
     private LocalDateTime createdAt;
