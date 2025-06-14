@@ -1,29 +1,70 @@
-import { NgClass, NgIf } from '@angular/common';
+import { CommonModule, NgClass, NgIf } from '@angular/common';
 import { Component, OnInit } from '@angular/core'; // Import OnInit
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { Role } from '../../../models/enums/role'; // Import Role
 
 @Component({
   selector: 'app-member-sidebar',
-  imports: [NgClass, NgIf, RouterLink],
+  imports: [NgClass, NgIf, RouterLink, RouterLinkActive, CommonModule],
   templateUrl: './member-sidebar.component.html',
   styleUrl: './member-sidebar.component.css',
 })
-export class MemberSidebarComponent implements OnInit { // Implement OnInit
+export class MemberSidebarComponent implements OnInit {
+  // Implement OnInit
   isSidebarCollapsed = false;
   userRoles: string[] = []; // Add userRoles property
 
   // Add sidebarLinks property
   public sidebarLinks = [
-    { label: 'Home', route: '/member/dashboard', icon: 'home-outline', allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'] },
-    { label: 'Find a Professional', route: '/member/find-professional', icon: 'search-outline', allowedRoles: ['ROLE_USER'] },
-    { label: 'My Sessions', route: '/member/sessions', icon: 'calendar-outline', allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL'] },
-    { label: 'Messages', route: '/member/messages', icon: 'paper-plane-outline', allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL'] },
-    { label: 'Connections', route: '/member/connections', icon: 'person-add-outline', allowedRoles: ['ROLE_PROFESSIONAL'] },
-    { label: 'Professionals', route: '/member/professionals', icon: 'people-outline', allowedRoles: ['ROLE_ADMIN'] },
-    { label: 'Billing', route: '/member/billing', icon: 'card-outline', allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'] },
-    { label: 'Settings', route: '/member/settings', icon: 'settings-outline', allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'] }
+    {
+      label: 'Home',
+      route: '/member/dashboard',
+      icon: 'home-outline',
+      allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'],
+    },
+    {
+      label: 'Find a Professional',
+      route: '/member/find-professional',
+      icon: 'search-outline',
+      allowedRoles: ['ROLE_USER'],
+    },
+    {
+      label: 'My Sessions',
+      route: '/member/sessions',
+      icon: 'calendar-outline',
+      allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL'],
+    },
+    {
+      label: 'Messages',
+      route: '/member/messages',
+      icon: 'paper-plane-outline',
+      allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL'],
+    },
+    {
+      label: 'Connections',
+      route: '/member/connections',
+      icon: 'person-add-outline',
+      allowedRoles: ['ROLE_PROFESSIONAL'],
+    },
+    {
+      label: 'Professionals',
+      route: '/member/professionals',
+      icon: 'people-outline',
+      allowedRoles: ['ROLE_ADMIN'],
+    },
+    {
+      label: 'Billing',
+      route: '/member/billing',
+      icon: 'card-outline',
+      allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'],
+    },
+    {
+      label: 'Settings',
+      route: '/member/settings',
+      icon: 'settings-outline',
+      allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'],
+    },
     // Logout is handled by a separate button/method.
   ];
 
@@ -41,7 +82,7 @@ export class MemberSidebarComponent implements OnInit { // Implement OnInit
     if (!allowedRoles || allowedRoles.length === 0) {
       return true;
     }
-    return allowedRoles.some(role => this.userRoles.includes(role));
+    return allowedRoles.some((role) => this.userRoles.includes(role));
   }
 
   logout(): void {
