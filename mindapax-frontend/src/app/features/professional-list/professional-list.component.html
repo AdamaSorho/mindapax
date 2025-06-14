@@ -339,7 +339,7 @@
                           </p>
                         </div>
                         <div>
-                          <a href="{{ cert.documentUrl }}" target="_blank"
+                          <a [href]="getAbsoluteFileUrl(cert.documentUrl)" target="_blank"
                             class="text-blue-600 hover:underline flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                               xmlns="http://www.w3.org/2000/svg">
@@ -369,7 +369,7 @@
                   <div class="flex items-center justify-between mb-4">
                     <h5 class="text-lg font-semibold text-gray-800">Resume</h5>
                     @if (selectedProfessional.resumeUrl) {
-                    <a href="{{ selectedProfessional.resumeUrl }}" target="_blank"
+                    <a [href]="getAbsoluteFileUrl(selectedProfessional.resumeUrl)" target="_blank"
                       class="text-blue-600 hover:underline flex items-center">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
@@ -389,7 +389,7 @@
                       </path>
                     </svg>
                     <p class="text-gray-600 mb-3">Resume available for review</p>
-                    <a href="{{ selectedProfessional.resumeUrl }}" target="_blank"
+                    <a [href]="getAbsoluteFileUrl(selectedProfessional.resumeUrl)" target="_blank"
                       class="text-sm font-medium text-blue-600 hover:underline">View Full Resume</a>
                   </div>
                   } @else {
