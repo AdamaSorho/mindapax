@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { environment } from '../../../environments/environment';
 import { ProfessionalService } from '../../services/professional.service';
 import { TabService } from '../../services/business/tab.service';
 import { CommonModule } from '@angular/common';
@@ -157,5 +158,55 @@ export class ProfessionalListComponent {
       this.professionals.map((pro) => pro.specialization)
     );
     return Array.from(specialties);
+  }
+
+  public getAbsoluteFileUrl(relativePath: string | undefined): string | undefined {
+    if (!relativePath) {
+      return undefined;
+    }
+    // If it's already a full URL (starts with http, https, or //), return it as is
+    if (/^(https?:)?\/\//i.test(relativePath)) {
+      return relativePath;
+    }
+
+    const apiUrl = environment.apiUrl; // Get from environment
+    let baseUrl = '';
+
+    try {
+      // Attempt to parse apiUrl to get the origin (e.g., http://localhost:8080)
+      // This handles cases where apiUrl might be like http://localhost:8080/api
+      const url = new URL(apiUrl);
+      baseUrl = url.origin;
+    } catch (e) {
+      // Fallback if apiUrl is not a full URL (e.g., just '/api')
+      // In this case, make it relative to the frontend's current host.
+      // This might be correct if a proxy is set up, or incorrect if files are served
+      // directly by the backend on a different origin/path without proxying.
+      console.warn("Failed to parse environment.apiUrl to extract origin. Assuming file paths are relative to the frontend host or a pre-configured proxy.", e);
+      // If relativePath doesn't start with '/', add it.
+      // This makes it an absolute path from the current host (e.g. /uploads/file.pdf)
+      // return relativePath.startsWith('/') ? relativePath : '/' + relativePath;
+      // For a more robust fallback, let's assume the backend paths might be like 'uploads/file.pdf'
+      // and they should be served from the root of where the API is hosted.
+      // If API is /api, and path is uploads/file.pdf, this will be /uploads/file.pdf
+      // This is a common scenario for Spring Boot static resources.
+      if (apiUrl.startsWith('http')) { // apiUrl is absolute, but parsing failed (should be rare)
+          baseUrl = apiUrl.substring(0, apiUrl.indexOf('/', apiUrl.indexOf('//') + 2) !== -1 ? apiUrl.indexOf('/', apiUrl.indexOf('//') + 2) : apiUrl.length);
+      } else { // apiUrl is relative itself e.g. /api
+          baseUrl = ''; // Paths will be relative to current host
+      }
+    }
+
+    // Ensure no double slashes if relativePath starts with one and baseUrl ends with one
+    // And ensure there IS a slash if relativePath doesn't start with one.
+    let finalUrl = baseUrl;
+    if (finalUrl.endsWith('/') && relativePath.startsWith('/')) {
+      finalUrl += relativePath.substring(1);
+    } else if (!finalUrl.endsWith('/') && !relativePath.startsWith('/')) {
+      finalUrl += '/' + relativePath;
+    } else {
+      finalUrl += relativePath;
+    }
+    return finalUrl;
   }
 }
