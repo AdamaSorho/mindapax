@@ -276,18 +276,18 @@
                 <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" role="tablist">
                   <li class="mr-2" role="presentation">
                     <button class="inline-block p-4 border-b-2 border-blue-600 rounded-t-lg active" id="bio-tab"
-                      type="button" role="tab" aria-controls="bio" aria-selected="true">Bio & Experience</button>
+                      data-tabs-target="#bio" type="button" role="tab" aria-controls="bio" aria-selected="true">Bio & Experience</button>
                   </li>
                   <li class="mr-2" role="presentation">
                     <button
                       class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300"
-                      id="certifications-tab" type="button" role="tab" aria-controls="certifications"
+                      id="certifications-tab" data-tabs-target="#certifications" type="button" role="tab" aria-controls="certifications"
                       aria-selected="false">Certifications</button>
                   </li>
                   <li class="mr-2" role="presentation">
                     <button
                       class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300"
-                      id="resume-tab" type="button" role="tab" aria-controls="resume"
+                      id="resume-tab" data-tabs-target="#resume" type="button" role="tab" aria-controls="resume"
                       aria-selected="false">Resume</button>
                   </li>
                 </ul>
@@ -319,8 +319,7 @@
                 </div>
 
                 <!-- Certifications Tab -->
-                <div id="certifications" role="tabpanel" aria-labelledby="certifications-tab" hidden
-                  style="display: none;">
+                <div id="certifications" role="tabpanel" aria-labelledby="certifications-tab" class="hidden">
                   <h5 class="text-lg font-semibold text-gray-800 mb-3">Certifications & Licenses</h5>
                   @if (selectedProfessional.certifications && selectedProfessional.certifications.length > 0) {
                   <div class="space-y-4">
@@ -365,7 +364,7 @@
                 </div>
 
                 <!-- Resume Tab -->
-                <div id="resume" role="tabpanel" aria-labelledby="resume-tab" hidden style="display: none;">
+                <div id="resume" role="tabpanel" aria-labelledby="resume-tab" class="hidden">
                   <div class="flex items-center justify-between mb-4">
                     <h5 class="text-lg font-semibold text-gray-800">Resume</h5>
                     @if (selectedProfessional.resumeUrl) {

@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { environment } from '../../../environments/environment';
+import { initTabs } from 'flowbite';
 import { ProfessionalService } from '../../services/professional.service';
-import { TabService } from '../../services/business/tab.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Professional } from '../../models/professional.model';
@@ -33,8 +33,7 @@ export class ProfessionalListComponent {
   currentPage: number = 0;
 
   constructor(
-    private professionalsService: ProfessionalService,
-    private tabService: TabService
+    private professionalsService: ProfessionalService
   ) {}
 
   ngOnInit(): void {
@@ -53,7 +52,7 @@ export class ProfessionalListComponent {
         if (mutation.addedNodes.length > 0) {
           const modal = document.getElementById('professionalDetailsModal');
           if (modal) {
-            this.tabService.initializeTabs('tab-content');
+            initTabs(); // Initialize Flowbite tabs
           }
         }
       });
