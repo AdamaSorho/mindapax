@@ -12,6 +12,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import java.util.Base64;
 import java.util.Map;
+
+import javax.crypto.spec.SecretKeySpec;
+
 // import com.fasterxml.jackson.databind.ObjectMapper; // Not directly used, but good for general JSON work
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
@@ -19,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
 
 @Service
 public class ZoomServiceImpl implements ZoomService {
@@ -57,14 +61,21 @@ public class ZoomServiceImpl implements ZoomService {
             long timestamp = new Date().getTime() / 1000 - 30;
             long expiryTimestamp = timestamp + 7200;
 
+            SecretKeySpec secretKeySpec = new SecretKeySpec(zoomSdkSecret.getBytes(StandardCharsets.UTF_8), SignatureAlgorithm.HS256.getJcaName());
+            Map<String, Object> oHeader = new HashMap<>();
+            oHeader.put("alg", SignatureAlgorithm.HS256);
+            oHeader.put("typ", "JWT");
+
             String payload = Jwts.builder()
+                .setHeaderParams(oHeader)
                 .claim("appKey", zoomSdkKey)
+                .claim("sdkKey", zoomSdkKey)
                 .claim("mn", meetingNumber)
                 .claim("role", role)
                 .claim("iat", timestamp)
                 .claim("exp", expiryTimestamp)
                 .claim("tokenExp", expiryTimestamp)
-                .signWith(SignatureAlgorithm.HS256, zoomSdkSecret.getBytes(StandardCharsets.UTF_8))
+                .signWith(secretKeySpec)
                 .compact();
 
             return payload;

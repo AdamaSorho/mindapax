@@ -42,5 +42,9 @@ app:
 
 # Zoom API Credentials (replace with actual credentials)
 zoom:
-  sdk_key: ${ZOOM_SDK_KEY:YOUR_ZOOM_SDK_KEY_MOCK}
-  sdk_secret: ${ZOOM_SDK_SECRET:YOUR_ZOOM_SDK_SECRET_MOCK}
+  sdk_key: ${ZOOM_SDK_KEY}
+  sdk_secret: ${ZOOM_SDK_SECRET}
+  api:
+    account-id: ${ZOOM_API_ACCOUNT_ID}
+    client-id: ${ZOOM_API_CLIENT_ID}
+    client-secret: ${ZOOM_API_CLIENT_SECRET}
