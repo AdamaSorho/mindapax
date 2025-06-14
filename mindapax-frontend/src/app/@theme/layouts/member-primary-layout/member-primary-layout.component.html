@@ -1,8 +1,10 @@
 <div class="flex min-h-screen bg-gray-100">
   <app-member-sidebar></app-member-sidebar>
   <!-- Main Content -->
-  <div class="flex-1 overflow-auto">
+  <div class="flex-1 flex flex-col overflow-auto">
     <app-member-header></app-member-header>
-    <ng-content></ng-content>
+    <div class="flex-grow">
+      <ng-content></ng-content>
+    </div>
   </div>
 </div>
