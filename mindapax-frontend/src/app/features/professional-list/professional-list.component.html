@@ -358,8 +358,8 @@
                           </p>
                         </div>
                         <div>
-                          <a [href]="getAbsoluteFileUrl(cert.documentUrl)" target="_blank"
-                            class="text-blue-600 hover:underline flex items-center">
+                          <button type="button" (click)="viewFile(getAbsoluteFileUrl(cert.documentUrl), cert.name ? (cert.name + '.pdf') : 'certification.pdf')"
+                            class="text-blue-600 hover:underline flex items-center focus:outline-none">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                               xmlns="http://www.w3.org/2000/svg">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -369,7 +369,7 @@
                               </path>
                             </svg>
                             View
-                          </a>
+                          </button>
                         </div>
                       </div>
                       @if (cert.description) {
@@ -388,15 +388,15 @@
                   <div class="flex items-center justify-between mb-4">
                     <h5 class="text-lg font-semibold text-gray-800">Resume</h5>
                     @if (selectedProfessional.resumeUrl) {
-                    <a [href]="getAbsoluteFileUrl(selectedProfessional.resumeUrl)" target="_blank"
-                      class="text-blue-600 hover:underline flex items-center">
+                    <button type="button" (click)="viewFile(getAbsoluteFileUrl(selectedProfessional.resumeUrl), 'resume.pdf')"
+                      class="text-blue-600 hover:underline flex items-center focus:outline-none">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                       </svg>
                       Download Resume
-                    </a>
+                    </button>
                     }
                   </div>
                   @if (selectedProfessional.resumeUrl) {
@@ -408,8 +408,8 @@
                       </path>
                     </svg>
                     <p class="text-gray-600 mb-3">Resume available for review</p>
-                    <a [href]="getAbsoluteFileUrl(selectedProfessional.resumeUrl)" target="_blank"
-                      class="text-sm font-medium text-blue-600 hover:underline">View Full Resume</a>
+                    <button type="button" (click)="viewFile(getAbsoluteFileUrl(selectedProfessional.resumeUrl), 'resume.pdf')"
+                      class="text-sm font-medium text-blue-600 hover:underline focus:outline-none">View Full Resume</button>
                   </div>
                   } @else {
                   <div class="bg-gray-50 rounded-lg p-6 text-center">
