@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { initTabs } from 'flowbite';
 import { ProfessionalService } from '../../services/professional.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,6 +30,7 @@ export class ProfessionalListComponent {
   professionalStatusOptions = professionalStatusOptions;
   totalPages: number = 0;
   currentPage: number = 0;
+  public selectedTab: string = 'bio';
 
   constructor(
     private professionalsService: ProfessionalService
@@ -40,26 +40,23 @@ export class ProfessionalListComponent {
     this.loadProfessionals();
   }
 
-  ngAfterViewInit(): void {
-    // Initialize tabs when modal is opened
-    this.initializeTabsWhenModalOpens();
-  }
+  public selectTab(tabId: string, event: MouseEvent): void {
+    // Try to blur an element within the modal content if it's currently focused
+    // and is not the tab button itself, to prevent focus being trapped in an inert panel.
+    const activeElement = document.activeElement as HTMLElement;
+    if (event.currentTarget && activeElement) {
+      const modalContent = (event.currentTarget as HTMLElement).closest('.relative.bg-white.rounded-lg.shadow-lg.overflow-hidden'); // Selector for the modal content box
+      if (modalContent && modalContent.contains(activeElement) && activeElement !== event.currentTarget) {
+        activeElement.blur();
+      }
+    }
 
-  private initializeTabsWhenModalOpens(): void {
-    // Using MutationObserver to detect when modal is added to DOM
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.addedNodes.length > 0) {
-          const modal = document.getElementById('professionalDetailsModal');
-          if (modal) {
-            initTabs(); // Initialize Flowbite tabs
-          }
-        }
-      });
-    });
+    this.selectedTab = tabId;
 
-    // Start observing the document body for changes
-    observer.observe(document.body, { childList: true, subtree: true });
+    // Set focus to the clicked tab button for accessibility
+    if (event.currentTarget) {
+      (event.currentTarget as HTMLElement).focus();
+    }
   }
 
   loadProfessionals(): void {
