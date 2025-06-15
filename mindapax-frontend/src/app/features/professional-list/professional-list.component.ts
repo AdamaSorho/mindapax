@@ -206,7 +206,7 @@ export class ProfessionalListComponent {
     if (!finalUrl.endsWith('/')) {
       finalUrl += '/';
     }
-    finalUrl += 'upload/'; // Add the fixed base path
+  finalUrl += 'uploads/'; // Add the fixed base path
 
     if (cleanRelativePath) {
       // Only add cleanRelativePath if it's not empty
