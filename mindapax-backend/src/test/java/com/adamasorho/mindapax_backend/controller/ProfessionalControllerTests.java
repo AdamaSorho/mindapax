@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
@@ -38,13 +39,13 @@ class ProfessionalControllerTests {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private ProfessionalService professionalService;
 
-    @MockBean
+    @MockitoBean
     private ProfessionalRepository professionalRepository;
 
-    @MockBean
+    @MockitoBean
     private ProfessionalMapper professionalMapper; // ProfessionalController depends on this
 
     @Autowired

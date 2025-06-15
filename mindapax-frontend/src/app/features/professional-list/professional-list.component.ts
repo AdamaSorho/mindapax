@@ -47,8 +47,14 @@ export class ProfessionalListComponent {
     // and is not the tab button itself, to prevent focus being trapped in an inert panel.
     const activeElement = document.activeElement as HTMLElement;
     if (event.currentTarget && activeElement) {
-      const modalContent = (event.currentTarget as HTMLElement).closest('.relative.bg-white.rounded-lg.shadow-lg.overflow-hidden'); // Selector for the modal content box
-      if (modalContent && modalContent.contains(activeElement) && activeElement !== event.currentTarget) {
+      const modalContent = (event.currentTarget as HTMLElement).closest(
+        '.relative.bg-white.rounded-lg.shadow-lg.overflow-hidden'
+      ); // Selector for the modal content box
+      if (
+        modalContent &&
+        modalContent.contains(activeElement) &&
+        activeElement !== event.currentTarget
+      ) {
         activeElement.blur();
       }
     }
@@ -158,7 +164,9 @@ export class ProfessionalListComponent {
     return Array.from(specialties);
   }
 
-  public getAbsoluteFileUrl(relativePath: string | undefined): string | undefined {
+  public getAbsoluteFileUrl(
+    relativePath: string | undefined
+  ): string | undefined {
     if (!relativePath) {
       return undefined;
     }
@@ -176,7 +184,10 @@ export class ProfessionalListComponent {
       const url = new URL(apiUrl);
       appOrigin = url.origin;
     } catch (e) {
-      console.warn("Failed to parse environment.apiUrl to extract origin. Assuming relative to current host for file path construction.", e);
+      console.warn(
+        'Failed to parse environment.apiUrl to extract origin. Assuming relative to current host for file path construction.',
+        e
+      );
       // If apiUrl is not a full URL (e.g., just '/api'), appOrigin will be empty.
       // This means the final URL will be relative to the current frontend host, e.g., '/upload/...'
       // This might be correct if a proxy is configured to handle /upload paths.
@@ -184,7 +195,9 @@ export class ProfessionalListComponent {
     }
 
     // Remove leading slash from relativePath if present, as we are constructing the path carefully.
-    const cleanRelativePath = relativePath.startsWith('/') ? relativePath.substring(1) : relativePath;
+    const cleanRelativePath = relativePath.startsWith('/')
+      ? relativePath.substring(1)
+      : relativePath;
 
     // Construct the final URL: appOrigin + /upload/ + cleanRelativePath
     // Ensure there's exactly one slash between appOrigin and 'upload', and one between 'upload' and cleanRelativePath.
@@ -195,7 +208,8 @@ export class ProfessionalListComponent {
     }
     finalUrl += 'upload/'; // Add the fixed base path
 
-    if (cleanRelativePath) { // Only add cleanRelativePath if it's not empty
+    if (cleanRelativePath) {
+      // Only add cleanRelativePath if it's not empty
       finalUrl += cleanRelativePath;
     } else {
       // If cleanRelativePath is empty, we might have just appOrigin/upload/
@@ -206,21 +220,27 @@ export class ProfessionalListComponent {
     return finalUrl;
   }
 
-  public viewFile(fileUrlInput: string | undefined, defaultFileName: string): void {
+  public viewFile(
+    fileUrlInput: string | undefined,
+    defaultFileName: string
+  ): void {
     if (!fileUrlInput) {
       console.error('File URL is undefined. Cannot view file.');
       // Consider showing a user-friendly error message here
       return;
     }
 
-    this.http.get(fileUrlInput, { responseType: 'blob', observe: 'response' })
+    this.http
+      .get(fileUrlInput, { responseType: 'blob', observe: 'response' })
       .subscribe({
         next: (response: HttpResponse<Blob>) => {
           if (response.body) {
             const blob = response.body;
             let fileName = defaultFileName;
 
-            const contentDisposition = response.headers.get('Content-Disposition');
+            const contentDisposition = response.headers.get(
+              'Content-Disposition'
+            );
             if (contentDisposition) {
               const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
               const matches = filenameRegex.exec(contentDisposition);
@@ -233,7 +253,9 @@ export class ProfessionalListComponent {
             const newTab = window.open(objectUrl, '_blank');
 
             if (!newTab) {
-              console.error('Failed to open new tab. A pop-up blocker might be active.');
+              console.error(
+                'Failed to open new tab. A pop-up blocker might be active.'
+              );
               // Consider showing a user-friendly error message here
             }
 
@@ -241,7 +263,6 @@ export class ProfessionalListComponent {
             // However, if the new tab is still using it, revoking too soon can break the display.
             // A common approach is to revoke it after a delay, assuming the new tab has loaded the content.
             setTimeout(() => URL.revokeObjectURL(objectUrl), 60 * 1000); // Revoke after 1 minute
-
           } else {
             console.error('Received an empty response body for the file.');
             // Consider showing a user-friendly error message here
@@ -251,7 +272,7 @@ export class ProfessionalListComponent {
           console.error('Error fetching file:', error);
           // Consider showing a user-friendly error message here,
           // e.g., "Sorry, the file could not be loaded or accessed."
-        }
+        },
       });
   }
 }
