@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { environment } from '../../../environments/environment';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { ProfessionalService } from '../../services/professional.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -33,7 +34,8 @@ export class ProfessionalListComponent {
   public selectedTab: string = 'bio';
 
   constructor(
-    private professionalsService: ProfessionalService
+    private professionalsService: ProfessionalService,
+    private http: HttpClient // Add this line
   ) {}
 
   ngOnInit(): void {
@@ -204,5 +206,54 @@ export class ProfessionalListComponent {
       finalUrl += relativePath;
     }
     return finalUrl;
+  }
+
+  public viewFile(fileUrlInput: string | undefined, defaultFileName: string): void {
+    if (!fileUrlInput) {
+      console.error('File URL is undefined. Cannot view file.');
+      // Consider showing a user-friendly error message here
+      return;
+    }
+
+    this.http.get(fileUrlInput, { responseType: 'blob', observe: 'response' })
+      .subscribe({
+        next: (response: HttpResponse<Blob>) => {
+          if (response.body) {
+            const blob = response.body;
+            let fileName = defaultFileName;
+
+            const contentDisposition = response.headers.get('Content-Disposition');
+            if (contentDisposition) {
+              const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+              const matches = filenameRegex.exec(contentDisposition);
+              if (matches != null && matches[1]) {
+                fileName = matches[1].replace(/['"]/g, '');
+              }
+            }
+
+            const objectUrl = URL.createObjectURL(blob);
+            const newTab = window.open(objectUrl, '_blank');
+
+            if (!newTab) {
+              console.error('Failed to open new tab. A pop-up blocker might be active.');
+              // Consider showing a user-friendly error message here
+            }
+
+            // It's best practice to revoke the object URL to free up memory.
+            // However, if the new tab is still using it, revoking too soon can break the display.
+            // A common approach is to revoke it after a delay, assuming the new tab has loaded the content.
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 60 * 1000); // Revoke after 1 minute
+
+          } else {
+            console.error('Received an empty response body for the file.');
+            // Consider showing a user-friendly error message here
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching file:', error);
+          // Consider showing a user-friendly error message here,
+          // e.g., "Sorry, the file could not be loaded or accessed."
+        }
+      });
   }
 }
