@@ -162,49 +162,47 @@ export class ProfessionalListComponent {
     if (!relativePath) {
       return undefined;
     }
+
     // If it's already a full URL (starts with http, https, or //), return it as is
     if (/^(https?:)?\/\//i.test(relativePath)) {
       return relativePath;
     }
 
     const apiUrl = environment.apiUrl; // Get from environment
-    let baseUrl = '';
+    let appOrigin = '';
 
     try {
       // Attempt to parse apiUrl to get the origin (e.g., http://localhost:8080)
-      // This handles cases where apiUrl might be like http://localhost:8080/api
       const url = new URL(apiUrl);
-      baseUrl = url.origin;
+      appOrigin = url.origin;
     } catch (e) {
-      // Fallback if apiUrl is not a full URL (e.g., just '/api')
-      // In this case, make it relative to the frontend's current host.
-      // This might be correct if a proxy is set up, or incorrect if files are served
-      // directly by the backend on a different origin/path without proxying.
-      console.warn("Failed to parse environment.apiUrl to extract origin. Assuming file paths are relative to the frontend host or a pre-configured proxy.", e);
-      // If relativePath doesn't start with '/', add it.
-      // This makes it an absolute path from the current host (e.g. /uploads/file.pdf)
-      // return relativePath.startsWith('/') ? relativePath : '/' + relativePath;
-      // For a more robust fallback, let's assume the backend paths might be like 'uploads/file.pdf'
-      // and they should be served from the root of where the API is hosted.
-      // If API is /api, and path is uploads/file.pdf, this will be /uploads/file.pdf
-      // This is a common scenario for Spring Boot static resources.
-      if (apiUrl.startsWith('http')) { // apiUrl is absolute, but parsing failed (should be rare)
-          baseUrl = apiUrl.substring(0, apiUrl.indexOf('/', apiUrl.indexOf('//') + 2) !== -1 ? apiUrl.indexOf('/', apiUrl.indexOf('//') + 2) : apiUrl.length);
-      } else { // apiUrl is relative itself e.g. /api
-          baseUrl = ''; // Paths will be relative to current host
-      }
+      console.warn("Failed to parse environment.apiUrl to extract origin. Assuming relative to current host for file path construction.", e);
+      // If apiUrl is not a full URL (e.g., just '/api'), appOrigin will be empty.
+      // This means the final URL will be relative to the current frontend host, e.g., '/upload/...'
+      // This might be correct if a proxy is configured to handle /upload paths.
+      appOrigin = ''; // Fallback to construct paths relative to the current host if apiUrl is not absolute
     }
 
-    // Ensure no double slashes if relativePath starts with one and baseUrl ends with one
-    // And ensure there IS a slash if relativePath doesn't start with one.
-    let finalUrl = baseUrl;
-    if (finalUrl.endsWith('/') && relativePath.startsWith('/')) {
-      finalUrl += relativePath.substring(1);
-    } else if (!finalUrl.endsWith('/') && !relativePath.startsWith('/')) {
-      finalUrl += '/' + relativePath;
-    } else {
-      finalUrl += relativePath;
+    // Remove leading slash from relativePath if present, as we are constructing the path carefully.
+    const cleanRelativePath = relativePath.startsWith('/') ? relativePath.substring(1) : relativePath;
+
+    // Construct the final URL: appOrigin + /upload/ + cleanRelativePath
+    // Ensure there's exactly one slash between appOrigin and 'upload', and one between 'upload' and cleanRelativePath.
+    let finalUrl = appOrigin;
+
+    if (!finalUrl.endsWith('/')) {
+      finalUrl += '/';
     }
+    finalUrl += 'upload/'; // Add the fixed base path
+
+    if (cleanRelativePath) { // Only add cleanRelativePath if it's not empty
+      finalUrl += cleanRelativePath;
+    } else {
+      // If cleanRelativePath is empty, we might have just appOrigin/upload/
+      // Check if this is intended or if we should return undefined/error for empty relativePath
+      // For now, allow it, it will result in 'http://origin/upload/'
+    }
+
     return finalUrl;
   }
 
