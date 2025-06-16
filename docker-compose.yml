@@ -1,0 +1,39 @@
+# Docker Compose file version
+version: '3.8'
+
+# Define the services (containers)
+services:
+  # Frontend service (Angular application)
+  frontend:
+    build:
+      context: ./mindapax-frontend # Path to the frontend Dockerfile and source code
+      dockerfile: Dockerfile      # Name of the Dockerfile
+    ports:
+      - "80:80"                   # Map host port 80 to container port 80 (Nginx default)
+    networks:
+      - mindapax-network          # Connect to the custom network
+    depends_on:
+      - backend                   # Optional: Ensures backend starts before frontend attempts to connect
+                                  # (useful if frontend makes API calls during its initialization or build)
+
+  # Backend service (Spring Boot application)
+  backend:
+    build:
+      context: ./mindapax-backend  # Path to the backend Dockerfile and source code
+      dockerfile: Dockerfile      # Name of the Dockerfile
+    ports:
+      - "8080:8080"               # Map host port 8080 to container port 8080 (Spring Boot default)
+    networks:
+      - mindapax-network          # Connect to the custom network
+    environment:
+      # Add any necessary environment variables here
+      # Example:
+      # - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mydatabase
+      # - SPRING_DATASOURCE_USERNAME=user
+      # - SPRING_DATASOURCE_PASSWORD=password
+      - APP_GREETING="Hello from Docker Compose!" # Example environment variable
+
+# Define the custom network
+networks:
+  mindapax-network:
+    driver: bridge                # Use the default bridge driver for local networks
