@@ -35,6 +35,6 @@ export interface ProfessionalCertification {
   issuingOrganization?: string;
   issueDate?: Date;
   expiryDate?: Date;
-  documentUrl?: string;
+  filePath?: string;
   description?: string;
 }
