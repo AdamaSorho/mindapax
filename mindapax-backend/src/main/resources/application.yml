@@ -31,12 +31,12 @@ logging:
 
 jwt:
   secret: ${JWT_SECRET:byzedcoachingsecretkey123hdt252tsayd456789012345678901234567890}
-  expiration: 86400000
+  expiration: ${JWT_EXPIRATION_TIME:86400000}
 
 app:
   jwt:
     refresh-token:
-      expiration-ms: 604800000
+      expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:86400000}
   file-storage:
     upload-dir: uploads
 
