@@ -25,6 +25,8 @@ services:
       - "8080:8080"               # Map host port 8080 to container port 8080 (Spring Boot default)
     networks:
       - mindapax-network          # Connect to the custom network
+    depends_on:
+      - mysql                     # Ensures MySQL starts before the backend
     environment:
       # Add any necessary environment variables here
       # Example:
@@ -32,6 +34,31 @@ services:
       # - SPRING_DATASOURCE_USERNAME=user
       # - SPRING_DATASOURCE_PASSWORD=password
       - APP_GREETING="Hello from Docker Compose!" # Example environment variable
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/mindapax_db?useSSL=false&allowPublicKeyRetrieval=true # CHANGE THIS if db name is different
+      SPRING_DATASOURCE_USERNAME: mindapax_user # CHANGE THIS
+      SPRING_DATASOURCE_PASSWORD: youruserpassword # CHANGE THIS
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update # Options: create, create-drop, validate, none
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
+
+  mysql:
+    image: mysql:8.0 # Or mysql:latest
+    container_name: mindapax-mysql
+    ports:
+      - "3306:3306" # Optional: Map host port 3306 to container port 3306 for external access/debugging
+    environment:
+      MYSQL_ROOT_PASSWORD: yourrootpassword # CHANGE THIS
+      MYSQL_DATABASE: mindapax_db # CHANGE THIS or use your desired DB name
+      MYSQL_USER: mindapax_user # CHANGE THIS or use your desired username
+      MYSQL_PASSWORD: youruserpassword # CHANGE THIS
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - mindapax-network # Ensure it's on the same network as your backend
+    restart: unless-stopped
+
+# Define named volumes
+volumes:
+  mysql-data: # This defines the named volume for MySQL
 
 # Define the custom network
 networks:
