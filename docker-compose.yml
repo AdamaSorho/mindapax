@@ -22,6 +22,8 @@ services:
       - "8080:8080" # Map host port 8080 to container port 8080 (Spring Boot default)
     networks:
       - mindapax-network # Connect to the custom network
+    depends_on:
+      - mysql # Ensures MySQL starts before the backend
     environment:
       # Add any necessary environment variables here
       - DB_NAME=${DB_NAME} # Example environment variable from .env file
@@ -37,6 +39,26 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME}
       - JWT_REFRESH_TOKEN_EXPIRATION_MS=${JWT_REFRESH_TOKEN_EXPIRATION_MS}
+
+  mysql:
+    image: mysql:8.0 # Or mysql:latest
+    container_name: mindapax-mysql
+    ports:
+      - "3306:3306" # Optional: Map host port 3306 to container port 3306 for external access/debugging
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # CHANGE THIS
+      MYSQL_DATABASE: ${DB_NAME} # CHANGE THIS or use your desired DB name
+      MYSQL_USER: ${MYSQL_USER} # CHANGE THIS or use your desired username
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD} # CHANGE THIS
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - mindapax-network # Ensure it's on the same network as your backend
+    restart: unless-stopped
+
+# Define named volumes
+volumes:
+  mysql-data: # This defines the named volume for MySQL
 
 # Define the custom network
 networks:
