@@ -21,6 +21,8 @@ FROM nginx:alpine
 
 # Remove default Nginx configuration file
 RUN rm /etc/nginx/conf.d/default.conf
+# ADD THIS LINE: Remove default Nginx HTML files
+RUN rm -f /usr/share/nginx/html/index.html /usr/share/nginx/html/50x.html
 
 # Copy custom Nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
