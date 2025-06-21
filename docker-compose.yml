@@ -48,8 +48,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # CHANGE THIS
       MYSQL_DATABASE: ${DB_NAME} # CHANGE THIS or use your desired DB name
-      MYSQL_USER: ${MYSQL_USER} # CHANGE THIS or use your desired username
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD} # CHANGE THIS
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
