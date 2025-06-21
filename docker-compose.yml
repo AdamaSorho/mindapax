@@ -23,7 +23,8 @@ services:
     networks:
       - mindapax-network # Connect to the custom network
     depends_on:
-      - mysql # Ensures MySQL starts before the backend
+      mysql:
+        condition: service_healthy
     environment:
       # Add any necessary environment variables here
       - DB_NAME=${DB_NAME} # Example environment variable from .env file
@@ -32,7 +33,7 @@ services:
       - ZOOM_API_ACCOUNT_ID=${ZOOM_API_ACCOUNT_ID}
       - ZOOM_API_CLIENT_ID=${ZOOM_API_CLIENT_ID}
       - ZOOM_API_CLIENT_SECRET=${ZOOM_API_CLIENT_SECRET}
-      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_HOST=mysql
       - MYSQL_PORT=${MYSQL_PORT}
       - MYSQL_USER=root
       - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
@@ -53,6 +54,12 @@ services:
     networks:
       - mindapax-network # Ensure it's on the same network as your backend
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-P", "3306", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s # Give MySQL some time to start up before healthchecks begin
 
 # Define named volumes
 volumes:
