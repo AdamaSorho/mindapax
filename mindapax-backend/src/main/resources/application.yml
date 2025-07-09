@@ -40,6 +40,17 @@ app:
   file-storage:
     upload-dir: uploads
 
+spring:
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
+      region:
+        static: us-east-1
+      s3:
+        bucket-name: ${AWS_S3_BUCKET_NAME}
+
 # Zoom API Credentials (replace with actual credentials)
 zoom:
   sdk_key: ${ZOOM_SDK_KEY}

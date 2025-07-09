@@ -16,8 +16,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.adamasorho.mindapax_backend.service.FileStorageService;
+import org.springframework.context.annotation.Profile;
 
 @Service
+@Profile("filesystem")
 public class FileStorageServiceImpl implements FileStorageService {
   private final Path fileStorageLocation;
 
