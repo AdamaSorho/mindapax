@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import io.awspring.cloud.s3.ObjectMetadataProvider;
+
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,7 +44,11 @@ public class S3StorageService implements FileStorageService {
         String key = subdirectory + "/" + uniqueFileName;
 
         try {
-            s3Template.upload(bucketName, key, file.getInputStream(), builder -> builder.acl(ObjectCannedACL.PRIVATE));
+            ObjectMetadataProvider metadataProvider = () -> PutObjectRequest.builder()
+                    .acl(ObjectCannedACL.PRIVATE)
+                    .contentType(file.getContentType())
+                    .build()::toBuilder;
+            s3Template.upload(bucketName, key, file.getInputStream(), metadataProvider);
             return key;
         } catch (IOException e) {
             throw new RuntimeException("Could not store file " + originalFileName, e);
