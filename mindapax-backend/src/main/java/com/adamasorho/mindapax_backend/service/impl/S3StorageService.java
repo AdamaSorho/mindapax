@@ -1,17 +1,18 @@
 package com.adamasorho.mindapax_backend.service.impl;
 
 import com.adamasorho.mindapax_backend.service.FileStorageService;
-import io.awspring.cloud.s3.S3Template;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
-import java.util.function.Consumer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,11 +22,11 @@ import java.util.UUID;
 @Profile("s3")
 public class S3StorageService implements FileStorageService {
 
-    private final S3Template s3Template;
+    private final S3Client s3Client;
     private final String bucketName;
 
-    public S3StorageService(S3Template s3Template, @Value("${spring.cloud.aws.s3.bucket-name}") String bucketName) {
-        this.s3Template = s3Template;
+    public S3StorageService(S3Client s3Client, @Value("${spring.cloud.aws.s3.bucket-name}") String bucketName) {
+        this.s3Client = s3Client;
         this.bucketName = bucketName;
     }
 
@@ -43,11 +44,14 @@ public class S3StorageService implements FileStorageService {
         String key = subdirectory + "/" + uniqueFileName;
 
         try {
-            Consumer<PutObjectRequest.Builder> putObjectRequestCallback = builder -> builder
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
                     .acl(ObjectCannedACL.PRIVATE)
-                    .contentType(file.getContentType());
+                    .contentType(file.getContentType())
+                    .build();
 
-            s3Template.upload(bucketName, key, file.getInputStream(), putObjectRequestCallback);
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
             return key;
         } catch (IOException e) {
             throw new RuntimeException("Could not store file " + originalFileName, e);
@@ -66,10 +70,15 @@ public class S3StorageService implements FileStorageService {
     @Override
     public boolean deleteFile(String filePath) {
         try {
-            s3Template.deleteObject(bucketName, filePath);
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(filePath)
+                    .build();
+            s3Client.deleteObject(deleteObjectRequest);
             return true;
         } catch (Exception e) {
-            // Log the exception
+            // Log the exception, e.g., using a logger
+            // log.error("Error deleting file from S3: {}", filePath, e);
             return false;
         }
     }
