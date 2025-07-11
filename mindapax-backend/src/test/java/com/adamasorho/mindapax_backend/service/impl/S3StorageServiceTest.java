@@ -12,10 +12,11 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import io.awspring.cloud.s3.ObjectMetadataProvider;
+
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,7 +48,7 @@ class S3StorageServiceTest {
 
         // Mock S3Template behavior
         S3Resource mockS3Resource = org.mockito.Mockito.mock(S3Resource.class);
-        when(s3Template.upload(eq(BUCKET_NAME), any(String.class), any(InputStream.class), any(Consumer.class)))
+        when(s3Template.upload(eq(BUCKET_NAME), any(String.class), any(InputStream.class), any(ObjectMetadataProvider.class)))
                 .thenReturn(mockS3Resource);
 
 
@@ -58,15 +59,16 @@ class S3StorageServiceTest {
         assertNotNull(fileKey);
         assertTrue(fileKey.matches(expectedKeyPattern));
 
-        ArgumentCaptor<Consumer<PutObjectRequest.Builder>> aclCaptor = ArgumentCaptor.forClass(Consumer.class);
-        verify(s3Template).upload(eq(BUCKET_NAME), eq(fileKey), any(InputStream.class), aclCaptor.capture());
+        ArgumentCaptor<ObjectMetadataProvider> metadataProviderCaptor = ArgumentCaptor.forClass(ObjectMetadataProvider.class);
+        verify(s3Template).upload(eq(BUCKET_NAME), eq(fileKey), any(InputStream.class), metadataProviderCaptor.capture());
 
-        // Verify ACL is set to private
-        PutObjectRequest.Builder builder = PutObjectRequest.builder();
-        aclCaptor.getValue().accept(builder);
-        assertEquals(ObjectCannedACL.PRIVATE.toString(), builder.build().acl().toString());
+        // Verify ACL and ContentType in metadata
+        PutObjectRequest.Builder putObjectRequestBuilder = PutObjectRequest.builder();
+        metadataProviderCaptor.getValue().provide(putObjectRequestBuilder);
+        PutObjectRequest putObjectRequest = putObjectRequestBuilder.build();
 
-
+        assertEquals(ObjectCannedACL.PRIVATE.toString(), putObjectRequest.acl().toString());
+        assertEquals("text/plain", putObjectRequest.contentType());
     }
 
     @Test
@@ -88,7 +90,7 @@ class S3StorageServiceTest {
         MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt", "text/plain", "test data".getBytes());
         String subdirectory = "test-subdir";
 
-        when(s3Template.upload(eq(BUCKET_NAME), any(String.class), any(InputStream.class), any(Consumer.class)))
+        when(s3Template.upload(eq(BUCKET_NAME), any(String.class), any(InputStream.class), any(ObjectMetadataProvider.class)))
                 .thenThrow(new IOException("S3 upload failed"));
         // Act & Assert
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
@@ -133,7 +135,7 @@ class S3StorageServiceTest {
         String subdirectory = "test-subdir";
 
         S3Resource mockS3Resource = org.mockito.Mockito.mock(S3Resource.class);
-        when(s3Template.upload(eq(BUCKET_NAME), any(String.class), any(InputStream.class), any(Consumer.class)))
+        when(s3Template.upload(eq(BUCKET_NAME), any(String.class), any(InputStream.class), any(ObjectMetadataProvider.class)))
                 .thenReturn(mockS3Resource);
 
         // Act
