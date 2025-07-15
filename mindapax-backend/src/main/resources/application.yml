@@ -1,6 +1,8 @@
 spring:
   application:
     name: mindapax-backend
+  # profiles:
+  #   active: s3
 
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${DB_NAME:mindapax_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -15,6 +17,16 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID:test}
+        secret-key: ${AWS_SECRET_ACCESS_KEY:test}
+      region:
+        static: us-east-1
+      s3:
+        bucket-name: ${AWS_S3_BUCKET_NAME:mindapax-bucket}
 
 logging:
   level:
@@ -40,18 +52,7 @@ app:
   file-storage:
     upload-dir: uploads
 
-spring:
-  cloud:
-    aws:
-      credentials:
-        access-key: ${AWS_ACCESS_KEY_ID}
-        secret-key: ${AWS_SECRET_ACCESS_KEY}
-      region:
-        static: us-east-1
-      s3:
-        bucket-name: ${AWS_S3_BUCKET_NAME}
-
-# Zoom API Credentials (replace with actual credentials)
+# Zoom API Credentials
 zoom:
   sdk_key: ${ZOOM_SDK_KEY}
   sdk_secret: ${ZOOM_SDK_SECRET}

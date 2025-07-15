@@ -1,6 +1,8 @@
 package com.adamasorho.mindapax_backend.service.impl;
 
 import com.adamasorho.mindapax_backend.service.FileStorageService;
+
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -20,6 +22,7 @@ import java.util.UUID;
 
 @Service
 @Profile("s3")
+@Slf4j
 public class S3StorageService implements FileStorageService {
 
     private final S3Client s3Client;
@@ -78,7 +81,7 @@ public class S3StorageService implements FileStorageService {
             return true;
         } catch (Exception e) {
             // Log the exception, e.g., using a logger
-            // log.error("Error deleting file from S3: {}", filePath, e);
+            log.error("Error deleting file from S3: {}", filePath, e);
             return false;
         }
     }
