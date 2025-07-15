@@ -1,8 +1,8 @@
 spring:
   application:
     name: mindapax-backend
-  # profiles:
-  #   active: s3
+  profiles:
+    active: s3
 
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${DB_NAME:mindapax_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
