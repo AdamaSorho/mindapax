@@ -7,8 +7,6 @@ import java.security.SecureRandom; // Added import
 import java.util.stream.Collectors; // Added import
 import java.util.stream.IntStream;  // Added import
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,11 +31,13 @@ import com.adamasorho.mindapax_backend.service.ZoomService;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Transactional
+@Slf4j
 public class ProfessionalServiceImpl implements ProfessionalService {
-  private static final Logger logger = LoggerFactory.getLogger(ProfessionalServiceImpl.class);
+  // private static final log log = logFactory.getlog(ProfessionalServiceImpl.class);
 
   private final ProfessionalRepository professionalRepository;
   private final ConnectionRepository connectionRepository;
@@ -92,7 +92,7 @@ public class ProfessionalServiceImpl implements ProfessionalService {
       Integer experience, LocalDate availabilityDate, ProfessionalStatus status, 
       Set<GrantedAuthority> authorities, Pageable pageable) {
     if (!authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN")) && status != ProfessionalStatus.ACTIVE) {
-      logger.warn("Non-admin user attempted to access non-active professionals. User authorities: {}", authorities);
+      log.warn("Non-admin user attempted to access non-active professionals. User authorities: {}", authorities);
       throw new AccessDeniedException("Only ACTIVE professionals are visible to regular users.");
     }
     
@@ -139,7 +139,7 @@ public class ProfessionalServiceImpl implements ProfessionalService {
   @Override
   public void updateProfessionalStatus(Long professionalId, ProfessionalStatus status, String rejectionNote, Set<GrantedAuthority> authorities) {
     if (!authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN")) && status == ProfessionalStatus.ACTIVE) {
-        logger.warn("Non-admin user attempted to set professional status to ACTIVE for ID: {}. User authorities: {}", professionalId, authorities);
+        log.warn("Non-admin user attempted to set professional status to ACTIVE for ID: {}. User authorities: {}", professionalId, authorities);
         throw new AccessDeniedException("Only ADMIN can set ACTIVE status.");
     }
 
@@ -150,20 +150,20 @@ public class ProfessionalServiceImpl implements ProfessionalService {
             String professionalFullName = professional.getUser().getFirstName() + " " + professional.getUser().getLastName();
 
             String generatedPassword = generateRandomPassword(10);
-            logger.info("Generated Zoom meeting password for professional {} {} (ID: {})",
+            log.info("Generated Zoom meeting password for professional {} {} (ID: {})",
                         professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId);
 
-            logger.info("Professional {} {} (ID: {}) is being approved. Attempting to create Zoom meeting with password.",
+            log.info("Professional {} {} (ID: {}) is being approved. Attempting to create Zoom meeting with password.",
                         professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId);
 
             String meetingId = zoomService.createPermanentMeetingForProfessional(professionalFullName, generatedPassword);
             professional.setZoomMeetingId(meetingId);
             professional.setZoomMeetingPassword(generatedPassword); // Store the generated password
 
-            logger.info("Successfully created Zoom meeting (ID: {}) and password, and set them for professional {} {} (ID: {})",
+            log.info("Successfully created Zoom meeting (ID: {}) and password, and set them for professional {} {} (ID: {})",
                         meetingId, professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId);
         } catch (Exception e) {
-            logger.error("Failed to create Zoom meeting for professional {} {} (ID: {}): {}. Professional status will be updated without a Zoom ID/password.",
+            log.error("Failed to create Zoom meeting for professional {} {} (ID: {}): {}. Professional status will be updated without a Zoom ID/password.",
                          professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId, e.getMessage(), e);
         }
     }
@@ -176,13 +176,13 @@ public class ProfessionalServiceImpl implements ProfessionalService {
     }
     professional.setStatusUpdatedAt(LocalDateTime.now());
     professionalRepository.save(professional);
-    logger.info("Updated status for professional ID: {} to {}. Rejection note: '{}'", professionalId, status, professional.getRejectionNote());
+    log.info("Updated status for professional ID: {} to {}. Rejection note: '{}'", professionalId, status, professional.getRejectionNote());
   }
 
   @Override
   public Page<Professional> findProfessionalsByStatus(ProfessionalStatus status, Set<GrantedAuthority> authorities, Pageable pageable) {
     if (!authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN")) && status != ProfessionalStatus.ACTIVE) {
-      logger.warn("Non-admin user attempted to find professionals by non-active status: {}. User authorities: {}", status, authorities);
+      log.warn("Non-admin user attempted to find professionals by non-active status: {}. User authorities: {}", status, authorities);
       throw new AccessDeniedException("Only ACTIVE professionals are visible to regular users.");
     }
     return professionalRepository.findByStatus(status, pageable);

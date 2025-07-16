@@ -2,6 +2,7 @@ package com.adamasorho.mindapax_backend.service.impl;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,15 +17,22 @@ import com.adamasorho.mindapax_backend.service.ProfessionalService;
 import com.adamasorho.mindapax_backend.service.UserService;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.AllArgsConstructor;
 
 @Service
-@AllArgsConstructor
 public class ConnectionServiceImpl implements ConnectionService {
   private final ConnectionRepository connectionRepository;
   private final UserService userService;
   private final ProfessionalService professionalService;
   private final ConversationService conversationService;
+
+  @Autowired
+  public ConnectionServiceImpl(ConnectionRepository connectionRepository, UserService userService, 
+      ProfessionalService professionalService, ConversationService conversationService) {
+    this.connectionRepository = connectionRepository;
+    this.userService = userService;
+    this.professionalService = professionalService;
+    this.conversationService = conversationService;
+  }
 
   @Override
   public Connection getConnectionById(Long id) {

@@ -3,6 +3,8 @@ package com.adamasorho.mindapax_backend.service.impl;
 import com.adamasorho.mindapax_backend.service.ZoomService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpHeaders;
@@ -17,17 +19,15 @@ import javax.crypto.spec.SecretKeySpec;
 
 // import com.fasterxml.jackson.databind.ObjectMapper; // Not directly used, but good for general JSON work
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 
 @Service
+@Slf4j
 public class ZoomServiceImpl implements ZoomService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ZoomServiceImpl.class);
 
     @Value("${zoom.sdk_key}")
     private String zoomSdkKey;
@@ -81,21 +81,21 @@ public class ZoomServiceImpl implements ZoomService {
             return payload;
 
         } catch (Exception e) {
-            logger.error("Error generating Zoom signature for meeting {}: {}", meetingNumber, e.getMessage(), e);
+            log.error("Error generating Zoom signature for meeting {}: {}", meetingNumber, e.getMessage(), e);
             throw new RuntimeException("Error generating Zoom signature", e);
         }
     }
 
     @Override
     public String createPermanentMeetingForProfessional(String professionalName, String password) {
-        logger.info("Attempting to create a permanent Zoom meeting for professional: {}", professionalName);
+        log.info("Attempting to create a permanent Zoom meeting for professional: {}", professionalName);
 
         String accessToken = getS2SAccessToken().block();
         if (accessToken == null) {
-            logger.error("Failed to obtain Zoom S2S access token for professional: {}", professionalName);
+            log.error("Failed to obtain Zoom S2S access token for professional: {}", professionalName);
             throw new RuntimeException("Failed to obtain Zoom S2S access token.");
         }
-        logger.debug("Successfully obtained Zoom S2S access token for professional: {}.", professionalName);
+        log.debug("Successfully obtained Zoom S2S access token for professional: {}.", professionalName);
 
         String userId = "me";
 
@@ -117,24 +117,24 @@ public class ZoomServiceImpl implements ZoomService {
                 .body(BodyInserters.fromValue(requestBody))
                 .retrieve()
                 .bodyToMono(ZoomMeetingResponse.class)
-                .doOnError(e -> logger.error("Error response from Zoom API during meeting creation for {}: {}", professionalName, e.getMessage(), e))
+                .doOnError(e -> log.error("Error response from Zoom API during meeting creation for {}: {}", professionalName, e.getMessage(), e))
                 .block();
 
             if (response != null && response.getId() != null) {
-                logger.info("Successfully created Zoom meeting for {}. Meeting ID: {}", professionalName, response.getId());
+                log.info("Successfully created Zoom meeting for {}. Meeting ID: {}", professionalName, response.getId());
                 return String.valueOf(response.getId());
             } else {
-                logger.error("Failed to create Zoom meeting for {}. Response was null or lacked ID. Response: {}", professionalName, response);
+                log.error("Failed to create Zoom meeting for {}. Response was null or lacked ID. Response: {}", professionalName, response);
                 throw new RuntimeException("Failed to create Zoom meeting for " + professionalName + ". Invalid response from Zoom.");
             }
         } catch (Exception e) {
-            logger.error("Exception during Zoom meeting creation for {}: {}", professionalName, e.getMessage(), e);
+            log.error("Exception during Zoom meeting creation for {}: {}", professionalName, e.getMessage(), e);
             throw new RuntimeException("Exception during Zoom meeting creation for " + professionalName, e);
         }
     }
 
     private Mono<String> getS2SAccessToken() {
-        logger.debug("Attempting to get Zoom S2S access token.");
+        log.debug("Attempting to get Zoom S2S access token.");
         String credentials = Base64.getEncoder().encodeToString((zoomApiClientId + ":" + zoomApiClientSecret).getBytes(StandardCharsets.UTF_8));
         String tokenUrl = "https://zoom.us/oauth/token";
 
@@ -148,14 +148,14 @@ public class ZoomServiceImpl implements ZoomService {
             .bodyToMono(Map.class)
             .map(responseBody -> {
                 if (responseBody == null || !responseBody.containsKey("access_token")) {
-                    logger.error("Zoom S2S token response is invalid or missing access_token. Response: {}", responseBody);
+                    log.error("Zoom S2S token response is invalid or missing access_token. Response: {}", responseBody);
                     throw new RuntimeException("Invalid response from Zoom token endpoint.");
                 }
                 String token = (String) responseBody.get("access_token");
-                logger.debug("Successfully retrieved Zoom S2S access token.");
+                log.debug("Successfully retrieved Zoom S2S access token.");
                 return token;
             })
-            .doOnError(e -> logger.error("Error obtaining Zoom S2S token: {}", e.getMessage(), e));
+            .doOnError(e -> log.error("Error obtaining Zoom S2S token: {}", e.getMessage(), e));
     }
 
     // Inner DTOs for Zoom API
