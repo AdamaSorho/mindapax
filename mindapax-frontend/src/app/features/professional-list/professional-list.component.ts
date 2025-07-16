@@ -164,62 +164,6 @@ export class ProfessionalListComponent {
     return Array.from(specialties);
   }
 
-  public getAbsoluteFileUrl(
-    relativePath: string | undefined
-  ): string | undefined {
-    if (!relativePath) {
-      return undefined;
-    }
-
-    // If it's already a full URL (starts with http, https, or //), return it as is
-    if (/^(https?:)?\/\//i.test(relativePath)) {
-      return relativePath;
-    }
-
-    const apiUrl = environment.apiUrl; // Get from environment
-    let appOrigin = '';
-
-    try {
-      // Attempt to parse apiUrl to get the origin (e.g., http://localhost:8080)
-      const url = new URL(apiUrl);
-      appOrigin = url.origin;
-    } catch (e) {
-      console.warn(
-        'Failed to parse environment.apiUrl to extract origin. Assuming relative to current host for file path construction.',
-        e
-      );
-      // If apiUrl is not a full URL (e.g., just '/api'), appOrigin will be empty.
-      // This means the final URL will be relative to the current frontend host, e.g., '/upload/...'
-      // This might be correct if a proxy is configured to handle /upload paths.
-      appOrigin = ''; // Fallback to construct paths relative to the current host if apiUrl is not absolute
-    }
-
-    // Remove leading slash from relativePath if present, as we are constructing the path carefully.
-    const cleanRelativePath = relativePath.startsWith('/')
-      ? relativePath.substring(1)
-      : relativePath;
-
-    // Construct the final URL: appOrigin + /upload/ + cleanRelativePath
-    // Ensure there's exactly one slash between appOrigin and 'upload', and one between 'upload' and cleanRelativePath.
-    let finalUrl = appOrigin;
-
-    if (!finalUrl.endsWith('/')) {
-      finalUrl += '/';
-    }
-  finalUrl += 'uploads/'; // Add the fixed base path
-
-    if (cleanRelativePath) {
-      // Only add cleanRelativePath if it's not empty
-      finalUrl += cleanRelativePath;
-    } else {
-      // If cleanRelativePath is empty, we might have just appOrigin/upload/
-      // Check if this is intended or if we should return undefined/error for empty relativePath
-      // For now, allow it, it will result in 'http://origin/upload/'
-    }
-
-    return finalUrl;
-  }
-
   public viewFile(
     fileUrlInput: string | undefined,
     defaultFileName: string

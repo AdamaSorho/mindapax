@@ -17,6 +17,7 @@ export interface Professional {
   createdAt: Date;
   statusUpdatedAt?: Date;
   resumeUrl?: string;
+  resumeFileUrl?: string;
   experience?: ProfessionalExperience[];
   certifications?: ProfessionalCertification[];
   rejectionNote?: string;
@@ -36,5 +37,6 @@ export interface ProfessionalCertification {
   issueDate?: Date;
   expiryDate?: Date;
   filePath?: string;
+  fileUrl?: string;
   description?: string;
 }
