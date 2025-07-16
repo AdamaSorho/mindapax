@@ -25,8 +25,11 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      localstack:
+        condition: service_started
     environment:
       # Add any necessary environment variables here
+      - SPRING_PROFILES_ACTIVE=local
       - DB_NAME=${DB_NAME} # Example environment variable from .env file
       - ZOOM_SDK_KEY=${ZOOM_SDK_KEY}
       - ZOOM_SDK_SECRET=${ZOOM_SDK_SECRET}
@@ -40,6 +43,22 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME}
       - JWT_REFRESH_TOKEN_EXPIRATION_MS=${JWT_REFRESH_TOKEN_EXPIRATION_MS}
+
+  localstack:
+    image: localstack/localstack:0.12.17
+    container_name: mindapax-localstack
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    environment:
+      - SERVICES=s3
+      - DATA_DIR=/tmp/localstack/data
+      - START_WEB=1
+    volumes:
+      - localstack-data:/tmp/localstack
+    networks:
+      - mindapax-network
+    restart: unless-stopped
 
   mysql:
     image: mysql:8.0 # Or mysql:latest
@@ -64,6 +83,7 @@ services:
 # Define named volumes
 volumes:
   mysql-data: # This defines the named volume for MySQL
+  localstack-data:
 
 # Define the custom network
 networks:

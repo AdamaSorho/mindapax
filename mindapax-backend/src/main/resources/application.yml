@@ -1,8 +1,39 @@
 spring:
   application:
     name: mindapax-backend
-  profiles:
-    active: s3
+
+---
+spring:
+  config:
+    activate:
+      on-profile: s3
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
+      region:
+        static: ${AWS_REGION}
+      s3:
+        bucket-name: ${AWS_S3_BUCKET_NAME}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  cloud:
+    aws:
+      credentials:
+        access-key: test
+        secret-key: test
+      region:
+        static: us-east-1
+      s3:
+        endpoint: http://localstack:4566
+        bucket-name: mindapax
+        path-style-access-enabled: true
+
 
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${DB_NAME:mindapax_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -18,15 +49,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
 
-  cloud:
-    aws:
-      credentials:
-        access-key: ${AWS_ACCESS_KEY_ID:test}
-        secret-key: ${AWS_SECRET_ACCESS_KEY:test}
-      region:
-        static: us-east-1
-      s3:
-        bucket-name: ${AWS_S3_BUCKET_NAME:mindapax-bucket}
 # debug: true
 logging:
   level:
