@@ -52,6 +52,9 @@ public class Professional {
     @Column(nullable = false)
     private String resumeFilePath;
 
+    @Column(length = 1024)
+    private String resumeFileUrl;
+
     @OneToOne
     @JoinColumn(name = "user_id")
     @MapsId

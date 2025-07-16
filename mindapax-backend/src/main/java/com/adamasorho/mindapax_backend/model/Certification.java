@@ -23,7 +23,13 @@ public class Certification {
     private Professional professional;
 
     @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
     private String filePath;
+
+    @Column(length = 1024)
+    private String fileUrl;
 
     @Column(nullable = false)
     private String fileName;

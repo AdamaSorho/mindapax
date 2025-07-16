@@ -80,4 +80,9 @@ public class FileStorageServiceImpl implements FileStorageService {
             return false;
         }
     }
+
+    @Override
+    public String getFileUrl(String key) {
+        return "/uploads/" + key;
+    }
 }

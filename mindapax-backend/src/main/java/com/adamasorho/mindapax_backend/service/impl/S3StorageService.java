@@ -50,7 +50,7 @@ public class S3StorageService implements FileStorageService {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
-                    .acl(ObjectCannedACL.PRIVATE)
+                    .acl(ObjectCannedACL.PUBLIC_READ)
                     .contentType(file.getContentType())
                     .build();
 
@@ -84,5 +84,10 @@ public class S3StorageService implements FileStorageService {
             log.error("Error deleting file from S3: {}", filePath, e);
             return false;
         }
+    }
+
+    @Override
+    public String getFileUrl(String key) {
+        return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(key)).toExternalForm();
     }
 }
