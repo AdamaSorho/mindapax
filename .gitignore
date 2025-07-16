@@ -2,3 +2,5 @@ uploads/
 environments.sh
 .env
 dev-config-sets/
+DEPLOYMENT-test.md
+docker-compose-test.yml

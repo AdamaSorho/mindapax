@@ -1,0 +1,12 @@
+spring:
+  cloud:
+    aws:
+      credentials:
+        access-key: test
+        secret-key: test
+      region:
+        static: us-east-1
+      s3:
+        endpoint: http://localhost:4566
+        bucket-name: mindapax-bucket
+        path-style-access-enabled: true

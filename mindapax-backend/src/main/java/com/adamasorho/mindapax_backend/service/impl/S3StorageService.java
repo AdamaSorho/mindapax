@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@Profile("s3")
+@Profile({"prod", "dev"})
 @Slf4j
 public class S3StorageService implements FileStorageService {
 
