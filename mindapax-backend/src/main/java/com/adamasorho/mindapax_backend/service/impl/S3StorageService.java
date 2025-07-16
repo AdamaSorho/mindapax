@@ -8,6 +8,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -28,10 +30,12 @@ public class S3StorageService implements FileStorageService {
 
     private final S3Client s3Client;
     private final String bucketName;
+    private final S3Presigner s3Presigner;
 
-    public S3StorageService(S3Client s3Client, @Value("${spring.cloud.aws.s3.bucket-name}") String bucketName) {
+    public S3StorageService(S3Client s3Client, @Value("${spring.cloud.aws.s3.bucket-name}") String bucketName, S3Presigner s3Presigner) {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
+        this.s3Presigner = s3Presigner;
     }
 
     @Override
@@ -89,6 +93,10 @@ public class S3StorageService implements FileStorageService {
 
     @Override
     public String getFileUrl(String key) {
-        return s3Client.utilities().presignGetObject(builder -> builder.bucket(bucketName).key(key).expiresIn(Duration.ofMinutes(10))).url().toExternalForm();
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(10))
+                .getObjectRequest(builder -> builder.bucket(bucketName).key(key).build())
+                .build();
+        return s3Presigner.presignGetObject(presignRequest).url().toExternalForm();
     }
 }
