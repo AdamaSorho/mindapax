@@ -8,7 +8,6 @@ import java.util.stream.Collectors; // Added import
 import java.util.stream.IntStream;  // Added import
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -50,7 +49,7 @@ public class ProfessionalServiceImpl implements ProfessionalService {
       ProfessionalRepository professionalRepository,
       ConnectionRepository connectionRepository,
       UserMapper userMapper,
-      @Lazy ZoomService zoomService) {
+      ZoomService zoomService) {
     this.professionalRepository = professionalRepository;
     this.connectionRepository = connectionRepository;
     this.userMapper = userMapper;
