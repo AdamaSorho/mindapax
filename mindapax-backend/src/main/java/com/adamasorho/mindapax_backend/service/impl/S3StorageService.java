@@ -15,6 +15,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +51,7 @@ public class S3StorageService implements FileStorageService {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
-                    .acl(ObjectCannedACL.PUBLIC_READ)
+                    .acl(ObjectCannedACL.PRIVATE)
                     .contentType(file.getContentType())
                     .build();
 
@@ -88,6 +89,6 @@ public class S3StorageService implements FileStorageService {
 
     @Override
     public String getFileUrl(String key) {
-        return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(key)).toExternalForm();
+        return s3Client.utilities().presignGetObject(builder -> builder.bucket(bucketName).key(key).expiresIn(Duration.ofMinutes(10))).url().toExternalForm();
     }
 }

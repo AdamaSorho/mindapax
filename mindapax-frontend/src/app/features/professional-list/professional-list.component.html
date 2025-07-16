@@ -350,7 +350,7 @@
                         </div>
                         <div>
                           <button type="button"
-                            (click)="viewFile(cert.fileUrl, cert.name ? (cert.name + '.pdf') : 'certification.pdf')"
+                            (click)="viewFile(cert.fileUrl, cert.fileName)"
                             class="text-blue-600 hover:underline flex items-center focus:outline-none">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                               xmlns="http://www.w3.org/2000/svg">
@@ -382,7 +382,7 @@
                     <h5 class="text-lg font-semibold text-gray-800">Resume</h5>
                     @if (selectedProfessional.resumeFileUrl) {
                     <button type="button"
-                      (click)="viewFile(selectedProfessional.resumeFileUrl, 'resume.pdf')"
+                      (click)="viewFile(selectedProfessional.resumeFileUrl, selectedProfessional.user.firstName + '_resume.pdf')"
                       class="text-blue-600 hover:underline flex items-center focus:outline-none">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
@@ -403,7 +403,7 @@
                     </svg>
                     <p class="text-gray-600 mb-3">Resume available for review</p>
                     <button type="button"
-                      (click)="viewFile(selectedProfessional.resumeFileUrl, 'resume.pdf')"
+                      (click)="viewFile(selectedProfessional.resumeFileUrl, selectedProfessional.user.firstName + '_resume.pdf')"
                       class="text-sm font-medium text-blue-600 hover:underline focus:outline-none">View Full
                       Resume</button>
                   </div>
