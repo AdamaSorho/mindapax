@@ -5,6 +5,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +33,8 @@ class S3StorageServiceTest {
 
     @Mock
     private S3Client s3Client;
+    @Mock
+    private S3Presigner s3Presigner;
 
     private S3StorageService s3StorageService;
 
@@ -38,7 +42,7 @@ class S3StorageServiceTest {
 
     @BeforeEach
     void setUp() {
-        s3StorageService = new S3StorageService(s3Client, BUCKET_NAME);
+        s3StorageService = new S3StorageService(s3Client, BUCKET_NAME, s3Presigner);
     }
 
     @Test

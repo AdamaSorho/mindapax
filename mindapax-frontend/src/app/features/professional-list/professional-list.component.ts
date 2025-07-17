@@ -114,6 +114,7 @@ export class ProfessionalListComponent {
     this.selectedProfessional = professional;
     this.rejectionNote = '';
     this.isModalOpen = true;
+    console.log(this.selectedProfessional);
   }
 
   closeModal(): void {

@@ -13,7 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class AwsConfig {
 
     @Bean
-    @Profile("s3")
+    @Profile({"dev", "prod"})
     public S3Client s3Client() {
         return S3Client.builder()
                 .credentialsProvider(DefaultCredentialsProvider.create())
@@ -22,7 +22,7 @@ public class AwsConfig {
     }
 
     @Bean
-    @Profile("s3")
+    @Profile({"dev", "prod"})
     public S3Presigner s3Presigner() {
         return S3Presigner.builder()
                 .credentialsProvider(DefaultCredentialsProvider.create())

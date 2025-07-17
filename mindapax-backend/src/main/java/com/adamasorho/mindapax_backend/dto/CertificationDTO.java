@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class CertificationDTO {
   private Long id;
   private String filePath;
+  private String fileUrl;
   private String name;
   private String fileType;
   private Long fileSize;
