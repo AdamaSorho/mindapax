@@ -26,6 +26,7 @@ public class AwsConfig {
                 .endpointOverride(URI.create(s3Endpoint))
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test")))
                 .region(Region.US_EAST_1)
+                .forcePathStyle(true)
                 .build();
     }
 
