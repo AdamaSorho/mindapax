@@ -2,13 +2,23 @@
 resource "aws_s3_bucket" "frontend" {
   # The name of the S3 bucket
   bucket = "mindapax-frontend-bucket"
+}
 
-  # The website configuration for the S3 bucket
-  website {
-    # The name of the index document for the website
-    index_document = "index.html"
-    # The name of the error document for the website
-    error_document = "index.html"
+# Creates a new S3 bucket website configuration
+resource "aws_s3_bucket_website_configuration" "frontend" {
+  # The name of the S3 bucket
+  bucket = aws_s3_bucket.frontend.bucket
+
+  # The index document for the website
+  index_document {
+    # The name of the index document
+    suffix = "index.html"
+  }
+
+  # The error document for the website
+  error_document {
+    # The name of the error document
+    key = "index.html"
   }
 }
 
@@ -17,7 +27,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   # The origin for the CloudFront distribution
   origin {
     # The domain name of the origin
-    domain_name = aws_s3_bucket.frontend.bucket_website_endpoint
+    domain_name = aws_s3_bucket_website_configuration.frontend.website_endpoint
     # The ID of the origin
     origin_id   = "S3-mindapax-frontend"
 
