@@ -94,4 +94,14 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     # The value of the setting
     value     = "static"
   }
+
+  # A map of settings to apply to the environment
+  setting {
+    # The namespace for the setting
+    namespace = "aws:elasticbeanstalk:application:environment"
+    # The name of the setting
+    name      = "ZOOM_SECRET_KEY"
+    # The value of the setting
+    value     = "your-zoom-secret-key"
+  }
 }
