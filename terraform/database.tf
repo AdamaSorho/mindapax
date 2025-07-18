@@ -22,7 +22,7 @@ resource "aws_db_instance" "default" {
   # The instance type to use for the database instance
   instance_class       = "db.t2.micro"
   # The name of the database to create when the instance is created
-  db_name                 = "mindapax"
+  db_name                 = "mindapax_db"
   # The username for the master user
   username             = "admin"
   # The password for the master user
