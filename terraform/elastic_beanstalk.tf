@@ -102,6 +102,6 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     # The name of the setting
     name      = "ZOOM_SECRET_KEY"
     # The value of the setting
-    value     = "your-zoom-secret-key"
+    value     = var.zoom_secret_key
   }
 }

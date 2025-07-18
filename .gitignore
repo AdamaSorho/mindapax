@@ -4,3 +4,4 @@ environments.sh
 dev-config-sets/
 DEPLOYMENT-test.md
 docker-compose-test.yml
+terraform.tfvars
