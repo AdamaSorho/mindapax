@@ -52,16 +52,6 @@ resource "aws_iam_policy" "codebuild" {
       },
       {
         Action = [
-          "secretsmanager:GetSecretValue",
-        ]
-        Effect   = "Allow"
-        Resource = [
-          aws_secretsmanager_secret.db_password.arn,
-          aws_secretsmanager_secret.zoom_secret_key.arn,
-        ]
-      },
-      {
-        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
