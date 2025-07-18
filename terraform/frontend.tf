@@ -1,57 +1,93 @@
+# Creates a new S3 bucket for the frontend application
 resource "aws_s3_bucket" "frontend" {
+  # The name of the S3 bucket
   bucket = "mindapax-frontend-bucket"
 
+  # The website configuration for the S3 bucket
   website {
+    # The name of the index document for the website
     index_document = "index.html"
+    # The name of the error document for the website
     error_document = "index.html"
   }
 }
 
+# Creates a new CloudFront distribution for the frontend application
 resource "aws_cloudfront_distribution" "frontend" {
+  # The origin for the CloudFront distribution
   origin {
+    # The domain name of the origin
     domain_name = aws_s3_bucket.frontend.bucket_website_endpoint
+    # The ID of the origin
     origin_id   = "S3-mindapax-frontend"
 
+    # The custom origin configuration for the origin
     custom_origin_config {
+      # The HTTP port of the origin
       http_port              = 80
+      # The HTTPS port of the origin
       https_port             = 443
+      # The origin protocol policy to use
       origin_protocol_policy = "http-only"
+      # The SSL protocols to use
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
+  # Whether the distribution is enabled
   enabled             = true
+  # Whether the distribution is IPv6 enabled
   is_ipv6_enabled     = true
+  # A comment for the distribution
   comment             = "Mindapax frontend distribution"
+  # The default root object for the distribution
   default_root_object = "index.html"
 
+  # The default cache behavior for the distribution
   default_cache_behavior {
+    # The allowed HTTP methods
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    # The cached HTTP methods
     cached_methods   = ["GET", "HEAD"]
+    # The ID of the origin to associate the cache behavior with
     target_origin_id = "S3-mindapax-frontend"
 
+    # The forwarded values for the cache behavior
     forwarded_values {
+      # Whether to forward query strings to the origin
       query_string = false
+      # The cookies to forward to the origin
       cookies {
+        # Whether to forward all cookies, no cookies, or a whitelist of cookies
         forward = "none"
       }
     }
 
+    # The viewer protocol policy to use
     viewer_protocol_policy = "redirect-to-https"
+    # The minimum TTL for the cache behavior
     min_ttl                = 0
+    # The default TTL for the cache behavior
     default_ttl            = 3600
+    # The maximum TTL for the cache behavior
     max_ttl                = 86400
   }
 
+  # The price class for the distribution
   price_class = "PriceClass_100"
 
+  # The restrictions for the distribution
   restrictions {
+    # The geo restriction for the distribution
     geo_restriction {
+      # The type of geo restriction
       restriction_type = "none"
     }
   }
 
+  # The viewer certificate for the distribution
   viewer_certificate {
+    # Whether to use the CloudFront default certificate
     cloudfront_default_certificate = true
   }
 }
