@@ -104,4 +104,115 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     # The value of the setting
     value     = var.zoom_secret_key
   }
+
+  setting {
+    # The namespace for the setting
+    namespace = "aws:elasticbeanstalk:application:environment"
+    # The name of the setting
+    name      = "ZOOM_SDK_KEY"
+    # The value of the setting
+    value     = var.zoom_sdk_key
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "DB_NAME"
+    value = aws_db_instance.default.db_name
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "MYSQL_USER"
+    value = aws_db_instance.default.username
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "MYSQL_PASSWORD"
+    value = aws_db_instance.default.password
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "MYSQL_HOST"
+    value = aws_db_instance.default.address
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "MYSQL_PORT"
+    value = aws_db_instance.default.port
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "MYSQL_ROOT_PASSWORD"
+    value = aws_db_instance.default.password
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "ZOOM_API_ACCOUNT_ID"
+    value = var.zoom_api_account_id
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "ZOOM_API_CLIENT_ID"
+    value = var.zoom_api_client_id
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "ZOOM_API_CLIENT_SECRET"
+    value = var.zoom_api_client_secret
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "JWT_SECRET"
+    value = var.jwt_secret
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "JWT_EXPIRATION_TIME"
+    value = var.jwt_expiration_time
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "JWT_REFRESH_TOKEN_EXPIRATION_MS"
+    value = var.jwt_refresh_token_expiration_ms
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "SPRING_PROFILES_ACTIVE"
+    value = var.spring_profiles_active
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "AWS_REGION"
+    value = var.aws_region
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "AWS_S3_BUCKET_NAME"
+    value = var.aws_s3_bucket_name
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "AWS_ACCESS_KEY_ID"
+    value = var.aws_access_key_id
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name = "AWS_SECRET_ACCESS_KEY"
+    value = var.aws_secret_access_key
+  }
 }
