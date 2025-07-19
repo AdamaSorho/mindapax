@@ -28,7 +28,15 @@ zoom_secret_key = "your-zoom-secret-key"
 ## Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) installed
-- AWS credentials configured
+- AWS credentials configured. You can get your `aws_access_key_id` and `aws_secret_access_key` by following these steps:
+
+  1. Log in to the AWS Management Console.
+  2. Go to the IAM dashboard.
+  3. Click on "Users" in the left-hand menu.
+  4. Click on your user name.
+  5. Click on the "Security credentials" tab.
+  6. Click on the "Create access key" button.
+  7. Copy the `aws_access_key_id` and `aws_secret_access_key` and store them in a safe place.
 
 ## Usage
 
