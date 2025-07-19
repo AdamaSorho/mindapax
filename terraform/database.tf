@@ -19,8 +19,8 @@ resource "aws_db_instance" "default" {
   engine               = "mysql"
   # The version of the database engine to use
   engine_version       = "8.0"
-  # The instance type to use for the database instance
-  instance_class       = "db.t2.micro"
+  # The instance type to use for the database instance (changed from db.t2.micro)
+  instance_class       = "db.t3.micro"
   # The name of the database to create when the instance is created
   db_name                 = "mindapax_db"
   # The username for the master user
@@ -33,4 +33,9 @@ resource "aws_db_instance" "default" {
   vpc_security_group_ids = [aws_security_group.database.id]
   # Determines whether a final snapshot is created before the instance is deleted
   skip_final_snapshot  = true
+
+  # Add tags for better resource management
+  tags = {
+    Name = "mindapax-mysql-db"
+  }
 }

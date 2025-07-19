@@ -121,8 +121,9 @@ resource "aws_route_table_association" "public_b" {
 
 # Creates a new Elastic IP address
 resource "aws_eip" "nat" {
-  # The domain to create the EIP in
-  domain   = "vpc"
+  tags = {
+    Name = "mindapax-nat-eip"
+  }
 }
 
 # Creates a new NAT gateway
