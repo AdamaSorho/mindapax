@@ -70,3 +70,27 @@ resource "aws_iam_role_policy_attachment" "codebuild" {
   # The ARN of the policy to attach
   policy_arn = aws_iam_policy.codebuild.arn
 }
+
+# Creates a new IAM role for the Elastic Beanstalk environment
+resource "aws_iam_role" "beanstalk" {
+  name = "mindapax-beanstalk-role"
+
+  assume_role_policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Creates a new IAM instance profile for the Elastic Beanstalk environment
+resource "aws_iam_instance_profile" "beanstalk" {
+  name = "mindapax-beanstalk-profile"
+  role = aws_iam_role.beanstalk.name
+}
