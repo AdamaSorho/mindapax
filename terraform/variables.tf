@@ -80,3 +80,9 @@ variable "aws_s3_bucket_name" {
   type        = string
   default     = "mindapax-bucket"
 }
+
+variable "github_token" {
+  description = "The GitHub personal access token"
+  type        = string
+  sensitive   = true
+}
