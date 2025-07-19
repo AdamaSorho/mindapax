@@ -104,4 +104,14 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     # The value of the setting
     value     = var.zoom_secret_key
   }
+
+  # A map of settings to apply to the environment
+  setting {
+    # The namespace for the setting
+    namespace = "aws:autoscaling:launchconfiguration"
+    # The name of the setting
+    name      = "IamInstanceProfile"
+    # The value of the setting
+    value     = aws_iam_instance_profile.beanstalk.name
+  }
 }
