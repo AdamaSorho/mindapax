@@ -1,9 +1,3 @@
-resource "aws_codebuild_source_credential" "github_token" {
-  auth_type   = "PERSONAL_ACCESS_TOKEN"
-  server_type = "GITHUB"
-  token       = var.github_token
-}
-
 # Creates a new CodeBuild project for the frontend
 resource "aws_codebuild_project" "frontend" {
   # The name of the project
@@ -21,10 +15,10 @@ resource "aws_codebuild_project" "frontend" {
     location  = "https://github.com/AdamaSorho/mindapax.git"
     # The type of the buildspec
     buildspec = "mindapax-frontend/buildspec.yml"
-    # The source credential to use
-    source_credential {
-      arn = aws_codebuild_source_credential.github_token.arn
-    }
+    # Whether to report the build status to the source provider
+    report_build_status = true
+    # Whether to ignore SSL warnings
+    insecure_ssl = false
   }
 
   # The environment for the build project
@@ -61,10 +55,10 @@ resource "aws_codebuild_project" "backend" {
     location  = "https://github.com/AdamaSorho/mindapax.git"
     # The type of the buildspec
     buildspec = "mindapax-backend/buildspec.yml"
-    # The source credential to use
-    source_credential {
-      arn = aws_codebuild_source_credential.github_token.arn
-    }
+    # Whether to report the build status to the source provider
+    report_build_status = true
+    # Whether to ignore SSL warnings
+    insecure_ssl = false
   }
 
   # The environment for the build project
