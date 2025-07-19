@@ -2,6 +2,29 @@
 
 This directory contains the Terraform configuration for deploying the Mindapax application on AWS.
 
+## AWS CodeBuild
+
+This project uses AWS CodeBuild to automatically build and deploy the frontend and backend applications. There are two CodeBuild projects:
+
+*   `mindapax-frontend`: Builds and deploys the frontend application to an S3 bucket.
+*   `mindapax-backend`: Builds and deploys the backend application to an Elastic Beanstalk environment.
+
+To trigger a build, you can either push a change to the GitHub repository or start a build manually in the AWS CodeBuild console.
+
+### Secrets
+
+This project uses a `terraform.tfvars` file to manage secrets. This file is not committed to the repository and must be created locally. The following variables must be defined in the `terraform.tfvars` file:
+
+*   `db_password`: The password for the database.
+*   `zoom_secret_key`: The Zoom secret key.
+
+Here is an example of what the `terraform.tfvars` file should look like:
+
+```
+db_password = "your-db-password"
+zoom_secret_key = "your-zoom-secret-key"
+```
+
 ## Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) installed
