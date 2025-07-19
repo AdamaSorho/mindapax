@@ -78,7 +78,7 @@ variable "aws_region" {
 variable "aws_s3_bucket_name" {
   description = "The AWS S3 bucket name"
   type        = string
-  default     = "mindapax-backend-bucket"
+  default     = "mindapax-bucket"
 }
 
 variable "aws_access_key_id" {

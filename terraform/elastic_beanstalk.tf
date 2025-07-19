@@ -95,6 +95,17 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     value     = "static"
   }
 
+
+  # A map of settings to apply to the environment
+  setting {
+    # The namespace for the setting
+    namespace = "aws:autoscaling:launchconfiguration"
+    # The name of the setting
+    name      = "IamInstanceProfile"
+    # The value of the setting
+    value     = aws_iam_instance_profile.beanstalk.name
+  }
+
   # A map of settings to apply to the environment
   setting {
     # The namespace for the setting
@@ -202,17 +213,5 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     namespace = "aws:elasticbeanstalk:application:environment"
     name = "AWS_S3_BUCKET_NAME"
     value = var.aws_s3_bucket_name
-  }
-
-  setting {
-    namespace = "aws:elasticbeanstalk:application:environment"
-    name = "AWS_ACCESS_KEY_ID"
-    value = var.aws_access_key_id
-  }
-
-  setting {
-    namespace = "aws:elasticbeanstalk:application:environment"
-    name = "AWS_SECRET_ACCESS_KEY"
-    value = var.aws_secret_access_key
   }
 }
