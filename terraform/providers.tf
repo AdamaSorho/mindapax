@@ -16,4 +16,5 @@ terraform {
 provider "aws" {
   # The AWS region to use
   region = "us-east-1"
+  profile = "TerraformMindapax"
 }

@@ -12,7 +12,7 @@ resource "aws_codebuild_project" "frontend" {
     # The type of the source
     type      = "GITHUB"
     # The location of the source
-    location  = "https://github.com/your-username/mindapax.git"
+    location  = "https://github.com/AdamaSorho/mindapax.git"
     # The type of the buildspec
     buildspec = "mindapax-frontend/buildspec.yml"
   }
@@ -48,7 +48,7 @@ resource "aws_codebuild_project" "backend" {
     # The type of the source
     type      = "GITHUB"
     # The location of the source
-    location  = "https://github.com/your-username/mindapax.git"
+    location  = "https://github.com/AdamaSorho/mindapax.git"
     # The type of the buildspec
     buildspec = "mindapax-backend/buildspec.yml"
   }
