@@ -1,3 +1,8 @@
+resource "aws_codestarconnections_connection" "github" {
+  provider_type = "GitHub"
+  name          = "github-connection"
+}
+
 # Creates a new CodeBuild project for the frontend
 resource "aws_codebuild_project" "frontend" {
   # The name of the project
@@ -9,12 +14,11 @@ resource "aws_codebuild_project" "frontend" {
 
   # The source for the build project
   source {
-    # The type of the source
-    type      = "GITHUB"
-    # The location of the source
-    location  = "https://github.com/AdamaSorho/mindapax.git"
-    # The type of the buildspec
-    buildspec = "mindapax-frontend/buildspec.yml"
+    type            = "GITHUB"
+    location        = aws_codestarconnections_connection.github.arn
+    buildspec       = "mindapax-frontend/buildspec.yml"
+    source_version  = "main"
+    report_build_status = true
   }
 
   # The environment for the build project
@@ -34,38 +38,6 @@ resource "aws_codebuild_project" "frontend" {
   }
 }
 
-resource "aws_codebuild_webhook" "backend" {
-  project_name = aws_codebuild_project.backend.name
-
-  filter_group {
-    filter {
-      type    = "EVENT"
-      pattern = "PUSH"
-    }
-
-    filter {
-      type    = "BASE_REF"
-      pattern = "refs/heads/main"
-    }
-  }
-}
-
-resource "aws_codebuild_webhook" "frontend" {
-  project_name = aws_codebuild_project.frontend.name
-
-  filter_group {
-    filter {
-      type    = "EVENT"
-      pattern = "PUSH"
-    }
-
-    filter {
-      type    = "BASE_REF"
-      pattern = "refs/heads/main"
-    }
-  }
-}
-
 # Creates a new CodeBuild project for the backend
 resource "aws_codebuild_project" "backend" {
   # The name of the project
@@ -77,12 +49,11 @@ resource "aws_codebuild_project" "backend" {
 
   # The source for the build project
   source {
-    # The type of the source
-    type      = "GITHUB"
-    # The location of the source
-    location  = "https://github.com/AdamaSorho/mindapax.git"
-    # The type of the buildspec
-    buildspec = "mindapax-backend/buildspec.yml"
+    type            = "GITHUB"
+    location        = aws_codestarconnections_connection.github.arn
+    buildspec       = "mindapax-backend/buildspec.yml"
+    source_version  = "main"
+    report_build_status = true
   }
 
   # The environment for the build project
