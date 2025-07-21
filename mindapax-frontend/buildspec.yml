@@ -5,6 +5,7 @@ phases:
     runtime-versions:
       nodejs: 16
     commands:
+      - cd mindapax-frontend
       - npm install
   build:
     commands:
