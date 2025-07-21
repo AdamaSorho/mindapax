@@ -34,6 +34,9 @@ resource "aws_iam_policy" "codebuild" {
           "s3:ListBucket",
           "s3:CreateBucket",
           "s3:PutBucketOwnershipControls",
+          "s3:PutBucketPublicAccessBlock",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:GetBucketPolicyStatus",
         ]
         Effect   = "Allow"
         Resource = [
