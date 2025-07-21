@@ -1,7 +1,3 @@
-resource "aws_codestarconnections_connection" "github" {
-  provider_type = "GitHub"
-  name          = "github-connection"
-}
 
 # Creates a new CodeBuild project for the frontend
 resource "aws_codebuild_project" "frontend" {
@@ -14,11 +10,16 @@ resource "aws_codebuild_project" "frontend" {
 
   # The source for the build project
   source {
-    type            = "GITHUB"
-    location        = aws_codestarconnections_connection.github.arn
-    buildspec       = "mindapax-frontend/buildspec.yml"
-    source_version  = "main"
-    report_build_status = true
+    # The type of the source
+    type      = "GITHUB"
+    # The location of the source
+    location  = "https://github.com/AdamaSorho/mindapax.git"
+    # The type of the buildspec
+    buildspec = "mindapax-frontend/buildspec.yml"
+    # The source credential to use
+    # source_credential {
+    #   arn = aws_codebuild_source_credential.github_token.arn
+    # }
   }
 
   # The environment for the build project
@@ -49,11 +50,12 @@ resource "aws_codebuild_project" "backend" {
 
   # The source for the build project
   source {
-    type            = "GITHUB"
-    location        = aws_codestarconnections_connection.github.arn
-    buildspec       = "mindapax-backend/buildspec.yml"
-    source_version  = "main"
-    report_build_status = true
+    # The type of the source
+    type      = "GITHUB"
+    # The location of the source
+    location  = "https://github.com/AdamaSorho/mindapax.git"
+    # The type of the buildspec
+    buildspec = "mindapax-backend/buildspec.yml"
   }
 
   # The environment for the build project
