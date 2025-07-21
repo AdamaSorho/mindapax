@@ -8,6 +8,9 @@ phases:
     commands:
       - cd mindapax-backend
       - mvn clean package -DskipTests
+      - mv target/*.jar mindapax-backend.jar
+      - zip mindapax-backend.zip mindapax-backend.jar
+      - aws s3 cp mindapax-backend.zip s3://mindapax-backend-bucket/
   post_build:
     commands:
       - aws elasticbeanstalk create-application-version --application-name mindapax-backend --version-label $CODEBUILD_RESOLVED_SOURCE_VERSION --source-bundle S3Bucket=mindapax-backend-bucket,S3Key=mindapax-backend.zip
