@@ -33,6 +33,7 @@ resource "aws_iam_policy" "codebuild" {
           "s3:PutObject",
           "s3:ListBucket",
           "s3:CreateBucket",
+          "s3:PutBucketOwnershipControls",
         ]
         Effect   = "Allow"
         Resource = [
