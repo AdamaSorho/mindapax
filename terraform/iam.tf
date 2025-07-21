@@ -32,11 +32,15 @@ resource "aws_iam_policy" "codebuild" {
           "s3:GetObject",
           "s3:PutObject",
           "s3:ListBucket",
+          "s3:CreateBucket",
         ]
         Effect   = "Allow"
         Resource = [
           aws_s3_bucket.frontend.arn,
           "${aws_s3_bucket.frontend.arn}/*",
+          "arn:aws:s3:::mindapax-backend-bucket",
+          "arn:aws:s3:::mindapax-backend-bucket/*",
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219",
         ]
       },
       {

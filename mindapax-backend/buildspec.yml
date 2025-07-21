@@ -13,5 +13,6 @@ phases:
       - aws s3 cp mindapax-backend.zip s3://mindapax-backend-bucket/
   post_build:
     commands:
-      - aws elasticbeanstalk create-application-version --application-name mindapax-backend --version-label $CODEBUILD_RESOLVED_SOURCE_VERSION --source-bundle S3Bucket=mindapax-backend-bucket,S3Key=mindapax-backend.zip
-      - aws elasticbeanstalk update-environment --application-name mindapax-backend --environment-name mindapax-backend-env --version-label $CODEBUILD_RESOLVED_SOURCE_VERSION
+      - export VERSION_LABEL="$CODEBUILD_RESOLVED_SOURCE_VERSION-$CODEBUILD_BUILD_NUMBER"
+      - aws elasticbeanstalk create-application-version --application-name mindapax-backend --version-label $VERSION_LABEL --source-bundle S3Bucket=mindapax-backend-bucket,S3Key=mindapax-backend.zip
+      - aws elasticbeanstalk update-environment --application-name mindapax-backend --environment-name mindapax-backend-env --version-label $VERSION_LABEL
