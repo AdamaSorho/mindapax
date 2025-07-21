@@ -1,6 +1,6 @@
 package com.adamasorho.mindapax_backend.service.impl;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,19 +11,41 @@ import org.springframework.stereotype.Service;
 import com.adamasorho.mindapax_backend.dto.SessionDTO;
 import com.adamasorho.mindapax_backend.dto.SessionTimeFilter;
 import com.adamasorho.mindapax_backend.mapper.SessionMapper;
+import com.adamasorho.mindapax_backend.model.Professional;
 import com.adamasorho.mindapax_backend.model.Session;
+import com.adamasorho.mindapax_backend.model.User;
 import com.adamasorho.mindapax_backend.model.enums.SessionStatus;
+import com.adamasorho.mindapax_backend.repository.ProfessionalRepository;
 import com.adamasorho.mindapax_backend.repository.SessionRepository;
+import com.adamasorho.mindapax_backend.repository.UserRepository;
 import com.adamasorho.mindapax_backend.service.SessionService;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.AllArgsConstructor;
+// import lombok.AllArgsConstructor; // Lombok not used if specific constructor is present
+
+import org.slf4j.Logger; // Added Logger
+import org.slf4j.LoggerFactory; // Added LoggerFactory
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@AllArgsConstructor
 public class SessionServiceImpl implements SessionService {
+  private static final Logger logger = LoggerFactory.getLogger(SessionServiceImpl.class); // Added logger instance
+
   private final SessionRepository sessionRepository;
   private final SessionMapper mapper;
+  private final UserRepository userRepository;
+  private final ProfessionalRepository professionalRepository;
+
+  public SessionServiceImpl(SessionRepository sessionRepository, SessionMapper mapper, UserRepository userRepository, ProfessionalRepository professionalRepository) {
+    this.sessionRepository = sessionRepository;
+    this.mapper = mapper;
+    this.userRepository = userRepository;
+    this.professionalRepository = professionalRepository;
+  }
 
   @Override
   public SessionDTO createSession(SessionDTO dto) {
@@ -70,20 +92,124 @@ public class SessionServiceImpl implements SessionService {
   @Override
   public Page<Session> getSessionsByUserAndTime(
         Long userId,
-        LocalDateTime date,
+        OffsetDateTime date,
         SessionTimeFilter filter,
         SessionStatus status,
         Pageable pageable) {
-
-    if (filter == SessionTimeFilter.PAST) {
-        return (status != null)
-                ? sessionRepository.findByUserIdAndStartTimeBeforeAndStatus(userId, date, status, pageable)
-                : sessionRepository.findByUserIdAndStartTimeBefore(userId, date, pageable);
-    } else {
-        return (status != null)
-                ? sessionRepository.findByUserIdAndStartTimeGreaterThanEqualAndStatus(userId, date, status, pageable)
-                : sessionRepository.findByUserIdAndStartTimeGreaterThanEqual(userId, date, pageable);
-    }
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      // is professional
+      if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PROFESSIONAL"))) {
+          return getSessionsFromProfessional(userId, date, filter, status, pageable);
+      } else {
+          return getSessionsFromClient(userId, date, filter, status, pageable);
+      }
 }
 
+private Page<Session> getSessionsFromProfessional(Long professionalId, OffsetDateTime date,
+  SessionTimeFilter filter, SessionStatus status, Pageable pageable) {
+    if (filter == SessionTimeFilter.PAST) {
+      return (status != null)
+              ? sessionRepository.findByProfessionalIdAndStartTimeBeforeAndStatus(professionalId, date, status, pageable)
+              : sessionRepository.findByProfessionalIdAndStartTimeBefore(professionalId, date, pageable);
+  } else {
+      return (status != null)
+              ? sessionRepository.findByProfessionalIdAndStartTimeGreaterThanEqualAndStatus(professionalId, date, status, pageable)
+              : sessionRepository.findByProfessionalIdAndStartTimeGreaterThanEqual(professionalId, date, pageable);
+  }
+}
+
+private Page<Session> getSessionsFromClient(Long clientId, OffsetDateTime date,
+  SessionTimeFilter filter, SessionStatus status, Pageable pageable) {
+  if (filter == SessionTimeFilter.PAST) {
+    return (status != null)
+            ? sessionRepository.findByUserIdAndStartTimeBeforeAndStatus(clientId, date, status, pageable)
+              : sessionRepository.findByUserIdAndStartTimeBefore(clientId, date, pageable);
+  } else {
+      return (status != null)
+              ? sessionRepository.findByUserIdAndStartTimeGreaterThanEqualAndStatus(clientId, date, status, pageable)
+              : sessionRepository.findByUserIdAndStartTimeGreaterThanEqual(clientId, date, pageable);
+  }
+}
+
+  @Override
+  @Transactional
+  public SessionDTO scheduleSessionByProfessional(SessionDTO sessionDto) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String professionalEmail = authentication.getName(); // This is usually the email
+
+    Professional professional = professionalRepository.findByUserEmail(professionalEmail)
+        .orElseThrow(() -> {
+            logger.error("Professional not found for email: {}", professionalEmail);
+            return new EntityNotFoundException("Professional not found for email: " + professionalEmail);
+        });
+
+
+    User clientUser = userRepository.findById(sessionDto.getUserId())
+        .orElseThrow(() -> {
+            logger.error("User (client) not found with ID: {}", sessionDto.getUserId());
+            return new EntityNotFoundException("User (client) not found with ID: " + sessionDto.getUserId());
+        });
+
+    // Create a new Session entity
+    Session session = new Session();
+
+    // Manually map fields from DTO
+    session.setStartTime(sessionDto.getStartTime());
+    session.setDurationMinutes(sessionDto.getDurationMinutes()); 
+    session.setMode(sessionDto.getMode());
+    session.setNotes(sessionDto.getNotes());
+    // If DTO can carry a status, map it, otherwise default is fine
+    if (sessionDto.getStatus() != null) {
+        session.setStatus(sessionDto.getStatus());
+    } else {
+        session.setStatus(SessionStatus.SCHEDULED);
+    }
+
+    // Set the professional and user fields
+    session.setProfessional(professional); // Use the re-fetched, managed instance
+    session.setUser(clientUser);         // Use the re-fetched, managed instance
+
+    // If status wasn't in DTO or needs override:
+    session.setStatus(SessionStatus.SCHEDULED); // Explicitly set/override status
+
+    // Populate Zoom Meeting ID for video sessions from the professional's stored ID
+    if (session.getMode() == com.adamasorho.mindapax_backend.model.enums.SessionMode.VIDEO) {
+        if (professional.getZoomMeetingId() != null && !professional.getZoomMeetingId().trim().isEmpty()) {
+            session.setZoomMeetingId(professional.getZoomMeetingId());
+            logger.info("Scheduled VIDEO session. Using Professional's Zoom Meeting ID: {} for session.", professional.getZoomMeetingId());
+
+            if (professional.getZoomMeetingPassword() != null && !professional.getZoomMeetingPassword().trim().isEmpty()) {
+                session.setZoomMeetingPassword(professional.getZoomMeetingPassword());
+                logger.info("Scheduled VIDEO session. Using Professional's Zoom Meeting Password for session ID: {}.", session.getZoomMeetingId());
+            } else {
+                // This case might occur if password generation/storage failed earlier for the professional,
+                // but they still had a meeting ID.
+                logger.warn("Professional {} {} has a Zoom Meeting ID ({}) but no Zoom Meeting Password configured for it. Session zoomMeetingPassword will be null.",
+                            professional.getUser().getFirstName(), professional.getUser().getLastName(), professional.getZoomMeetingId());
+                // Session.zoomMeetingPassword will remain null. The frontend will need to handle this (e.g., not prompt for a password).
+            }
+        } else {
+            // This case should ideally not happen if a professional approved for video sessions always has a Zoom ID.
+            // If it does, joinVideoSession will throw an error, which is an existing safeguard.
+            logger.warn("Professional {} {} is scheduling a VIDEO session but does not have a Zoom Meeting ID configured. Session zoomMeetingId will be null.",
+                        professional.getUser().getFirstName(), professional.getUser().getLastName());
+            // Session.zoomMeetingId will remain null.
+            // The SessionController.joinVideoSession method already has a check for null/empty session.getZoomMeetingId()
+            // and throws an error, which will prevent joining.
+        }
+    }
+
+    // Save the Session entity
+    Session savedSession = sessionRepository.save(session);
+
+
+    // Return the saved Session mapped back to a SessionDTO
+    return mapper.toDTO(savedSession);
+  }
+
+  @Override
+  public Session getSessionEntityById(Long id) {
+      return sessionRepository.findById(id)
+              .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+  }
 }

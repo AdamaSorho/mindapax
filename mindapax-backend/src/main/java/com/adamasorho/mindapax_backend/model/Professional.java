@@ -52,6 +52,9 @@ public class Professional {
     @Column(nullable = false)
     private String resumeFilePath;
 
+    @Column(length = 1024)
+    private String resumeFileUrl;
+
     @OneToOne
     @JoinColumn(name = "user_id")
     @MapsId
@@ -67,6 +70,8 @@ public class Professional {
     private boolean verified = false;
 
     private String rejectionNote;
+    private String zoomMeetingId;
+    private String zoomMeetingPassword;
     
     @CreationTimestamp
     private LocalDateTime createdAt;

@@ -13,4 +13,6 @@ public class UserDTO {
   private UserRole role;
   private String phone;
   private String location;
+  private boolean emailVerified;
+  private boolean active;
 }

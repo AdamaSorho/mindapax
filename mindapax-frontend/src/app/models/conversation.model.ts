@@ -6,7 +6,7 @@ export interface Conversation {
   id: number;
   user: User;
   professional: Professional;
-  lastMessage: Message;
+  lastMessage: Message | null;
   unreadCount?: number;
   isOnline?: boolean;
   createdAt?: Date;

@@ -92,21 +92,20 @@
             <div class="w-12 h-12 rounded-full bg-gray-200">
               <!-- We're using a placeholder instead of actual image for demo -->
               <div class="flex items-center justify-center w-full h-full text-gray-600 font-bold">
-                {{ session.professionalName.charAt(0) }}
+                {{ session.professionalName?.charAt(0) }}
               </div>
             </div>
           </div>
           <div class="ml-4">
             <h3 class="text-lg font-semibold text-gray-800">{{ session.professionalName }}</h3>
-            <p class="text-sm text-gray-600">{{ session.specialization }}</p>
+            <p class="text-sm text-gray-600">{{ session.professionalSpecialization }}</p>
             <div class="mt-2 flex items-center">
               <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
-              <span class="ml-1 text-sm text-gray-600">{{ session.date | date:'MMM d, y' }} at {{ session.time
-                }}</span>
+              <span class="ml-1 text-sm text-gray-600">{{ session.startTime}}</span>
             </div>
             <div class="mt-1 flex items-center">
               <svg *ngIf="session.mode === 'VIDEO'" class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor"

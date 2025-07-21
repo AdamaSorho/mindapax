@@ -1,6 +1,6 @@
 package com.adamasorho.mindapax_backend.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import com.adamasorho.mindapax_backend.model.enums.SessionMode;
 import com.adamasorho.mindapax_backend.model.enums.SessionStatus;
@@ -9,6 +9,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,20 +24,31 @@ public class Session {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "professional_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "professional_id", nullable = false)
     private Professional professional;
 
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    @Column(nullable = false)
+    private OffsetDateTime startTime;
+
+    @Column(nullable = false)
+    private Integer durationMinutes;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private SessionMode mode; // CHAT, VIDEO, MESSAGE
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private SessionStatus status; // SCHEDULED, COMPLETED, CANCELLED
+
     @Column(columnDefinition = "TEXT")
-    private String notes;
+    private String notes; // Notes can remain optional/nullable
+
+    private String zoomMeetingId;
+    private String zoomMeetingPassword;
 }

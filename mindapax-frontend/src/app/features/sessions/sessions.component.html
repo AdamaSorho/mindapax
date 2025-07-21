@@ -100,7 +100,7 @@
                       <path stroke-linecap="round" stroke-linejoin="round"
                         d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                     </svg>
-                    <h3 class="text-lg font-semibold text-gray-900">{{formatDateToRelative(session.date)}}</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">{{formatDateToRelative(session.startTime)}}</h3>
                   </div>
                   <div class="flex items-center mb-2">
                     <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -108,7 +108,11 @@
                       <path stroke-linecap="round" stroke-linejoin="round"
                         d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p class="text-gray-700">{{session.startTime}} - {{session.endTime}}</p>
+                    <p class="text-gray-700">
+                      {{session.startTime | date:'shortTime'}} - {{getCalculatedEndTime(session) | date:'shortTime'}}
+                      <span *ngIf="session.durationMinutes" class="text-xs text-gray-500">({{session.durationMinutes}}
+                        mins)</span>
+                    </p>
                   </div>
                   <div class="flex items-center">
                     <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -129,11 +133,11 @@
 
                 <!-- Professional Info -->
                 <div class="flex items-center mb-4">
-                  <img [src]="session.professionalImage" alt="{{session.professionalName}}"
-                    class="w-12 h-12 rounded-full mr-4 object-cover">
+                  <!-- <img [src]="session.professionalImage" alt="{{session.professionalName}}"
+                    class="w-12 h-12 rounded-full mr-4 object-cover"> -->
                   <div>
-                    <h4 class="font-semibold text-gray-900">{{session.professionalName}}</h4>
-                    <p class="text-sm text-blue-600">{{session.specialization}}</p>
+                    <h4 class="font-semibold text-gray-900">{{session.professionalName || 'Professional Name N/A'}}</h4>
+                    <p class="text-sm text-blue-600">{{session.professionalSpecialization || 'Specialization N/A'}}</p>
                   </div>
                 </div>
 
@@ -145,9 +149,14 @@
 
               <!-- Action Buttons -->
               <div class="ml-6 flex flex-col space-y-2">
-                <button *ngIf="isToday(session)" (click)="joinSession(session.id)"
-                  class="bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg text-sm px-4 py-2 text-center">
-                  Join Now
+                <button *ngIf="isJoinable(session)" (click)="joinVideoCall(session)"
+                  class="bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg text-sm px-4 py-2 text-center flex items-center justify-center">
+                  <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round"
+                      d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  Join Video Call
                 </button>
                 <button (click)="rescheduleSession(session.id)"
                   class="text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 font-medium rounded-lg text-sm px-4 py-2 text-center">
@@ -206,7 +215,7 @@
                       <path stroke-linecap="round" stroke-linejoin="round"
                         d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                     </svg>
-                    <h3 class="text-lg font-semibold text-gray-900">{{formatDateToRelative(session.date)}}</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">{{formatDateToRelative(session.startTime)}}</h3>
                   </div>
                   <div class="flex items-center mb-2">
                     <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -214,7 +223,11 @@
                       <path stroke-linecap="round" stroke-linejoin="round"
                         d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p class="text-gray-700">{{session.startTime}} - {{session.endTime}}</p>
+                    <p class="text-gray-700">
+                      {{session.startTime | date:'shortTime'}} - {{getCalculatedEndTime(session) | date:'shortTime'}}
+                      <span *ngIf="session.durationMinutes" class="text-xs text-gray-500">({{session.durationMinutes}}
+                        mins)</span>
+                    </p>
                   </div>
                   <div class="flex items-center">
                     <svg class="w-5 h-5 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -235,11 +248,11 @@
 
                 <!-- Professional Info -->
                 <div class="flex items-center mb-4">
-                  <img [src]="session.professionalImage" alt="{{session.professionalName}}"
-                    class="w-12 h-12 rounded-full mr-4 object-cover">
+                  <!-- <img [src]="session.professionalImage" alt="{{session.professionalName}}"
+                    class="w-12 h-12 rounded-full mr-4 object-cover"> -->
                   <div>
-                    <h4 class="font-semibold text-gray-900">{{session.professionalName}}</h4>
-                    <p class="text-sm text-blue-600">{{session.specialization}}</p>
+                    <h4 class="font-semibold text-gray-900">{{session.professionalName || 'Professional Name N/A'}}</h4>
+                    <p class="text-sm text-blue-600">{{session.professionalSpecialization || 'Specialization N/A'}}</p>
                   </div>
                 </div>
 

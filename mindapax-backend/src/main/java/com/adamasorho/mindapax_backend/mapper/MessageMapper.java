@@ -12,13 +12,15 @@ public interface MessageMapper {
   @Mappings({
       @Mapping(target = "sessionId", ignore = true),
       @Mapping(target = "conversationId", source = "conversation.id"),
-      @Mapping(target = "senderId", source = "sender.id")
+      @Mapping(target = "senderId", source = "sender.id"),
+      @Mapping(target = "read", source = "isRead")
   })
   MessageDTO toDTO(Message message);
 
   @Mappings({
       @Mapping(target = "conversation", ignore = true),
-      @Mapping(target = "sender", ignore = true)
+      @Mapping(target = "sender", ignore = true),
+      @Mapping(target = "isRead", source = "read")
   })
   Message toEntity(MessageDTO messageDTO);
 }

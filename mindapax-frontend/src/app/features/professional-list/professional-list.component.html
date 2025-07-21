@@ -275,20 +275,28 @@
               <div class="mb-4 border-b border-gray-200">
                 <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" role="tablist">
                   <li class="mr-2" role="presentation">
-                    <button class="inline-block p-4 border-b-2 border-blue-600 rounded-t-lg active" id="bio-tab"
-                      type="button" role="tab" aria-controls="bio" aria-selected="true">Bio & Experience</button>
+                    <button [ngClass]="{
+                        'border-blue-600 text-blue-600 active': selectedTab === 'bio',
+                        'border-transparent text-gray-500 hover:text-gray-600 hover:border-gray-300': selectedTab !== 'bio'
+                      }" class="inline-block p-4 border-b-2 rounded-t-lg" id="bio-tab" type="button" role="tab"
+                      aria-controls="bio" (click)="selectTab('bio', $event)"
+                      [attr.aria-selected]="selectedTab === 'bio' ? 'true' : 'false'">Bio & Experience</button>
                   </li>
                   <li class="mr-2" role="presentation">
-                    <button
-                      class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300"
-                      id="certifications-tab" type="button" role="tab" aria-controls="certifications"
-                      aria-selected="false">Certifications</button>
+                    <button [ngClass]="{
+                        'border-blue-600 text-blue-600 active': selectedTab === 'certifications',
+                        'border-transparent text-gray-500 hover:text-gray-600 hover:border-gray-300': selectedTab !== 'certifications'
+                      }" class="inline-block p-4 border-b-2 rounded-t-lg" id="certifications-tab" type="button"
+                      role="tab" aria-controls="certifications" (click)="selectTab('certifications', $event)"
+                      [attr.aria-selected]="selectedTab === 'certifications' ? 'true' : 'false'">Certifications</button>
                   </li>
                   <li class="mr-2" role="presentation">
-                    <button
-                      class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300"
-                      id="resume-tab" type="button" role="tab" aria-controls="resume"
-                      aria-selected="false">Resume</button>
+                    <button [ngClass]="{
+                        'border-blue-600 text-blue-600 active': selectedTab === 'resume',
+                        'border-transparent text-gray-500 hover:text-gray-600 hover:border-gray-300': selectedTab !== 'resume'
+                      }" class="inline-block p-4 border-b-2 rounded-t-lg" id="resume-tab" type="button" role="tab"
+                      aria-controls="resume" (click)="selectTab('resume', $event)"
+                      [attr.aria-selected]="selectedTab === 'resume' ? 'true' : 'false'">Resume</button>
                   </li>
                 </ul>
               </div>
@@ -296,7 +304,8 @@
               <!-- Tab content -->
               <div id="tab-content">
                 <!-- Bio & Experience Tab -->
-                <div id="bio" role="tabpanel" aria-labelledby="bio-tab">
+                <div id="bio" role="tabpanel" aria-labelledby="bio-tab" [attr.inert]="selectedTab === 'bio' ? null : ''"
+                  [hidden]="selectedTab !== 'bio'">
                   <h5 class="text-lg font-semibold text-gray-800 mb-2">About</h5>
                   <p class="text-gray-600 mb-4">{{ selectedProfessional.bio }}</p>
 
@@ -319,8 +328,9 @@
                 </div>
 
                 <!-- Certifications Tab -->
-                <div id="certifications" role="tabpanel" aria-labelledby="certifications-tab" hidden
-                  style="display: none;">
+                <div id="certifications" role="tabpanel" aria-labelledby="certifications-tab"
+                  [attr.inert]="selectedTab === 'certifications' ? null : ''"
+                  [hidden]="selectedTab !== 'certifications'">
                   <h5 class="text-lg font-semibold text-gray-800 mb-3">Certifications & Licenses</h5>
                   @if (selectedProfessional.certifications && selectedProfessional.certifications.length > 0) {
                   <div class="space-y-4">
@@ -339,8 +349,8 @@
                           </p>
                         </div>
                         <div>
-                          <a href="{{ cert.documentUrl }}" target="_blank"
-                            class="text-blue-600 hover:underline flex items-center">
+                          <button type="button" (click)="viewFile(cert.fileUrl, cert.name)"
+                            class="text-blue-600 hover:underline flex items-center focus:outline-none">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                               xmlns="http://www.w3.org/2000/svg">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -350,7 +360,7 @@
                               </path>
                             </svg>
                             View
-                          </a>
+                          </button>
                         </div>
                       </div>
                       @if (cert.description) {
@@ -365,22 +375,24 @@
                 </div>
 
                 <!-- Resume Tab -->
-                <div id="resume" role="tabpanel" aria-labelledby="resume-tab" hidden style="display: none;">
+                <div id="resume" role="tabpanel" aria-labelledby="resume-tab"
+                  [attr.inert]="selectedTab === 'resume' ? null : ''" [hidden]="selectedTab !== 'resume'">
                   <div class="flex items-center justify-between mb-4">
                     <h5 class="text-lg font-semibold text-gray-800">Resume</h5>
-                    @if (selectedProfessional.resumeUrl) {
-                    <a href="{{ selectedProfessional.resumeUrl }}" target="_blank"
-                      class="text-blue-600 hover:underline flex items-center">
+                    @if (selectedProfessional.resumeFileUrl) {
+                    <button type="button"
+                      (click)="viewFile(selectedProfessional.resumeFileUrl, selectedProfessional.user.firstName + '_resume.pdf')"
+                      class="text-blue-600 hover:underline flex items-center focus:outline-none">
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                       </svg>
                       Download Resume
-                    </a>
+                    </button>
                     }
                   </div>
-                  @if (selectedProfessional.resumeUrl) {
+                  @if (selectedProfessional.resumeFileUrl) {
                   <div class="bg-gray-50 rounded-lg p-6 flex flex-col items-center">
                     <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                       xmlns="http://www.w3.org/2000/svg">
@@ -389,8 +401,10 @@
                       </path>
                     </svg>
                     <p class="text-gray-600 mb-3">Resume available for review</p>
-                    <a href="{{ selectedProfessional.resumeUrl }}" target="_blank"
-                      class="text-sm font-medium text-blue-600 hover:underline">View Full Resume</a>
+                    <button type="button"
+                      (click)="viewFile(selectedProfessional.resumeFileUrl, selectedProfessional.user.firstName + '_resume.pdf')"
+                      class="text-sm font-medium text-blue-600 hover:underline focus:outline-none">View Full
+                      Resume</button>
                   </div>
                   } @else {
                   <div class="bg-gray-50 rounded-lg p-6 text-center">

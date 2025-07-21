@@ -19,6 +19,7 @@ public class ProfessionalDTO {
   private ProfessionalStatus status;
   private String rejectionNote;
   private String resumeUrl;
+  private String resumeFileUrl;
   private List <CertificationDTO> certifications;
   private LocalDateTime createdAt;
   private LocalDateTime statusUpdatedAt;

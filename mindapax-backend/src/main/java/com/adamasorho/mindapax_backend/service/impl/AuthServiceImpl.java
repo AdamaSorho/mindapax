@@ -67,6 +67,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Store resume file
         String resumePath = fileStorageService.storeFile(resume, "resumes");
+        String resumeUrl = fileStorageService.getFileUrl(resumePath);
 
         // Create professional profile
         Professional professional = Professional.builder()
@@ -74,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
                 .specialization(request.getProfessionalDetails().getSpecialization())
                 .yearsOfExperience(request.getProfessionalDetails().getExperienceYears())
                 .resumeFilePath(resumePath)
+                .resumeFileUrl(resumeUrl)
                 .status(ProfessionalStatus.PENDING)
                 .certifications(Collections.emptyList()) // Will be populated after saving
                 .verified(false) // Professional profiles need verification by admin
@@ -89,10 +91,13 @@ public class AuthServiceImpl implements AuthService {
         for (int i = 0; i < certifications.length; i++) {
             MultipartFile file = certifications[i];
             String filePath = certificationPaths.get(i);
+            String fileUrl = fileStorageService.getFileUrl(filePath);
             
             Certification certification = Certification.builder()
                     .professional(professional)
+                    .name("Certification " + (i + 1))
                     .filePath(filePath)
+                    .fileUrl(fileUrl)
                     .fileName(file.getOriginalFilename())
                     .fileType(file.getContentType())
                     .fileSize(file.getSize())

@@ -3,6 +3,20 @@ import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { SessionQueryParams } from '../models/network/SessionQueryParams';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { Session } from '../models/session.model'; // Added import
+import { SessionMode } from '../models/enums/SessionFilter'; // Added import
+import { PagedResponse } from '../models/network/pagedResponse';
+import { ZoomSignatureResponse } from '../models/zoom-signature-response.model';
+
+// Define the payload interface
+export interface ScheduleSessionPayload {
+  userId: number;
+  startTime: string; // ISO 8601 format
+  durationMinutes: number;
+  mode: SessionMode;
+  notes?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -12,7 +26,7 @@ export class SessionService {
 
   constructor(private http: HttpClient) {}
 
-  getSessions(params: SessionQueryParams): Observable<any> {
+  getSessions(params: SessionQueryParams): Observable<PagedResponse<Session>> {
     let httpParams = new HttpParams()
       .set('userId', params.userId)
       .set('filter', params.filter);
@@ -22,7 +36,32 @@ export class SessionService {
     if (params.page != null) httpParams = httpParams.set('page', params.page);
     if (params.size != null) httpParams = httpParams.set('size', params.size);
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
+    console.log('params: ', params);
 
-    return this.http.get(this.baseUrl, { params: httpParams });
+    return this.http.get<PagedResponse<Session>>(`${this.baseUrl}/by-user`, {
+      params: httpParams,
+    });
+  }
+
+  scheduleSessionByProfessional(
+    payload: ScheduleSessionPayload
+  ): Observable<Session> {
+    return this.http.post<Session>(
+      `${this.baseUrl}/professional/schedule`,
+      payload
+    );
+  }
+
+  /**
+   * Fetches the signature and parameters required to join a Zoom video session.
+   * @param sessionId The ID of the session to join.
+   * @returns An Observable of ZoomSignatureResponse.
+   */
+  public getZoomMeetingSignature(sessionId: string): Observable<ZoomSignatureResponse> {
+    // The backend endpoint is POST /api/v1/sessions/{sessionId}/join-video
+    // this.baseUrl is environment.apiUrl + '/sessions'
+    return this.http.post<ZoomSignatureResponse>(`${this.baseUrl}/${sessionId}/join-video`, {}).pipe(
+      tap(response => console.log('Backend response for getZoomMeetingSignature:', response))
+    );
   }
 }

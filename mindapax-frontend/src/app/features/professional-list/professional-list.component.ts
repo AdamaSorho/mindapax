@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
+import { environment } from '../../../environments/environment';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { ProfessionalService } from '../../services/professional.service';
-import { TabService } from '../../services/business/tab.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Professional } from '../../models/professional.model';
@@ -30,36 +31,40 @@ export class ProfessionalListComponent {
   professionalStatusOptions = professionalStatusOptions;
   totalPages: number = 0;
   currentPage: number = 0;
+  public selectedTab: string = 'bio';
 
   constructor(
     private professionalsService: ProfessionalService,
-    private tabService: TabService
+    private http: HttpClient // Add this line
   ) {}
 
   ngOnInit(): void {
     this.loadProfessionals();
   }
 
-  ngAfterViewInit(): void {
-    // Initialize tabs when modal is opened
-    this.initializeTabsWhenModalOpens();
-  }
+  public selectTab(tabId: string, event: MouseEvent): void {
+    // Try to blur an element within the modal content if it's currently focused
+    // and is not the tab button itself, to prevent focus being trapped in an inert panel.
+    const activeElement = document.activeElement as HTMLElement;
+    if (event.currentTarget && activeElement) {
+      const modalContent = (event.currentTarget as HTMLElement).closest(
+        '.relative.bg-white.rounded-lg.shadow-lg.overflow-hidden'
+      ); // Selector for the modal content box
+      if (
+        modalContent &&
+        modalContent.contains(activeElement) &&
+        activeElement !== event.currentTarget
+      ) {
+        activeElement.blur();
+      }
+    }
 
-  private initializeTabsWhenModalOpens(): void {
-    // Using MutationObserver to detect when modal is added to DOM
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.addedNodes.length > 0) {
-          const modal = document.getElementById('professionalDetailsModal');
-          if (modal) {
-            this.tabService.initializeTabs('tab-content');
-          }
-        }
-      });
-    });
+    this.selectedTab = tabId;
 
-    // Start observing the document body for changes
-    observer.observe(document.body, { childList: true, subtree: true });
+    // Set focus to the clicked tab button for accessibility
+    if (event.currentTarget) {
+      (event.currentTarget as HTMLElement).focus();
+    }
   }
 
   loadProfessionals(): void {
@@ -109,6 +114,7 @@ export class ProfessionalListComponent {
     this.selectedProfessional = professional;
     this.rejectionNote = '';
     this.isModalOpen = true;
+    console.log(this.selectedProfessional);
   }
 
   closeModal(): void {
@@ -157,5 +163,61 @@ export class ProfessionalListComponent {
       this.professionals.map((pro) => pro.specialization)
     );
     return Array.from(specialties);
+  }
+
+  public viewFile(
+    fileUrlInput: string | undefined,
+    defaultFileName: string
+  ): void {
+    if (!fileUrlInput) {
+      console.error('File URL is undefined. Cannot view file.');
+      // Consider showing a user-friendly error message here
+      return;
+    }
+
+    this.http
+      .get(fileUrlInput, { responseType: 'blob', observe: 'response' })
+      .subscribe({
+        next: (response: HttpResponse<Blob>) => {
+          if (response.body) {
+            const blob = response.body;
+            let fileName = defaultFileName;
+
+            const contentDisposition = response.headers.get(
+              'Content-Disposition'
+            );
+            if (contentDisposition) {
+              const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+              const matches = filenameRegex.exec(contentDisposition);
+              if (matches != null && matches[1]) {
+                fileName = matches[1].replace(/['"]/g, '');
+              }
+            }
+
+            const objectUrl = URL.createObjectURL(blob);
+            const newTab = window.open(objectUrl, '_blank');
+
+            if (!newTab) {
+              console.error(
+                'Failed to open new tab. A pop-up blocker might be active.'
+              );
+              // Consider showing a user-friendly error message here
+            }
+
+            // It's best practice to revoke the object URL to free up memory.
+            // However, if the new tab is still using it, revoking too soon can break the display.
+            // A common approach is to revoke it after a delay, assuming the new tab has loaded the content.
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 60 * 1000); // Revoke after 1 minute
+          } else {
+            console.error('Received an empty response body for the file.');
+            // Consider showing a user-friendly error message here
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching file:', error);
+          // Consider showing a user-friendly error message here,
+          // e.g., "Sorry, the file could not be loaded or accessed."
+        },
+      });
   }
 }

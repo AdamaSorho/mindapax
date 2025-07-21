@@ -4,7 +4,6 @@ import com.adamasorho.mindapax_backend.dto.MessageDTO;
 import com.adamasorho.mindapax_backend.mapper.MessageMapper;
 import com.adamasorho.mindapax_backend.model.Message;
 import com.adamasorho.mindapax_backend.service.MessageService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith; // Added
 import org.mockito.InjectMocks;

@@ -1,12 +1,13 @@
 spring:
   application:
     name: mindapax-backend
-
+  profiles:
+    active: dev
   datasource:
-    url: jdbc:mysql://localhost:3306/mindapax_db?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${DB_NAME:mindapax_db}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password:
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
 
   jpa:
     hibernate:
@@ -16,6 +17,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
 
+# debug: true
 logging:
   level:
     com.adamasorho.mindapax_backend: DEBUG
@@ -30,12 +32,21 @@ logging:
               annotation: DEBUG
 
 jwt:
-  secret: byzedcoachingsecretkey123hdt252tsayd456789012345678901234567890
-  expiration: 86400000
+  secret: ${JWT_SECRET:byzedcoachingsecretkey123hdt252tsayd456789012345678901234567890}
+  expiration: ${JWT_EXPIRATION_TIME:86400000}
 
 app:
   jwt:
     refresh-token:
-      expiration-ms: 604800000
+      expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:86400000}
   file-storage:
     upload-dir: uploads
+
+# Zoom API Credentials
+zoom:
+  sdk_key: ${ZOOM_SDK_KEY}
+  sdk_secret: ${ZOOM_SDK_SECRET}
+  api:
+    account-id: ${ZOOM_API_ACCOUNT_ID}
+    client-id: ${ZOOM_API_CLIENT_ID}
+    client-secret: ${ZOOM_API_CLIENT_SECRET}

@@ -7,8 +7,12 @@ import { MessagesComponent } from './messages/messages.component';
 import { BillingComponent } from './billing/billing.component';
 import { SettingsComponent } from './settings/settings.component';
 import { authGuard } from '../guards/auth.guard';
+// Assuming RoleGuard exists or will be created, e.g., in ../guards/role.guard
+// import { roleGuard } from '../guards/role.guard';
 import { ProfessionalListComponent } from './professional-list/professional-list.component';
 import { ConnectionsComponent } from './connections/connections.component';
+import { ScheduleSessionComponent } from './schedule-session/schedule-session.component'; // Import new component
+import { ZoomMeetingComponent } from './zoom-meeting/zoom-meeting.component';
 
 export const featuresRoutes: Routes = [
   {
@@ -22,8 +26,28 @@ export const featuresRoutes: Routes = [
       { path: 'messages', component: MessagesComponent },
       { path: 'billing', component: BillingComponent },
       { path: 'settings', component: SettingsComponent },
-      { path: 'professionals', component: ProfessionalListComponent },
+      {
+        path: 'professionals',
+        component: ProfessionalListComponent,
+        canActivate: [authGuard],
+        data: { roles: ['ADMIN'] },
+      },
       { path: 'connections', component: ConnectionsComponent },
+      {
+        path: 'schedule-session',
+        component: ScheduleSessionComponent,
+        // Assuming authGuard protects parent, and roleGuard for specific role
+        // canActivate: [authGuard, roleGuard], // If roleGuard is separate
+        canActivate: [authGuard], // If authGuard itself can check roles or a combined guard is used
+        data: { roles: ['PROFESSIONAL'] }, // Data for RoleGuard if it uses it
+      },
+      {
+        path: 'zoom-call', // Path for the zoom meeting page
+        component: ZoomMeetingComponent
+        // All parameters (sdkKey, meetingNumber, signature, userName, userEmail)
+        // will be passed as query parameters during navigation.
+        // authGuard is implicitly applied due to parent.
+      },
     ],
   },
 ];

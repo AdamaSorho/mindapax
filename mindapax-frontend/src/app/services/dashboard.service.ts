@@ -10,24 +10,24 @@ import { SessionMode } from '../models/enums/SessionFilter';
 })
 export class DashboardService {
   private mockSessions: Session[] = [
-    {
-      id: 1,
-      professionalName: 'Dr. Sarah Chen',
-      professionalImage: 'assets/images/professionals/sarah.jpg',
-      specialization: 'Cognitive Behavioral Therapy',
-      date: new Date(2025, 2, 24), // March 24, 2025
-      time: '10:00 AM',
-      mode: SessionMode.VIDEO,
-    },
-    {
-      id: 2,
-      professionalName: 'Michael Rodriguez',
-      professionalImage: 'assets/images/professionals/michael.jpg',
-      specialization: 'Financial Planning',
-      date: new Date(2025, 2, 26), // March 26, 2025
-      time: '2:30 PM',
-      mode: SessionMode.CHAT,
-    },
+    // {
+    //   id: 1,
+    //   professionalName: 'Dr. Sarah Chen',
+    //   // professionalImage: 'assets/images/professionals/sarah.jpg',
+    //   // specialization: 'Cognitive Behavioral Therapy',
+    //   date: new Date(2025, 2, 24), // March 24, 2025
+    //   time: '10:00 AM',
+    //   mode: SessionMode.VIDEO,
+    // },
+    // {
+    //   id: 2,
+    //   professionalName: 'Michael Rodriguez',
+    //   professionalImage: 'assets/images/professionals/michael.jpg',
+    //   specialization: 'Financial Planning',
+    //   date: new Date(2025, 2, 26), // March 26, 2025
+    //   time: '2:30 PM',
+    //   mode: SessionMode.CHAT,
+    // },
   ];
 
   private mockRecommendations: Recommendation[] = [

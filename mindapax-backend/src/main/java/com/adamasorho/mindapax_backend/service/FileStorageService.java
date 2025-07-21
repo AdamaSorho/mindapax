@@ -8,4 +8,5 @@ public interface FileStorageService {
   String storeFile(MultipartFile file, String subdirectory);
   List<String> storeFiles(MultipartFile[] files, String subdirectory);
   boolean deleteFile(String filePath);
+  String getFileUrl(String key);
 }

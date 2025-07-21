@@ -1,0 +1,88 @@
+<div class="container mx-auto p-4">
+  <h2 class="text-2xl font-semibold mb-6 text-gray-800">Schedule New Session</h2>
+
+  <div *ngIf="successMessage" class="mb-4 p-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+    {{ errorMessage }}
+  </div>
+
+  <form [formGroup]="scheduleForm" (ngSubmit)="onSubmit()" class="space-y-6 bg-white p-8 rounded-lg shadow-md">
+    <div>
+      <label for="userId" class="block mb-2 text-sm font-medium text-gray-900">Select User *</label>
+      <select id="userId" formControlName="userId"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+        <option value="" disabled selected>Choose a user</option>
+        <option *ngFor="let user of users" [value]="user.id">{{user.firstName}} {{user.lastName}} ({{user.email}})
+        </option>
+      </select>
+      <div *ngIf="scheduleForm.get('userId')?.errors?.['required'] && scheduleForm.get('userId')?.touched"
+        class="mt-1 text-sm text-red-600" id="userIdError">
+        User selection is required.
+      </div>
+    </div>
+
+    <div>
+      <label for="startDatePicker" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Start Date
+        *</label>
+      <input type="date" id="startDatePicker" formControlName="startDate"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+      <div *ngIf="scheduleForm.get('startDate')?.errors?.['required'] && scheduleForm.get('startDate')?.touched"
+        class="mt-1 text-sm text-red-600" id="startDateError">
+        Start date is required.
+      </div>
+    </div>
+
+    <div>
+      <label for="startTimeValuePicker" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Start Time
+        *</label>
+      <input type="time" id="startTimeValuePicker" formControlName="startTimeValue"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+      <div *ngIf="scheduleForm.get('startTimeValue')?.invalid && scheduleForm.get('startTimeValue')?.touched"
+        id="startTimeValueError" class="mt-1 text-sm text-red-600">
+        <span *ngIf="scheduleForm.get('startTimeValue')?.errors?.['required']">Start time is required.</span>
+      </div>
+    </div>
+
+    <div>
+      <label for="durationMinutes" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Duration
+        (minutes) *</label>
+      <input type="number" id="durationMinutes" formControlName="durationMinutes"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        placeholder="e.g., 60" />
+      <div *ngIf="scheduleForm.get('durationMinutes')?.invalid && scheduleForm.get('durationMinutes')?.touched"
+        id="durationMinutesError" class="mt-1 text-sm text-red-600">
+        <span *ngIf="scheduleForm.get('durationMinutes')?.errors?.['required']">Duration is required.</span>
+        <span *ngIf="scheduleForm.get('durationMinutes')?.errors?.['min']">Duration must be at least {{
+          scheduleForm.get('durationMinutes')?.errors?.['min'].min }} minutes.</span>
+      </div>
+    </div>
+
+    <div>
+      <label for="mode" class="block mb-2 text-sm font-medium text-gray-900">Session Mode *</label>
+      <select id="mode" formControlName="mode"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+        <option *ngFor="let mode of sessionModes" [value]="mode">{{mode}}</option>
+      </select>
+      <div *ngIf="scheduleForm.get('mode')?.errors?.['required'] && scheduleForm.get('mode')?.touched"
+        class="mt-1 text-sm text-red-600" id="modeError">
+        Session mode is required.
+      </div>
+    </div>
+
+    <div>
+      <label for="notes" class="block mb-2 text-sm font-medium text-gray-900">Notes</label>
+      <textarea id="notes" formControlName="notes" rows="4"
+        class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Any notes for the session..."></textarea>
+    </div>
+
+    <div>
+      <button type="submit" [disabled]="scheduleForm.invalid"
+        class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:bg-gray-400">
+        Schedule Session
+      </button>
+    </div>
+  </form>
+</div>

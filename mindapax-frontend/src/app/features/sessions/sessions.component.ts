@@ -1,16 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { Session } from '../../models/session.model';
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf, DatePipe } from '@angular/common'; // Added DatePipe
 import { SessionService } from '../../services/session.service';
 import { AuthService } from '../../services/auth.service';
 import {
   SessionStatus,
   SessionTimeFilter,
 } from '../../models/enums/SessionFilter';
+import { Router } from '@angular/router';
+import { ZoomSignatureResponse } from '../../models/zoom-signature-response.model';
 
 @Component({
   selector: 'app-sessions',
-  imports: [NgFor, NgIf, NgClass],
+  imports: [NgFor, NgIf, NgClass, DatePipe], // Added DatePipe to imports
   templateUrl: './sessions.component.html',
   styleUrl: './sessions.component.css',
 })
@@ -20,9 +22,13 @@ export class SessionsComponent implements OnInit {
   activeTab: 'upcoming' | 'past' = 'upcoming';
   loading: boolean = true;
 
+  currentPage = 0;
+  pageSize = 10;
+
   constructor(
     private sessionService: SessionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -30,10 +36,29 @@ export class SessionsComponent implements OnInit {
     this.fetchPastSessions();
   }
 
-  isToday(session: Session): boolean | undefined {
+  public getCalculatedEndTime(session: Session): Date | null {
+    if (!session.startTime || session.durationMinutes == null) {
+      return null;
+    }
+    const startTimeDate = new Date(session.startTime);
+    const duration = Number(session.durationMinutes);
+    if (isNaN(duration)) {
+      return null;
+    }
+    return new Date(startTimeDate.getTime() + duration * 60000); // 60000 ms in a minute
+  }
+
+  isToday(session: Session): boolean {
+    if (!session.startTime) {
+      return false;
+    }
+    const sessionStartDate = new Date(session.startTime);
+    const today = new Date();
+
     return (
-      session.date.getDate() === new Date().getDate() &&
-      session.startTime?.includes(new Date().getHours().toString())
+      sessionStartDate.getFullYear() === today.getFullYear() &&
+      sessionStartDate.getMonth() === today.getMonth() &&
+      sessionStartDate.getDate() === today.getDate()
     );
   }
 
@@ -44,14 +69,15 @@ export class SessionsComponent implements OnInit {
         userId: this.authService.getUserId(),
         filter: SessionTimeFilter.UPCOMING,
         date: new Date().toISOString(),
-        status: SessionStatus.PENDING,
-        page: 1,
-        size: 10,
-        sort: 'date,asc',
+        status: SessionStatus.SCHEDULED,
+        page: this.currentPage,
+        size: this.pageSize,
+        sort: 'startTime,asc',
       })
       .subscribe({
         next: (response) => {
-          this.upcomingSessions = response;
+          this.upcomingSessions = response.content;
+          console.log('Upcoming sessions:', this.upcomingSessions);
           this.loading = false;
         },
         error: (error) => {
@@ -68,14 +94,14 @@ export class SessionsComponent implements OnInit {
         userId: this.authService.getUserId(),
         filter: SessionTimeFilter.PAST,
         date: new Date().toISOString(),
-        status: SessionStatus.PENDING,
-        page: 1,
-        size: 10,
-        sort: 'date,asc',
+        status: SessionStatus.SCHEDULED,
+        page: this.currentPage,
+        size: this.pageSize,
+        sort: 'startTime,asc',
       })
       .subscribe({
         next: (response) => {
-          this.pastSessions = response;
+          this.pastSessions = response.content;
           this.loading = false;
         },
         error: (error) => {
@@ -89,36 +115,113 @@ export class SessionsComponent implements OnInit {
     this.activeTab = tab;
   }
 
-  joinSession(sessionId: number): void {
-    // In a real app, this would navigate to the video/chat interface
-    console.log(`Joining session with ID: ${sessionId}`);
+  public isJoinable(session: Session): boolean {
+    if (
+      !session ||
+      session.mode?.toUpperCase() !== 'VIDEO' ||
+      session.status?.toUpperCase() !== 'SCHEDULED'
+    ) {
+      return false;
+    }
+    const now = new Date().getTime();
+    // Ensure startTime is valid before creating a Date object
+    if (!session.startTime) return false;
+    const startTime = new Date(session.startTime).getTime();
+    if (isNaN(startTime)) return false; // Invalid date for startTime
+
+    // Allow joining if session starts now or in the past (up to its duration), or up to 15 minutes before.
+    const joinWindowStart = startTime - 15 * 60 * 1000; // 15 minutes before
+
+    // Ensure durationMinutes is valid
+    const durationMinutes = Number(session.durationMinutes);
+    if (isNaN(durationMinutes) || durationMinutes <= 0) return false; // Defaulting to 60 if invalid is risky for window end
+
+    const sessionDuration = durationMinutes * 60 * 1000;
+    const joinWindowEnd = startTime + sessionDuration; // Allow joining until session ends
+
+    return now >= joinWindowStart && now <= joinWindowEnd;
   }
 
-  rescheduleSession(sessionId: number): void {
+  public joinVideoCall(session: Session): void {
+    if (!session || !session.id) {
+      console.error('Session or Session ID is undefined.');
+      alert('Session or Session ID is undefined.');
+      // TODO: Show user-friendly error
+      return;
+    }
+
+    this.loading = true; // Show loading indicator
+    this.sessionService
+      .getZoomMeetingSignature(session.id.toString())
+      .subscribe({
+        next: (zoomResponse: ZoomSignatureResponse) => {
+          this.loading = false;
+          // TODO: Get actual userName and userEmail from AuthService
+          // const currentUser = this.authService.getCurrentUser(); // Assuming AuthService has such a method
+          const userName = this.authService.getUsername()
+            ? this.authService.getUsername()
+            : 'Mindapax User'; // Placeholder
+          const userEmail = this.authService.getUserEmail
+            ? this.authService.getUserEmail()
+            : ''; // Placeholder - Zoom SDK might need it
+
+          this.router.navigate(['/member/zoom-call'], {
+            queryParams: {
+              sdkKey: zoomResponse.apiKey,
+              meetingNumber: zoomResponse.meetingNumber,
+              signature: zoomResponse.signature,
+              passWord: zoomResponse.password,
+              userName: userName,
+              userEmail: userEmail,
+            },
+          });
+        },
+        error: (error) => {
+          this.loading = false;
+          console.error('Failed to get Zoom meeting signature:', error);
+          // TODO: Show user-friendly error (e.g., using a toast notification service)
+          alert('Failed to start video call. Please try again later.');
+        },
+      });
+  }
+
+  // The old joinSession can be removed or adapted if it was meant for other session types.
+  // For this subtask, we are focusing on adding joinVideoCall.
+  // joinSession(sessionId: number | undefined): void {
+  //   // In a real app, this would navigate to the video/chat interface
+  //   console.log(`Joining session with ID: ${sessionId}`);
+  // }
+
+  rescheduleSession(sessionId: number | undefined): void {
     // In a real app, this would open a rescheduling modal/page
     console.log(`Rescheduling session with ID: ${sessionId}`);
   }
 
-  cancelSession(sessionId: number): void {
+  cancelSession(sessionId: number | undefined): void {
     // In a real app, this would make an API call to cancel the session
     console.log(`Canceling session with ID: ${sessionId}`);
   }
 
-  viewPastSession(sessionId: number): void {
+  viewPastSession(sessionId: number | undefined): void {
     // In a real app, this would navigate to the session details page
     console.log(`Viewing past session with ID: ${sessionId}`);
   }
 
   bookNewSession(): void {
-    // In a real app, this would navigate to the find professional page
-    console.log('Navigating to Find a Professional page');
+    this.router.navigate(['/member/schedule-session']);
   }
 
-  formatDateToRelative(date: Date): string {
+  formatDateToRelative(dateString: string | Date): string {
+    console.log('dateString:', dateString);
+    // Accept string or Date
     const now = new Date();
-    const sessionDate = new Date(date);
+    const sessionDate = new Date(dateString); // Works with ISO string or Date object
     const diffTime = Math.abs(sessionDate.getTime() - now.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    console.log('diffDays:', diffDays);
+    console.log('sessionDate:', sessionDate);
+    console.log('now:', now);
+    console.log('diffTime:', diffTime);
 
     if (diffDays === 0) {
       return 'Today';
@@ -147,94 +250,4 @@ export class SessionsComponent implements OnInit {
         return 'question-mark-circle';
     }
   }
-
-  // Helper method to generate mock data
-  // private getMockSessions(): Session[] {
-  //   const today = new Date();
-  //   const yesterday = new Date(today);
-  //   yesterday.setDate(yesterday.getDate() - 1);
-
-  //   const tomorrow = new Date(today);
-  //   tomorrow.setDate(tomorrow.getDate() + 1);
-
-  //   const nextWeek = new Date(today);
-  //   nextWeek.setDate(nextWeek.getDate() + 7);
-
-  //   const lastWeek = new Date(today);
-  //   lastWeek.setDate(lastWeek.getDate() - 7);
-
-  //   const twoWeeksAgo = new Date(today);
-  //   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
-  //   return [
-  //     {
-  //       id: 1,
-  //       professionalName: 'Dr. Sarah Johnson',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Mental Health',
-  //       date: tomorrow,
-  //       startTime: '10:00 AM',
-  //       endTime: '11:00 AM',
-  //       status: 'upcoming',
-  //       type: 'video',
-  //       notes: 'Follow-up on stress management techniques',
-  //     },
-  //     {
-  //       id: 2,
-  //       professionalName: 'Michael Chang, CFA',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Financial Coaching',
-  //       date: nextWeek,
-  //       startTime: '3:00 PM',
-  //       endTime: '4:00 PM',
-  //       status: 'upcoming',
-  //       type: 'video',
-  //     },
-  //     {
-  //       id: 3,
-  //       professionalName: 'Emma Martinez',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Physical Wellness',
-  //       date: yesterday,
-  //       startTime: '2:00 PM',
-  //       endTime: '3:00 PM',
-  //       status: 'completed',
-  //       type: 'video',
-  //       notes: 'Discussed new exercise routine',
-  //     },
-  //     {
-  //       id: 4,
-  //       professionalName: 'Dr. Sarah Johnson',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Mental Health',
-  //       date: lastWeek,
-  //       startTime: '11:00 AM',
-  //       endTime: '12:00 PM',
-  //       status: 'completed',
-  //       type: 'chat',
-  //     },
-  //     {
-  //       id: 5,
-  //       professionalName: 'Robert Davis',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Career Counseling',
-  //       date: twoWeeksAgo,
-  //       startTime: '4:00 PM',
-  //       endTime: '5:00 PM',
-  //       status: 'canceled',
-  //       type: 'messaging',
-  //     },
-  //     {
-  //       id: 6,
-  //       professionalName: 'Sophia Lee',
-  //       professionalImage: '/api/placeholder/150/150',
-  //       specialization: 'Nutrition',
-  //       date: today,
-  //       startTime: '5:00 PM',
-  //       endTime: '6:00 PM',
-  //       status: 'upcoming',
-  //       type: 'video',
-  //     },
-  //   ];
-  // }
 }

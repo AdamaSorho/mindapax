@@ -1,0 +1,21 @@
+/* Styles for the Zoom meeting component container */
+:host {
+  display: block;
+  width: 100%;
+  height: 100%; /* Make it fill the parent container's height */
+}
+
+#zmmtg-root {
+  width: 100%;
+  height: 100%;
+  /* Ensure zmmtg-root is hidden initially if there's a delay or pre-join UI */
+  /* display: none; */ /* Can be controlled by component logic after successful join */
+}
+
+/*
+  Zoom Web SDK typically injects its own styles.
+  However, you might need to override or adjust some styles for better integration.
+  For example, to ensure the meeting interface is not obscured by other elements.
+  The SDK itself should handle most of the internal styling.
+  If using Bootstrap via SDK, ensure no conflicts with your app's Bootstrap if also used.
+*/

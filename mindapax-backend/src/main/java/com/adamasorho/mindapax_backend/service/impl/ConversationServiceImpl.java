@@ -1,6 +1,5 @@
 package com.adamasorho.mindapax_backend.service.impl;
 
-import java.util.ArrayList; // Added import
 import java.util.List; // Added import
 import java.util.stream.Collectors; // Added import
 import org.springframework.data.domain.Page;
@@ -8,7 +7,6 @@ import org.springframework.data.domain.PageImpl; // Added import
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.adamasorho.mindapax_backend.dto.MessageDTO; // Added import
 import com.adamasorho.mindapax_backend.dto.response.ConversationResponse; // Added import
 import com.adamasorho.mindapax_backend.mapper.ConversationMapper; // Added import
 import com.adamasorho.mindapax_backend.mapper.MessageMapper; // Added import

@@ -1,0 +1,13 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+  build:
+    commands:
+      - mvn clean package
+  post_build:
+    commands:
+      - aws elasticbeanstalk create-application-version --application-name mindapax-backend --version-label $CODEBUILD_RESOLVED_SOURCE_VERSION --source-bundle S3Bucket=mindapax-backend-bucket,S3Key=mindapax-backend.zip
+      - aws elasticbeanstalk update-environment --application-name mindapax-backend --environment-name mindapax-backend-env --version-label $CODEBUILD_RESOLVED_SOURCE_VERSION
