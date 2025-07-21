@@ -6,6 +6,7 @@ phases:
       java: corretto17
   build:
     commands:
+      - cd mindapax-backend
       - mvn clean package
   post_build:
     commands:
