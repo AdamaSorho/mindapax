@@ -48,6 +48,7 @@ resource "aws_iam_policy" "codebuild" {
         Resource = [
           aws_elastic_beanstalk_application.backend.arn,
           aws_elastic_beanstalk_environment.backend.arn,
+          "arn:aws:elasticbeanstalk:us-east-1:002436683219:applicationversion/mindapax-backend/*",
         ]
       },
       {
