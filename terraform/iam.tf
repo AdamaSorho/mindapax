@@ -37,6 +37,8 @@ resource "aws_iam_policy" "codebuild" {
         Resource = [
           aws_s3_bucket.frontend.arn,
           "${aws_s3_bucket.frontend.arn}/*",
+          "arn:aws:s3:::mindapax-backend-bucket",
+          "arn:aws:s3:::mindapax-backend-bucket/*",
         ]
       },
       {
