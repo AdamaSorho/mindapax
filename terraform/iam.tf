@@ -48,13 +48,15 @@ resource "aws_iam_policy" "codebuild" {
         Action = [
           "elasticbeanstalk:CreateApplicationVersion",
           "elasticbeanstalk:UpdateEnvironment",
+          "elasticbeanstalk:DescribeEnvironments",
+          "elasticbeanstalk:DescribeConfigurationSettings",
+          "ec2:DescribeInstances",
+          "ec2:DescribeSubnets",
+          "autoscaling:DescribeAutoScalingGroups",
+          "cloudformation:DescribeStacks",
         ]
         Effect   = "Allow"
-        Resource = [
-          aws_elastic_beanstalk_application.backend.arn,
-          aws_elastic_beanstalk_environment.backend.arn,
-          "arn:aws:elasticbeanstalk:us-east-1:002436683219:applicationversion/mindapax-backend/*",
-        ]
+        Resource = "*"
       },
       {
         Action = [
