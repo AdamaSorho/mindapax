@@ -4,6 +4,18 @@ resource "aws_s3_bucket" "frontend" {
   bucket = "mindapax-frontend-bucket"
 }
 
+# Creates a new S3 bucket for logging
+resource "aws_s3_bucket" "log_bucket" {
+  bucket = "mindapax-frontend-log-bucket"
+}
+
+resource "aws_s3_bucket_logging" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+
+  target_bucket = aws_s3_bucket.log_bucket.id
+  target_prefix = "log/"
+}
+
 # Creates a new CloudFront origin access identity
 resource "aws_cloudfront_origin_access_identity" "frontend" {
   comment = "OAI for Mindapax frontend"
