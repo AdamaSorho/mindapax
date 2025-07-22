@@ -14,6 +14,8 @@ resource "aws_s3_bucket_logging" "frontend" {
 
   target_bucket = aws_s3_bucket.log_bucket.id
   target_prefix = "log/"
+
+  depends_on = [aws_s3_bucket.frontend]
 }
 
 # Creates a new CloudFront origin access identity
