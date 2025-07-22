@@ -4,22 +4,28 @@ resource "aws_s3_bucket" "frontend" {
   bucket = "mindapax-frontend-bucket"
 }
 
-# Creates a new S3 bucket website configuration
-resource "aws_s3_bucket_website_configuration" "frontend" {
-  # The name of the S3 bucket
-  bucket = aws_s3_bucket.frontend.bucket
+# Creates a new CloudFront origin access identity
+resource "aws_cloudfront_origin_access_identity" "frontend" {
+  comment = "OAI for Mindapax frontend"
+}
 
-  # The index document for the website
-  index_document {
-    # The name of the index document
-    suffix = "index.html"
-  }
+# Creates a new S3 bucket policy for the frontend bucket
+resource "aws_s3_bucket_policy" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
 
-  # The error document for the website
-  error_document {
-    # The name of the error document
-    key = "index.html"
-  }
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action    = "s3:GetObject"
+        Effect    = "Allow"
+        Resource  = "${aws_s3_bucket.frontend.arn}/*"
+        Principal = {
+          AWS = aws_cloudfront_origin_access_identity.frontend.iam_arn
+        }
+      },
+    ]
+  })
 }
 
 # Creates a new CloudFront distribution for the frontend application
@@ -27,20 +33,13 @@ resource "aws_cloudfront_distribution" "frontend" {
   # The origin for the CloudFront distribution
   origin {
     # The domain name of the origin
-    domain_name = aws_s3_bucket_website_configuration.frontend.website_endpoint
+    domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
     # The ID of the origin
     origin_id   = "S3-mindapax-frontend"
 
-    # The custom origin configuration for the origin
-    custom_origin_config {
-      # The HTTP port of the origin
-      http_port              = 80
-      # The HTTPS port of the origin
-      https_port             = 443
-      # The origin protocol policy to use
-      origin_protocol_policy = "http-only"
-      # The SSL protocols to use
-      origin_ssl_protocols   = ["TLSv1.2"]
+    # The S3 origin configuration for the origin
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.frontend.cloudfront_access_identity_path
     }
   }
 
