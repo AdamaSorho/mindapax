@@ -4,6 +4,24 @@ resource "aws_s3_bucket" "frontend" {
   bucket = "mindapax-frontend-bucket"
 }
 
+# Creates a new S3 bucket website configuration
+resource "aws_s3_bucket_website_configuration" "frontend" {
+  # The name of the S3 bucket
+  bucket = aws_s3_bucket.frontend.bucket
+
+  # The index document for the website
+  index_document {
+    # The name of the index document
+    suffix = "index.html"
+  }
+
+  # The error document for the website
+  error_document {
+    # The name of the error document
+    key = "index.html"
+  }
+}
+
 # Creates a new CloudFront origin access identity
 resource "aws_cloudfront_origin_access_identity" "frontend" {
   comment = "OAI for Mindapax frontend"
