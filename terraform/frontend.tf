@@ -51,13 +51,20 @@ resource "aws_cloudfront_distribution" "frontend" {
   # The origin for the CloudFront distribution
   origin {
     # The domain name of the origin
-    domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
+    domain_name = aws_s3_bucket_website_configuration.frontend.website_endpoint
     # The ID of the origin
     origin_id   = "S3-mindapax-frontend"
 
-    # The S3 origin configuration for the origin
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.frontend.cloudfront_access_identity_path
+    # The custom origin configuration for the origin
+    custom_origin_config {
+      # The HTTP port of the origin
+      http_port              = 80
+      # The HTTPS port of the origin
+      https_port             = 443
+      # The origin protocol policy to use
+      origin_protocol_policy = "http-only"
+      # The SSL protocols to use
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
