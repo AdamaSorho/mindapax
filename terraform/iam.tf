@@ -57,6 +57,8 @@ resource "aws_iam_policy" "codebuild" {
           "ec2:DescribeSubnets",
           "autoscaling:DescribeAutoScalingGroups",
           "cloudformation:DescribeStacks",
+          "cloudformation:GetTemplate",
+          "cloudformation:DescribeStackResource",
         ]
         Effect   = "Allow"
         Resource = "*"
