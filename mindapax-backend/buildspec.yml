@@ -44,7 +44,7 @@ phases:
       - aws s3 cp mindapax-backend.zip s3://mindapax-backend-bucket/
 
       # Deploy to Elastic Beanstalk
-      - "export VERSION_LABEL=\"v$(date +%Y%m%d%H%M%S)-$CODEBUILD_BUILD_NUMBER\""
+      - 'export VERSION_LABEL="v$(date +%Y%m%d%H%M%S)-$CODEBUILD_BUILD_NUMBER"'
       - echo "Creating application version: $VERSION_LABEL"
       - aws elasticbeanstalk create-application-version --application-name mindapax-backend --version-label $VERSION_LABEL --source-bundle S3Bucket=mindapax-backend-bucket,S3Key=mindapax-backend.zip
 
