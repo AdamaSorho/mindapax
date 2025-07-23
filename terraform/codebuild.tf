@@ -31,7 +31,8 @@ resource "aws_codebuild_project" "frontend" {
   artifacts {
     # The type of the artifacts
     type = "S3"
-    location = "${aws_s3_bucket.frontend.bucket}/builds"
+    location = aws_s3_bucket.frontend.bucket
+    path = "/builds"
   }
 }
 
