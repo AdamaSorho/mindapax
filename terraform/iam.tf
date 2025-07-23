@@ -31,21 +31,36 @@ resource "aws_iam_policy" "codebuild" {
         Action = [
           "s3:GetObject",
           "s3:PutObject",
+          "s3:DeleteObject",
           "s3:ListBucket",
           "s3:CreateBucket",
           "s3:PutBucketOwnershipControls",
           "s3:PutBucketPublicAccessBlock",
           "s3:GetBucketPublicAccessBlock",
           "s3:GetBucketPolicyStatus",
+          "s3:PutObjectAcl",
+          "s3:GetObjectAcl"
         ]
         Effect   = "Allow"
         Resource = [
           aws_s3_bucket.frontend.arn,
           "${aws_s3_bucket.frontend.arn}/*",
-          "arn:aws:s3:::mindapax-backend-bucket",
-          "arn:aws:s3:::mindapax-backend-bucket/*",
+          aws_s3_bucket.backend.arn,
+          "${aws_s3_bucket.backend.arn}/*",
           "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219",
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219/*"
         ]
+      },
+      {
+        Action = [
+          "cloudfront:CreateInvalidation",
+          "cloudfront:GetInvalidation",
+          "cloudfront:ListInvalidations",
+          "cloudfront:GetDistribution",
+          "cloudfront:GetDistributionConfig"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
       },
       {
         Action = [
@@ -100,6 +115,22 @@ resource "aws_iam_role" "beanstalk" {
       }
     ]
   })
+}
+
+# Attach the necessary managed policies for Elastic Beanstalk
+resource "aws_iam_role_policy_attachment" "beanstalk_web_tier" {
+  role       = aws_iam_role.beanstalk.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier"
+}
+
+resource "aws_iam_role_policy_attachment" "beanstalk_worker_tier" {
+  role       = aws_iam_role.beanstalk.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier"
+}
+
+resource "aws_iam_role_policy_attachment" "beanstalk_multicontainer_docker" {
+  role       = aws_iam_role.beanstalk.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker"
 }
 
 # Creates a new IAM instance profile for the Elastic Beanstalk environment
