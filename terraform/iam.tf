@@ -57,7 +57,8 @@ resource "aws_iam_policy" "codebuild" {
           "cloudfront:GetInvalidation",
           "cloudfront:ListInvalidations",
           "cloudfront:GetDistribution",
-          "cloudfront:GetDistributionConfig"
+          "cloudfront:GetDistributionConfig",
+          "cloudfront:ListDistributions"
         ]
         Effect   = "Allow"
         Resource = "*"
