@@ -1,4 +1,3 @@
-
 # Creates a new CodeBuild project for the frontend
 resource "aws_codebuild_project" "frontend" {
   # The name of the project
@@ -16,18 +15,14 @@ resource "aws_codebuild_project" "frontend" {
     location  = "https://github.com/AdamaSorho/mindapax.git"
     # The type of the buildspec
     buildspec = "mindapax-frontend/buildspec.yml"
-    # The source credential to use
-    # source_credential {
-    #   arn = aws_codebuild_source_credential.github_token.arn
-    # }
   }
 
   # The environment for the build project
   environment {
     # The type of the environment
     type          = "LINUX_CONTAINER"
-    # The image to use for the environment
-    image         = "aws/codebuild/standard:5.0"
+    # Updated to newer image version
+    image         = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
     # The compute type to use for the environment
     compute_type  = "BUILD_GENERAL1_SMALL"
   }
@@ -35,7 +30,8 @@ resource "aws_codebuild_project" "frontend" {
   # The artifacts for the build project
   artifacts {
     # The type of the artifacts
-    type = "NO_ARTIFACTS"
+    type = "S3"
+    location = "${aws_s3_bucket.frontend.bucket}/builds"
   }
 }
 
@@ -62,8 +58,8 @@ resource "aws_codebuild_project" "backend" {
   environment {
     # The type of the environment
     type          = "LINUX_CONTAINER"
-    # The image to use for the environment
-    image         = "aws/codebuild/standard:5.0"
+    # Updated to newer image version
+    image         = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
     # The compute type to use for the environment
     compute_type  = "BUILD_GENERAL1_SMALL"
   }
