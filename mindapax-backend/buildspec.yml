@@ -4,15 +4,59 @@ phases:
   install:
     runtime-versions:
       java: corretto17
+    commands:
+      - echo Install phase started on `date`
+      - echo Install phase completed on `date`
+
+  pre_build:
+    commands:
+      - echo Pre-build phase started on `date`
+      - cd mindapax-backend
+      - echo "Java version:"
+      - java -version
+      - echo "Maven version:"
+      - mvn -version
+      - echo Pre-build phase completed on `date`
+
   build:
     commands:
-      - cd mindapax-backend
+      - echo Build phase started on `date`
       - mvn clean package -DskipTests
-      - mv target/*.jar mindapax-backend.jar
-      - zip mindapax-backend.zip mindapax-backend.jar
-      - aws s3 cp mindapax-backend.zip s3://mindapax-backend-bucket/
+      - echo "Listing target directory:"
+      - ls -la target/
+      - echo Build phase completed on `date`
+
   post_build:
     commands:
-      - export VERSION_LABEL="$CODEBUILD_RESOLVED_SOURCE_VERSION-$CODEBUILD_BUILD_NUMBER"
+      - echo Post-build phase started on `date`
+      # Create the backend bucket if it doesn't exist
+      - aws s3 mb s3://mindapax-backend-bucket --region us-east-1 || echo "Bucket already exists"
+
+      # Find the JAR file and copy it
+      - JAR_FILE=$(find target -name "*.jar" | head -1)
+      - if [ -z "$JAR_FILE" ]; then echo "No JAR file found!" && exit 1; fi
+      - echo "Found JAR file: $JAR_FILE"
+      - cp "$JAR_FILE" mindapax-backend.jar
+
+      # Create ZIP file for Elastic Beanstalk
+      - zip mindapax-backend.zip mindapax-backend.jar
+      - echo "Uploading to S3..."
+      - aws s3 cp mindapax-backend.zip s3://mindapax-backend-bucket/
+
+      # Deploy to Elastic Beanstalk
+      - export VERSION_LABEL="v$(date +%Y%m%d%H%M%S)-$CODEBUILD_BUILD_NUMBER"
+      - echo "Creating application version: $VERSION_LABEL"
       - aws elasticbeanstalk create-application-version --application-name mindapax-backend --version-label $VERSION_LABEL --source-bundle S3Bucket=mindapax-backend-bucket,S3Key=mindapax-backend.zip
+
+      - echo "Updating environment..."
       - aws elasticbeanstalk update-environment --application-name mindapax-backend --environment-name mindapax-backend-env --version-label $VERSION_LABEL
+
+      - echo "Waiting for environment to be ready..."
+      - aws elasticbeanstalk wait environment-updated --application-name mindapax-backend --environment-name mindapax-backend-env
+
+      - echo Post-build phase completed on `date`
+
+artifacts:
+  files:
+    - mindapax-backend.zip
+  base-directory: mindapax-backend
