@@ -156,7 +156,7 @@ resource "aws_iam_policy" "beanstalk_s3_access" {
 
 resource "aws_iam_role_policy_attachment" "beanstalk_s3_access" {
   role       = aws_iam_role.beanstalk.name
-  policy_arn = aws_iam_policy.beanstalk_s3_access.arn
+  policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy"
 }
 
 # Creates a new IAM instance profile for the Elastic Beanstalk environment
