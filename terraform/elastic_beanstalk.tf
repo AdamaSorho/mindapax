@@ -223,10 +223,4 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     name = "AWS_S3_BUCKET_NAME"
     value = var.aws_s3_bucket_name
   }
-
-  setting {
-    namespace = "aws:elasticbeanstalk:managedactions"
-    name      = "ManagedActionsEnabled"
-    value     = "false"
-  }
 }
