@@ -181,9 +181,7 @@ resource "aws_iam_policy" "beanstalk_s3_access" {
         ]
         Resource = [
           "arn:aws:s3:::elasticbeanstalk-*",
-          "arn:aws:s3:::elasticbeanstalk-*/*",
-          "arn:aws:s3:::elasticbeanstalk-env-resources-us-east-1",
-          "arn:aws:s3:::elasticbeanstalk-env-resources-us-east-1/*"
+          "arn:aws:s3:::elasticbeanstalk-*/*"
         ]
       },
       {
@@ -194,6 +192,15 @@ resource "aws_iam_policy" "beanstalk_s3_access" {
         ]
         Resource = [
           "arn:aws:s3:::elasticbeanstalk-*/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::elasticbeanstalk-env-resources-us-east-1/*"
         ]
       }
     ]
