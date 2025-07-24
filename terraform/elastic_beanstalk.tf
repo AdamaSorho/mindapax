@@ -82,7 +82,7 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     # The name of the setting
     name      = "ServiceRole"
     # The value of the setting
-    value     = "aws-elasticbeanstalk-service-role"
+    value     = aws_iam_role.beanstalk.name
   }
 
   # A map of settings to apply to the environment
