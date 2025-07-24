@@ -88,8 +88,6 @@ resource "aws_s3_bucket_policy" "frontend" {
       }
     ]
   })
-
-  depends_on = [aws_cloudfront_distribution.frontend]
 }
 
 # Creates a new CloudFront distribution for the frontend application

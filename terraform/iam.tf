@@ -75,6 +75,8 @@ resource "aws_iam_policy" "codebuild" {
           "cloudformation:DescribeStacks",
           "cloudformation:GetTemplate",
           "cloudformation:DescribeStackResource",
+          "cloudformation:DescribeStackResources",
+          "ec2:CreateLaunchTemplate"
         ]
         Effect   = "Allow"
         Resource = "*"
