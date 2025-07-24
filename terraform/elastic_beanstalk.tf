@@ -40,6 +40,16 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     # The namespace for the setting
     namespace = "aws:ec2:vpc"
     # The name of the setting
+    name      = "ELBSubnets"
+    # The value of the setting
+    value     = "${aws_subnet.public_a.id},${aws_subnet.public_b.id}"
+  }
+
+  # A map of settings to apply to the environment
+  setting {
+    # The namespace for the setting
+    namespace = "aws:ec2:vpc"
+    # The name of the setting
     name      = "AssociatePublicIpAddress"
     # The value of the setting
     value     = "false"
@@ -75,14 +85,14 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     value     = "application"
   }
 
-  # A map of settings to apply to the environment
+  # Use the service role for Elastic Beanstalk operations
   setting {
     # The namespace for the setting
     namespace = "aws:elasticbeanstalk:environment"
     # The name of the setting
     name      = "ServiceRole"
     # The value of the setting
-    value     = aws_iam_role.beanstalk.name
+    value     = aws_iam_role.beanstalk_service.arn
   }
 
   # A map of settings to apply to the environment
@@ -95,7 +105,6 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     value     = "static"
   }
 
-
   # A map of settings to apply to the environment
   setting {
     # The namespace for the setting
@@ -106,7 +115,7 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     value     = aws_iam_instance_profile.beanstalk.name
   }
 
-  # A map of settings to apply to the environment
+  # Environment variables
   setting {
     # The namespace for the setting
     namespace = "aws:elasticbeanstalk:application:environment"

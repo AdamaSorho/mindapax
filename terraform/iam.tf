@@ -120,7 +120,37 @@ resource "aws_iam_role" "beanstalk" {
   })
 }
 
-# Attach the necessary managed policies for Elastic Beanstalk
+# Creates a new IAM service role for Elastic Beanstalk service operations
+resource "aws_iam_role" "beanstalk_service" {
+  name = "mindapax-elasticbeanstalk-service-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "elasticbeanstalk.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Attach the Elastic Beanstalk service role policy
+resource "aws_iam_role_policy_attachment" "beanstalk_service" {
+  role       = aws_iam_role.beanstalk_service.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkService"
+}
+
+# Attach enhanced health policy for the service role
+resource "aws_iam_role_policy_attachment" "beanstalk_enhanced_health" {
+  role       = aws_iam_role.beanstalk_service.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkEnhancedHealth"
+}
+
+# Attach the necessary managed policies for Elastic Beanstalk EC2 instances
 resource "aws_iam_role_policy_attachment" "beanstalk_web_tier" {
   role       = aws_iam_role.beanstalk.name
   policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier"
@@ -136,6 +166,7 @@ resource "aws_iam_role_policy_attachment" "beanstalk_multicontainer_docker" {
   policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker"
 }
 
+# Custom policy for S3 access to Elastic Beanstalk resources
 resource "aws_iam_policy" "beanstalk_s3_access" {
   name = "mindapax-beanstalk-s3-access"
   policy = jsonencode({
@@ -144,20 +175,38 @@ resource "aws_iam_policy" "beanstalk_s3_access" {
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject"
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:ListBucket"
         ]
         Resource = [
+          "arn:aws:s3:::elasticbeanstalk-*",
+          "arn:aws:s3:::elasticbeanstalk-*/*",
+          "arn:aws:s3:::elasticbeanstalk-env-resources-us-east-1",
           "arn:aws:s3:::elasticbeanstalk-env-resources-us-east-1/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::elasticbeanstalk-*/*"
         ]
       }
     ]
   })
 }
 
+# Attach the S3 access policy to the instance role
 resource "aws_iam_role_policy_attachment" "beanstalk_s3_access" {
   role       = aws_iam_role.beanstalk.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy"
+  policy_arn = aws_iam_policy.beanstalk_s3_access.arn
 }
+
+# Note: AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy removed as it may not be available in all regions
 
 # Creates a new IAM instance profile for the Elastic Beanstalk environment
 resource "aws_iam_instance_profile" "beanstalk" {
