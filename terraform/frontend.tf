@@ -27,11 +27,6 @@ resource "aws_s3_bucket_public_access_block" "frontend" {
   restrict_public_buckets = true
 }
 
-# Creates a new S3 bucket for Elastic Beanstalk resources
-resource "aws_s3_bucket" "elasticbeanstalk" {
-  bucket = "elasticbeanstalk-env-resources-us-east-1"
-}
-
 # Creates a new S3 bucket for logging
 resource "aws_s3_bucket" "log_bucket" {
   bucket = "mindapax-frontend-log-bucket"
