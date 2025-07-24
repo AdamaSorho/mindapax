@@ -13,7 +13,7 @@ resource "aws_elastic_beanstalk_environment" "backend" {
   # The name of the application to associate the environment with
   application         = aws_elastic_beanstalk_application.backend.name
   # The name of the solution stack to use
-  solution_stack_name = "64bit Amazon Linux 2 v3.9.1 running Corretto 17"
+  solution_stack_name = "64bit Amazon Linux 2023 v4.6.1 running Corretto 17"
 
   # A map of settings to apply to the environment
   setting {

@@ -207,11 +207,6 @@ resource "aws_iam_role_policy_attachment" "beanstalk_s3_access" {
 }
 
 # Note: AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy removed as it may not be available in all regions
-# Attach the managed updates policy to the instance role
-resource "aws_iam_role_policy_attachment" "beanstalk_managed_updates" {
-  role       = aws_iam_role.beanstalk.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy"
-}
 
 # Creates a new IAM instance profile for the Elastic Beanstalk environment
 resource "aws_iam_instance_profile" "beanstalk" {
