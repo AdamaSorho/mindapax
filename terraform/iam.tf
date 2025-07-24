@@ -136,6 +136,29 @@ resource "aws_iam_role_policy_attachment" "beanstalk_multicontainer_docker" {
   policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker"
 }
 
+resource "aws_iam_policy" "beanstalk_s3_access" {
+  name = "mindapax-beanstalk-s3-access"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::elasticbeanstalk-env-resources-us-east-1/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "beanstalk_s3_access" {
+  role       = aws_iam_role.beanstalk.name
+  policy_arn = aws_iam_policy.beanstalk_s3_access.arn
+}
+
 # Creates a new IAM instance profile for the Elastic Beanstalk environment
 resource "aws_iam_instance_profile" "beanstalk" {
   name = "mindapax-beanstalk-profile"
