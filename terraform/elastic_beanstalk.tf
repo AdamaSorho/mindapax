@@ -115,27 +115,6 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     value     = aws_iam_instance_profile.beanstalk.name
   }
 
-  # Disable managed platform updates to avoid the S3 access issue
-  setting {
-    namespace = "aws:elasticbeanstalk:managedactions"
-    name      = "ManagedActionsEnabled"
-    value     = "false"
-  }
-
-  # Disable automatic platform updates
-  setting {
-    namespace = "aws:elasticbeanstalk:managedactions:platformupdate"
-    name      = "UpdateLevel"
-    value     = "minor"
-  }
-
-  # Disable instance replacement for platform updates
-  setting {
-    namespace = "aws:elasticbeanstalk:managedactions:platformupdate"
-    name      = "InstanceRefreshEnabled"
-    value     = "false"
-  }
-
   # Environment variables
   setting {
     # The namespace for the setting
