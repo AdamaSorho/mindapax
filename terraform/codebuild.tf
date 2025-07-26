@@ -21,8 +21,8 @@ resource "aws_codebuild_project" "frontend" {
   environment {
     # The type of the environment
     type          = "LINUX_CONTAINER"
-    # Updated to newer image version
-    image         = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+    # Updated to newer image that supports Node.js 18
+    image         = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
     # The compute type to use for the environment
     compute_type  = "BUILD_GENERAL1_SMALL"
   }
