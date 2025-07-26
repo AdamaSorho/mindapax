@@ -47,8 +47,8 @@ resource "aws_iam_policy" "codebuild" {
           "${aws_s3_bucket.frontend.arn}/*",
           aws_s3_bucket.backend.arn,
           "${aws_s3_bucket.backend.arn}/*",
-          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219",
-          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219/*"
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-*",
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-*/*"
         ]
       },
       {
@@ -166,7 +166,7 @@ resource "aws_iam_role_policy_attachment" "beanstalk_multicontainer_docker" {
   policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker"
 }
 
-# Custom policy for S3 access to Elastic Beanstalk resources
+# Custom policy for comprehensive S3 access including AWS-managed Elastic Beanstalk resources
 resource "aws_iam_policy" "beanstalk_s3_access" {
   name = "mindapax-beanstalk-s3-access"
   policy = jsonencode({
@@ -182,8 +182,12 @@ resource "aws_iam_policy" "beanstalk_s3_access" {
         Resource = [
           "arn:aws:s3:::elasticbeanstalk-*",
           "arn:aws:s3:::elasticbeanstalk-*/*",
-          "arn:aws:s3:::elasticbeanstalk-env-resources-us-east-1",
-          "arn:aws:s3:::elasticbeanstalk-env-resources-us-east-1/*"
+          # Include the actual bucket in your account
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219",
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219/*",
+          # Include AWS-managed environment resources bucket pattern
+          "arn:aws:s3:::elasticbeanstalk-env-resources-*",
+          "arn:aws:s3:::elasticbeanstalk-env-resources-*/*"
         ]
       },
       {
@@ -193,8 +197,35 @@ resource "aws_iam_policy" "beanstalk_s3_access" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "arn:aws:s3:::elasticbeanstalk-*/*"
+          "arn:aws:s3:::elasticbeanstalk-*/*",
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219/*"
         ]
+      },
+      {
+        # Additional permissions for SSM and Systems Manager operations
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath",
+          "ssm:DescribeInstanceInformation",
+          "ssm:DescribeInstanceProperties",
+          "ssm:DescribeDocumentParameters",
+          "ssm:ListDocuments",
+          "ssm:SendCommand",
+          "ssm:GetCommandInvocation",
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel",
+          "ec2messages:AcknowledgeMessage",
+          "ec2messages:DeleteMessage",
+          "ec2messages:FailMessage",
+          "ec2messages:GetEndpoint",
+          "ec2messages:GetMessages",
+          "ec2messages:SendReply"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -206,7 +237,17 @@ resource "aws_iam_role_policy_attachment" "beanstalk_s3_access" {
   policy_arn = aws_iam_policy.beanstalk_s3_access.arn
 }
 
-# Note: AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy removed as it may not be available in all regions
+# Attach SSM managed instance core policy for patching operations
+resource "aws_iam_role_policy_attachment" "beanstalk_ssm_managed_instance_core" {
+  role       = aws_iam_role.beanstalk.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# Remove or comment out the managed updates policy attachment as it may be causing issues
+# resource "aws_iam_role_policy_attachment" "beanstalk_managed_updates" {
+#   role       = aws_iam_role.beanstalk.name
+#   policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy"
+# }
 
 # Creates a new IAM instance profile for the Elastic Beanstalk environment
 resource "aws_iam_instance_profile" "beanstalk" {

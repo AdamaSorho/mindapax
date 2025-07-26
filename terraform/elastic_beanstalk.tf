@@ -12,7 +12,7 @@ resource "aws_elastic_beanstalk_environment" "backend" {
   name                = "mindapax-backend-env"
   # The name of the application to associate the environment with
   application         = aws_elastic_beanstalk_application.backend.name
-  # The name of the solution stack to use
+  # The name of the solution stack to use - Updated to Amazon Linux 2023
   solution_stack_name = "64bit Amazon Linux 2023 v4.6.1 running Corretto 17"
 
   # A map of settings to apply to the environment
@@ -113,6 +113,27 @@ resource "aws_elastic_beanstalk_environment" "backend" {
     name      = "IamInstanceProfile"
     # The value of the setting
     value     = aws_iam_instance_profile.beanstalk.name
+  }
+
+  # Disable managed platform updates to avoid the S3 access issue
+  setting {
+    namespace = "aws:elasticbeanstalk:managedactions"
+    name      = "ManagedActionsEnabled"
+    value     = "false"
+  }
+
+  # Disable automatic platform updates
+  setting {
+    namespace = "aws:elasticbeanstalk:managedactions:platformupdate"
+    name      = "UpdateLevel"
+    value     = "minor"
+  }
+
+  # Disable instance replacement for platform updates
+  setting {
+    namespace = "aws:elasticbeanstalk:managedactions:platformupdate"
+    name      = "InstanceRefreshEnabled"
+    value     = "false"
   }
 
   # Environment variables

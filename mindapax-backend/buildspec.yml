@@ -53,4 +53,8 @@ phases:
 artifacts:
   files:
     - mindapax-backend.zip
+    - target/*.jar
+    - .ebextensions/**/*
+    - Procfile
   base-directory: mindapax-backend
+  name: backend-artifacts
