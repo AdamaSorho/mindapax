@@ -183,11 +183,8 @@ resource "aws_iam_policy" "beanstalk_s3_access" {
           "arn:aws:s3:::elasticbeanstalk-*",
           "arn:aws:s3:::elasticbeanstalk-*/*",
           # Include the actual bucket in your account
-          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219",
-          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219/*",
-          # Include AWS-managed environment resources bucket pattern
-          "arn:aws:s3:::elasticbeanstalk-env-resources-*",
-          "arn:aws:s3:::elasticbeanstalk-env-resources-*/*"
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-*",
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-*/*"
         ]
       },
       {
@@ -198,7 +195,7 @@ resource "aws_iam_policy" "beanstalk_s3_access" {
         ]
         Resource = [
           "arn:aws:s3:::elasticbeanstalk-*/*",
-          "arn:aws:s3:::elasticbeanstalk-us-east-1-002436683219/*"
+          "arn:aws:s3:::elasticbeanstalk-us-east-1-*/*"
         ]
       },
       {
