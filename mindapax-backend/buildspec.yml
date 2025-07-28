@@ -2,59 +2,36 @@ version: 0.2
 
 phases:
   install:
+    runtime-versions:
+      java: corretto17
     commands:
-      - echo Install phase started on `date`
-      - echo Install phase completed on `date`
+      - echo "Installing Terraform"
+      - wget https://releases.hashicorp.com/terraform/1.0.0/terraform_1.0.0_linux_amd64.zip
+      - unzip terraform_1.0.0_linux_amd64.zip
+      - mv terraform /usr/local/bin/
 
   pre_build:
     commands:
-      - echo Pre-build phase started on `date`
-      - cd mindapax-backend
       - echo "Java version:"
       - java -version
       - echo "Maven version:"
       - mvn -version
-      - echo Pre-build phase completed on `date`
+      - echo "Terraform version:"
+      - terraform --version
 
   build:
     commands:
-      - echo Build phase started on `date`
-      - cd mindapax-backend
+      - echo "Running Maven build"
       - mvn clean package -DskipTests
       - echo "Listing target directory:"
       - ls -la target/
-      - echo Build phase completed on `date`
-
-  post_build:
-    commands:
-      - echo Post-build phase started on `date`
-      - cd mindapax-backend
-      # Create the backend bucket if it doesn't exist
-      - aws s3 mb s3://mindapax-backend-bucket --region us-east-1 || echo "Bucket already exists"
-      # Find the JAR file and copy it
-      - JAR_FILE=$(find target -name "*.jar" | head -1)
-      - if [ -z "$JAR_FILE" ]; then echo "No JAR file found!" && exit 1; fi
-      - echo "Found JAR file:$JAR_FILE"
-      - cp "$JAR_FILE" mindapax-backend.jar
-      # Create ZIP file for Elastic Beanstalk
-      - zip mindapax-backend.zip mindapax-backend.jar
-      - echo "Uploading to S3..."
-      - aws s3 cp mindapax-backend.zip s3://mindapax-backend-bucket/
-      # Deploy to Elastic Beanstalk
-      - export VERSION_LABEL="v$(date +%Y%m%d%H%M%S)-$CODEBUILD_BUILD_NUMBER"
-      - echo "Creating application version:$VERSION_LABEL"
-      - aws elasticbeanstalk create-application-version --application-name mindapax-backend --version-label $VERSION_LABEL --source-bundle S3Bucket=mindapax-backend-bucket,S3Key=mindapax-backend.zip
-      - echo "Updating environment..."
-      - aws elasticbeanstalk update-environment --application-name mindapax-backend --environment-name mindapax-backend-env --version-label $VERSION_LABEL
-      - echo "Waiting for environment to be ready..."
-      - aws elasticbeanstalk wait environment-updated --application-name mindapax-backend --environment-name mindapax-backend-env
-      - echo Post-build phase completed on `date`
+      - echo "Running Terraform"
+      - cd terraform
+      - terraform init
+      - terraform apply -auto-approve
 
 artifacts:
   files:
-    - mindapax-backend.zip
     - target/*.jar
-    - .ebextensions/**/*
-    - Procfile
   base-directory: mindapax-backend
   name: backend-artifacts
