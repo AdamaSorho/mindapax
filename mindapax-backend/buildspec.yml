@@ -19,6 +19,7 @@ phases:
   build:
     commands:
       - echo Build phase started on `date`
+      - cd mindapax-backend
       - mvn clean package -DskipTests
       - echo "Listing target directory:"
       - ls -la target/
@@ -27,6 +28,7 @@ phases:
   post_build:
     commands:
       - echo Post-build phase started on `date`
+      - cd mindapax-backend
       # Create the backend bucket if it doesn't exist
       - aws s3 mb s3://mindapax-backend-bucket --region us-east-1 || echo "Bucket already exists"
       # Find the JAR file and copy it
