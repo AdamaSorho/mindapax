@@ -3,22 +3,11 @@
 # Exit on error
 set -e
 
-# Build the frontend
-echo "Building the frontend..."
-cd mindapax-frontend
-npm install
-npm run build
-cd ..
-
 # Build the backend
 echo "Building the backend..."
 cd mindapax-backend
 mvn clean package -DskipTests
 cd ..
-
-# Upload the frontend to S3
-echo "Uploading the frontend to S3..."
-aws s3 sync mindapax-frontend/dist/mindapax-frontend s3://mindapax-frontend-bucket --delete
 
 # Upload the backend to S3
 echo "Uploading the backend to S3..."
@@ -31,4 +20,4 @@ terraform init
 terraform apply -auto-approve
 cd ..
 
-echo "Deployment complete!"
+echo "Backend deployment complete!"
