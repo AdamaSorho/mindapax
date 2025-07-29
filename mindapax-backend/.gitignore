@@ -33,3 +33,5 @@ build/
 .vscode/
 
 uploads/
+mindapax-backend.jar
+mindapax-backend.zip
