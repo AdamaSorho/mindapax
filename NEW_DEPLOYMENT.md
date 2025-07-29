@@ -22,6 +22,8 @@ To deploy the application, you need to have the following tools installed:
 
 Before running the deployment scripts, you need to make them executable. You can do this by running the following commands from the root of the repository:
 
+**Important:** Before running the deployment script for the first time, you must manually terminate the Elastic Beanstalk environment in the AWS console. This is necessary to avoid conflicts with the new EC2-based deployment.
+
 ```bash
 chmod +x deploy.sh
 chmod +x deploy-backend.sh
