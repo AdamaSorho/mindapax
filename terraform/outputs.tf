@@ -1,11 +1,7 @@
-# The URL for the frontend application
-output "frontend_url" {
-  # The value of the output
-  value = aws_cloudfront_distribution.frontend.domain_name
+output "backend_ip" {
+  value = aws_instance.backend.public_ip
 }
 
-# The URL for the backend application
-output "backend_url" {
-  # The value of the output
-  value = aws_elastic_beanstalk_environment.backend.cname
+output "frontend_url" {
+  value = "http://${aws_s3_bucket.frontend.website_endpoint}"
 }
