@@ -58,7 +58,7 @@ resource "aws_iam_instance_profile" "ec2" {
 
 # Creates a new EC2 instance for the backend
 resource "aws_instance" "backend" {
-  ami           = "ami-0c55b159cbfafe1f0" # Amazon Linux 2 AMI (HVM), SSD Volume Type
+  ami           = "ami-08a6efd148b1f7504"
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public_a.id
   vpc_security_group_ids = [aws_security_group.backend_ec2.id]
