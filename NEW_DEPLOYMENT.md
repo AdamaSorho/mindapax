@@ -20,7 +20,25 @@ To deploy the application, you need to have the following tools installed:
 *   [Maven](https://maven.apache.org/download.cgi)
 *   [Node.js and npm](https://nodejs.org/en/download/)
 
-### Backend Deployment
+### Full Deployment
+
+To deploy both the backend and the frontend, run the following command from the root of the repository:
+
+```bash
+./deploy.sh
+```
+
+This script will:
+
+1.  Deploy the backend by running the `deploy-backend.sh` script.
+2.  Get the backend's public IP address from the Terraform output.
+3.  Deploy the frontend by running the `deploy-frontend.sh` script with the backend's URL.
+
+### Separate Deployment
+
+You can also deploy the backend and frontend separately.
+
+#### Backend Deployment
 
 To deploy the backend, run the following command from the root of the repository:
 
@@ -36,7 +54,7 @@ This script will:
 
 After the deployment is complete, Terraform will output the public IP address of the backend EC2 instance. You will need this for the frontend deployment.
 
-### Frontend Deployment
+#### Frontend Deployment
 
 To deploy the frontend, run the following command from the root of the repository, replacing `<backend_url>` with the public IP address of the backend EC2 instance:
 
