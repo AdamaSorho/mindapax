@@ -174,86 +174,6 @@ resource "aws_route_table_association" "private_b" {
   route_table_id = aws_route_table.private.id
 }
 
-# Creates a new security group for the load balancer
-resource "aws_security_group" "lb" {
-  # The name of the security group
-  name        = "mindapax-lb-sg"
-  # A description of the security group
-  description = "Allow HTTP and HTTPS traffic to load balancer"
-  # The ID of the VPC to create the security group in
-  vpc_id      = aws_vpc.main.id
-
-  # A list of ingress rules to create in the security group
-  ingress {
-    # The starting port for the rule
-    from_port   = 80
-    # The ending port for the rule
-    to_port     = 80
-    # The protocol for the rule
-    protocol    = "tcp"
-    # A list of CIDR blocks to allow traffic from
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # A list of ingress rules to create in the security group
-  ingress {
-    # The starting port for the rule
-    from_port   = 443
-    # The ending port for the rule
-    to_port     = 443
-    # The protocol for the rule
-    protocol    = "tcp"
-    # A list of CIDR blocks to allow traffic from
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # A list of egress rules to create in the security group
-  egress {
-    # The starting port for the rule
-    from_port   = 0
-    # The ending port for the rule
-    to_port     = 0
-    # The protocol for the rule
-    protocol    = "-1"
-    # A list of CIDR blocks to allow traffic to
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-# Creates a new security group for the backend application
-resource "aws_security_group" "backend" {
-  # The name of the security group
-  name        = "mindapax-backend-sg"
-  # A description of the security group
-  description = "Allow traffic from load balancer to backend"
-  # The ID of the VPC to create the security group in
-  vpc_id      = aws_vpc.main.id
-
-  # A list of ingress rules to create in the security group
-  ingress {
-    # The starting port for the rule
-    from_port       = 8080
-    # The ending port for the rule
-    to_port         = 8080
-    # The protocol for the rule
-    protocol        = "tcp"
-    # A list of security group IDs to allow traffic from
-    security_groups = [aws_security_group.lb.id]
-  }
-
-  # A list of egress rules to create in the security group
-  egress {
-    # The starting port for the rule
-    from_port   = 0
-    # The ending port for the rule
-    to_port     = 0
-    # The protocol for the rule
-    protocol    = "-1"
-    # A list of CIDR blocks to allow traffic to
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 # Creates a new security group for the database
 resource "aws_security_group" "database" {
   # The name of the security group
@@ -272,7 +192,7 @@ resource "aws_security_group" "database" {
     # The protocol for the rule
     protocol        = "tcp"
     # A list of security group IDs to allow traffic from
-    security_groups = [aws_security_group.backend.id]
+    security_groups = [aws_security_group.backend_ec2.id]
   }
 
   # A list of egress rules to create in the security group
