@@ -37,3 +37,7 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+target/
+mindapax-backend/mindapax-backend.jar
+mindapax-backend/mindapax-backend.zip
