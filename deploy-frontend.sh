@@ -24,6 +24,6 @@ cd ..
 
 # Upload the frontend to S3
 echo "Uploading the frontend to S3..."
-aws s3 sync mindapax-frontend/dist/mindapax-frontend s3://mindapax-frontend-bucket --delete
+aws s3 sync mindapax-frontend/dist/mindapax-frontend/browser s3://mindapax-frontend-bucket --delete
 
 echo "Frontend deployment complete!"
