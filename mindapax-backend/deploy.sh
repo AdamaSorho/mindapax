@@ -27,7 +27,7 @@ aws s3 cp mindapax-backend.zip s3://mindapax-backend-bucket/
 
 # 4. Create a new application version in Elastic Beanstalk.
 echo "Creating application version..."
-VERSION_LABEL="v$(date +%Y%m%d%H%M%S)"
+VERSION_LABEL="v$(date +%Y%m%d%H%M%S)-local"
 aws elasticbeanstalk create-application-version \
   --application-name mindapax-backend \
   --version-label "$VERSION_LABEL" \
