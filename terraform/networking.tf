@@ -97,6 +97,20 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
+  route {
+    # The CIDR block for the route
+    cidr_block     = "10.0.3.0/24"
+    # The ID of the NAT gateway to route traffic to
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
+
+  route {
+    # The CIDR block for the route
+    cidr_block     = "10.0.4.0/24"
+    # The ID of the NAT gateway to route traffic to
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
+
   # A map of tags to assign to the resource
   tags = {
     Name = "mindapax-public-rt"
@@ -195,16 +209,6 @@ resource "aws_security_group" "database" {
     security_groups = [aws_security_group.backend_ec2.id]
   }
 
-  ingress {
-    # The starting port for the rule
-    from_port       = 3306
-    # The ending port for the rule
-    to_port         = 3306
-    # The protocol for the rule
-    protocol        = "tcp"
-    # A list of CIDR blocks to allow traffic from
-    cidr_blocks = [aws_subnet.public_a.cidr_block]
-  }
 
   # A list of egress rules to create in the security group
   egress {
