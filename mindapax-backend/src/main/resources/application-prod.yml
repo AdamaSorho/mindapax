@@ -6,3 +6,7 @@ spring:
         static: ${AWS_REGION}
       s3:
         bucket-name: ${AWS_S3_BUCKET_NAME}
+
+logging:
+  file:
+    path: /var/log/mindapax-backend.log

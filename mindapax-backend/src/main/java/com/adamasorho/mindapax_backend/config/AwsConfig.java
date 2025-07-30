@@ -18,7 +18,7 @@ import java.net.URI;
 @Configuration
 public class AwsConfig {
 
-    @Value("${spring.cloud.aws.s3.endpoint}")
+    @Value("${spring.cloud.aws.s3.endpoint:}")
     private String s3Endpoint;
 
     @Bean

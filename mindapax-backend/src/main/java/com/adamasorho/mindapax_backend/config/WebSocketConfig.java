@@ -20,7 +20,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(@NonNull StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")  // WebSocket endpoint
-                .setAllowedOrigins("http://localhost:4200")
+                .setAllowedOrigins("http://localhost:4200", "http://mindapax-frontend-bucket.s3-website-us-east-1.amazonaws.com")
                 .withSockJS();       // fallback for browsers
     }
 }

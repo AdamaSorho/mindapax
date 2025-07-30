@@ -3,17 +3,17 @@
 # Exit on error
 set -e
 
-if [ -z "$1" ]; then
-  echo "Usage: ./deploy-frontend.sh <backend_url>"
-  exit 1
-fi
+# if [ -z "$1" ]; then
+#   echo "Usage: ./deploy-frontend.sh <backend_url>"
+#   exit 1
+# fi
 
-BACKEND_URL=$1
+# BACKEND_URL=$1
 
-# Update the frontend environment file
-echo "Updating the frontend environment file..."
-sed -i '' "s|apiUrl: .* |apiUrl: $BACKEND_URL/api/v1 |" mindapax-frontend/src/environments/environment.ts
-sed -i '' "s|webSocketUrl: .* |webSocketUrl: $BACKEND_URL/ws |" mindapax-frontend/src/environments/environment.ts
+# # Update the frontend environment file
+# echo "Updating the frontend environment file..."
+# sed -i '' "s|apiUrl: .* |apiUrl: $BACKEND_URL/api/v1 |" mindapax-frontend/src/environments/environment.ts
+# sed -i '' "s|webSocketUrl: .* |webSocketUrl: $BACKEND_URL/ws |" mindapax-frontend/src/environments/environment.ts
 
 # Build the frontend
 echo "Building the frontend..."

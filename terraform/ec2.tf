@@ -69,7 +69,7 @@ resource "aws_instance" "backend" {
               yum update -y
               yum install -y java-17-amazon-corretto
               aws s3 cp s3://mindapax-backend-bucket/mindapax-backend.jar /home/ec2-user/mindapax-backend.jar
-              java -jar /home/ec2-user/mindapax-backend.jar
+              java -jar /home/ec2-user/mindapax-backend.jar 
               EOF
 
   tags = {
