@@ -60,14 +60,13 @@ resource "aws_iam_instance_profile" "ec2" {
 resource "aws_instance" "backend" {
   ami           = "ami-08a6efd148b1f7504"
   instance_type = "t2.micro"
-  subnet_id     = aws_subnet.public_a.id
+  subnet_id     = aws_subnet.private_a.id
   vpc_security_group_ids = [aws_security_group.backend_ec2.id]
   iam_instance_profile = aws_iam_instance_profile.ec2.name
 
   user_data = <<-EOF
               #!/bin/bash
               yum update -y
-              yum install -y java-17-amazon-corretto
               aws s3 cp s3://mindapax-backend-bucket/mindapax-backend.jar /home/ec2-user/mindapax-backend.jar
               java -jar /home/ec2-user/mindapax-backend.jar 
               EOF
