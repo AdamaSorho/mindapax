@@ -195,6 +195,17 @@ resource "aws_security_group" "database" {
     security_groups = [aws_security_group.backend_ec2.id]
   }
 
+  ingress {
+    # The starting port for the rule
+    from_port       = 3306
+    # The ending port for the rule
+    to_port         = 3306
+    # The protocol for the rule
+    protocol        = "tcp"
+    # A list of CIDR blocks to allow traffic from
+    cidr_blocks = [aws_subnet.public_a.cidr_block]
+  }
+
   # A list of egress rules to create in the security group
   egress {
     # The starting port for the rule
