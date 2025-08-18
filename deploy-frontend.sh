@@ -12,7 +12,8 @@ BACKEND_URL=$1
 
 # Update the frontend environment file
 echo "Updating the frontend environment file..."
-sed -i "s|apiUrl: '.*'|apiUrl: '$BACKEND_URL'|" mindapax-frontend/src/environments/environment.ts
+sed -i '' "s|apiUrl: .* |apiUrl: $BACKEND_URL/api/v1 |" mindapax-frontend/src/environments/environment.ts
+sed -i '' "s|webSocketUrl: .* |webSocketUrl: $BACKEND_URL/ws |" mindapax-frontend/src/environments/environment.ts
 
 # Build the frontend
 echo "Building the frontend..."
@@ -23,6 +24,6 @@ cd ..
 
 # Upload the frontend to S3
 echo "Uploading the frontend to S3..."
-aws s3 sync mindapax-frontend/dist/mindapax-frontend s3://mindapax-frontend-bucket --delete
+aws s3 sync mindapax-frontend/dist/mindapax-frontend/browser s3://mindapax-frontend-bucket --delete
 
 echo "Frontend deployment complete!"

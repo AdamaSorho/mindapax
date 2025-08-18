@@ -11,6 +11,10 @@ cd ..
 
 # Upload the backend to S3
 echo "Uploading the backend to S3..."
+cd terraform
+terraform init
+terraform apply --target=aws_s3_bucket.backend -auto-approve
+cd ..
 aws s3 cp mindapax-backend/target/*.jar s3://mindapax-backend-bucket/mindapax-backend.jar
 
 # Deploy the infrastructure using Terraform
