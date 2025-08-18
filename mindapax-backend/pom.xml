@@ -93,10 +93,6 @@
       <artifactId>mysql-connector-j</artifactId>
       <scope>runtime</scope>
     </dependency>
-		<dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-webflux</artifactId>
-    </dependency>
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -129,6 +125,16 @@
 			<groupId>io.github.cdimascio</groupId>
 			<artifactId>dotenv-java</artifactId>
 			<version>2.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>io.netty</groupId>
+					<artifactId>netty-resolver-dns-native-macos</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 

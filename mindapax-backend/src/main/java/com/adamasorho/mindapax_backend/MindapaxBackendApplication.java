@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MindapaxBackendApplication {
 
 	public static void main(String[] args) {
+		io.github.cdimascio.dotenv.Dotenv.load();
 		SpringApplication.run(MindapaxBackendApplication.class, args);
 	}
 
