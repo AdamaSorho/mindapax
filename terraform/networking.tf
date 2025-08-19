@@ -1,7 +1,9 @@
 # Creates a new VPC
 resource "aws_vpc" "main" {
   # The CIDR block for the VPC
-  cidr_block = "10.0.0.0/16"
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 
   # A map of tags to assign to the resource
   tags = {
@@ -95,20 +97,6 @@ resource "aws_route_table" "public" {
     cidr_block = "0.0.0.0/0"
     # The ID of the internet gateway to route traffic to
     gateway_id = aws_internet_gateway.main.id
-  }
-
-  route {
-    # The CIDR block for the route
-    cidr_block     = "10.0.3.0/24"
-    # The ID of the NAT gateway to route traffic to
-    nat_gateway_id = aws_nat_gateway.main.id
-  }
-
-  route {
-    # The CIDR block for the route
-    cidr_block     = "10.0.4.0/24"
-    # The ID of the NAT gateway to route traffic to
-    nat_gateway_id = aws_nat_gateway.main.id
   }
 
   # A map of tags to assign to the resource
@@ -205,10 +193,17 @@ resource "aws_security_group" "database" {
     to_port         = 3306
     # The protocol for the rule
     protocol        = "tcp"
-    # A list of security group IDs to allow traffic from
-    security_groups = [aws_security_group.backend_ec2.id]
+    # Allow traffic from the entire VPC CIDR (more permissive for troubleshooting)
+    cidr_blocks     = ["10.0.0.0/16"]
   }
 
+  # Alternative: Use security group reference (comment out the above ingress and uncomment this)
+  # ingress {
+  #   from_port       = 3306
+  #   to_port         = 3306
+  #   protocol        = "tcp"
+  #   security_groups = [aws_security_group.backend_ec2.id]
+  # }
 
   # A list of egress rules to create in the security group
   egress {
@@ -220,5 +215,9 @@ resource "aws_security_group" "database" {
     protocol    = "-1"
     # A list of CIDR blocks to allow traffic to
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "mindapax-database-sg"
   }
 }

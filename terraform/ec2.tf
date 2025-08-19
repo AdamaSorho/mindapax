@@ -75,8 +75,7 @@ resource "aws_instance" "backend" {
   tags = {
     Name = "mindapax-backend"
   }
-}
 
-output "backend_ip" {
-  value = aws_instance.backend.public_ip
+  # Ensure the EC2 instance is created after the database
+  depends_on = [aws_db_instance.default]
 }
