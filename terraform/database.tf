@@ -16,9 +16,9 @@ resource "aws_db_instance" "default" {
   # The amount of storage to allocate for the database instance
   allocated_storage    = 20
   # The name of the database engine to use
-  engine               = "mysql"
+  engine               = "postgres"
   # The version of the database engine to use
-  engine_version       = "8.0"
+  engine_version       = "15.4"
   # The instance type to use for the database instance (changed from db.t2.micro)
   instance_class       = "db.t3.micro"
   # The name of the database to create when the instance is created
@@ -36,6 +36,6 @@ resource "aws_db_instance" "default" {
 
   # Add tags for better resource management
   tags = {
-    Name = "mindapax-mysql-db"
+    Name = "mindapax-postgres-db"
   }
 }
