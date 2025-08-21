@@ -13,6 +13,7 @@ import { ProfessionalListComponent } from './professional-list/professional-list
 import { ConnectionsComponent } from './connections/connections.component';
 import { ScheduleSessionComponent } from './schedule-session/schedule-session.component'; // Import new component
 import { ZoomMeetingComponent } from './zoom-meeting/zoom-meeting.component';
+import { AiAssistantComponent } from './ai-assistant/ai-assistant.component';
 
 export const featuresRoutes: Routes = [
   {
@@ -24,6 +25,7 @@ export const featuresRoutes: Routes = [
       { path: 'find-professional', component: FindProfessionalComponent },
       { path: 'sessions', component: SessionsComponent },
       { path: 'messages', component: MessagesComponent },
+      { path: 'assistant', component: AiAssistantComponent },
       { path: 'billing', component: BillingComponent },
       { path: 'settings', component: SettingsComponent },
       {

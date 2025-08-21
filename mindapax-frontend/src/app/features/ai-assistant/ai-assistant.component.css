@@ -1,0 +1,15 @@
+.ai-assistant {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reply {
+  background: #f3f4f6;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+textarea {
+  min-height: 4rem;
+}

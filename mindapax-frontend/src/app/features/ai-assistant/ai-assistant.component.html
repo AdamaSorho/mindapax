@@ -1,0 +1,5 @@
+<div class="ai-assistant">
+  <div *ngFor="let reply of replies" class="reply">{{ reply }}</div>
+  <textarea [(ngModel)]="message" placeholder="Ask the assistant..."></textarea>
+  <button (click)="send()">Send</button>
+</div>
