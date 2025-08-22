@@ -66,7 +66,6 @@ public class Professional {
     @Enumerated(EnumType.STRING)
     private ProfessionalStatus status = ProfessionalStatus.PENDING;
 
-    @Column
     private boolean verified = false;
 
     private String rejectionNote;

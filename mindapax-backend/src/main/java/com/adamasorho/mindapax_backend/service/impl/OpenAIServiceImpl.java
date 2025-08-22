@@ -29,7 +29,7 @@ public class OpenAIServiceImpl implements OpenAIService {
         if (response == null || response.getResult() == null || response.getResult().getOutput() == null) {
             return "";
         }
-        return response.getResult().getOutput().getContent();
+        return response.getResult().getOutput().getText();
     }
 }
 
