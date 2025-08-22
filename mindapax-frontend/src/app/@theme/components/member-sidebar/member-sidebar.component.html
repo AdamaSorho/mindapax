@@ -1,4 +1,4 @@
-<div class="sidebar-container transition-all duration-300 bg-white shadow-lg h-full"
+<div class="sidebar-container relative transition-all duration-300 bg-white shadow-lg h-full"
   [ngClass]="{'w-64': !isSidebarCollapsed, 'w-20': isSidebarCollapsed}">
   <!-- Logo -->
   <div class="flex items-center justify-center h-16 border-b">
@@ -91,8 +91,9 @@
   </nav>
 
   <!-- Toggle Button -->
-  <div class="absolute bottom-4 left-0 right-0 flex justify-center">
-    <button (click)="toggleSidebar()" class="p-2 text-gray-500 bg-gray-100 rounded-full hover:bg-gray-200">
+  <div class="absolute top-1/2 -right-3 transform -translate-y-1/2">
+    <button (click)="toggleSidebar()" class="p-2 text-gray-500 bg-gray-100 rounded-full hover:bg-gray-200 shadow"
+      title="Toggle sidebar">
       <svg *ngIf="!isSidebarCollapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>

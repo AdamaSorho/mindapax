@@ -7,9 +7,9 @@
       </div>
     </div>
   </div>
-  <div class="flex items-center space-x-2">
-    <input [(ngModel)]="message" (keyup.enter)="send()" type="text" placeholder="Ask the assistant..."
+  <form (ngSubmit)="send()" class="flex items-center space-x-2">
+    <input [(ngModel)]="message" name="message" type="text" placeholder="Ask the assistant..."
       class="flex-1 border rounded px-3 py-2" />
-    <button (click)="send()" class="bg-blue-600 text-white px-4 py-2 rounded">Send</button>
-  </div>
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Send</button>
+  </form>
 </div>
