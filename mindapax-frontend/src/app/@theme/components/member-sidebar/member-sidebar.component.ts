@@ -44,7 +44,7 @@ export class MemberSidebarComponent implements OnInit {
     {
       label: 'AI Assistant',
       route: '/member/assistant',
-      icon: 'chat-outline',
+      icon: 'robot-outline',
       allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'],
     },
     {
