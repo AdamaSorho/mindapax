@@ -1,46 +1,35 @@
 package com.adamasorho.mindapax_backend.service.impl;
 
-import java.util.Arrays;
+import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
 
 import com.adamasorho.mindapax_backend.service.OpenAIService;
-import com.unfbx.chatgpt.OpenAiClient;
-import com.unfbx.chatgpt.entity.chat.ChatCompletion;
-import com.unfbx.chatgpt.entity.chat.ChatCompletionResponse;
-import com.unfbx.chatgpt.entity.chat.Message;
 
 @Service
 public class OpenAIServiceImpl implements OpenAIService {
 
-    private final OpenAiClient openAiClient;
+    private final OpenAiChatModel chatModel;
 
-    @Value("${openai.model:gpt-4o-mini}")
-    private String model;
-
-    public OpenAIServiceImpl(OpenAiClient openAiClient) {
-        this.openAiClient = openAiClient;
+    public OpenAIServiceImpl(OpenAiChatModel chatModel) {
+        this.chatModel = chatModel;
     }
 
     @Override
     public String getCompletion(String message) {
-        ChatCompletion request = ChatCompletion.builder()
-                .model(model)
-                .messages(Arrays.asList(
-                        Message.builder()
-                                .role(Message.Role.SYSTEM)
-                                .content(
-                                        "You are Mindapax, a helpful wellness assistant supporting users with financial, physical, and mental health questions.")
-                                .build(),
-                        Message.builder().role(Message.Role.USER).content(message).build()))
-                .build();
-
-        ChatCompletionResponse response = openAiClient.chatCompletion(request);
-        if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
+        Prompt prompt = new Prompt(List.of(
+                new SystemMessage("You are Mindapax, a helpful wellness assistant supporting users with financial, physical, and mental health questions."),
+                new UserMessage(message)));
+        ChatResponse response = chatModel.call(prompt);
+        if (response == null || response.getResult() == null || response.getResult().getOutput() == null) {
             return "";
         }
-        return response.getChoices().get(0).getMessage().getContent();
+        return response.getResult().getOutput().getContent();
     }
 }
 

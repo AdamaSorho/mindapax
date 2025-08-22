@@ -18,6 +18,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
     database-platform: org.hibernate.dialect.MySQL8Dialect
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      model: ${OPENAI_MODEL:gpt-4o-mini}
 
 # debug: true
 logging:
@@ -52,8 +56,3 @@ zoom:
     account-id: ${ZOOM_API_ACCOUNT_ID}
     client-id: ${ZOOM_API_CLIENT_ID}
     client-secret: ${ZOOM_API_CLIENT_SECRET}
-
-openai:
-  api-key: ${OPENAI_API_KEY}
-  apiKey: ${OPENAI_API_KEY}
-  model: ${OPENAI_MODEL:gpt-4o-mini}
