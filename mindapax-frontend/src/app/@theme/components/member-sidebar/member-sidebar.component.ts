@@ -42,6 +42,12 @@ export class MemberSidebarComponent implements OnInit {
       allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL'],
     },
     {
+      label: 'AI Assistant',
+      route: '/member/assistant',
+      icon: 'chat-outline',
+      allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'],
+    },
+    {
       label: 'Connections',
       route: '/member/connections',
       icon: 'person-add-outline',
