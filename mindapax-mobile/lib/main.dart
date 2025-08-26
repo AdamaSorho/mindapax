@@ -11,7 +11,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Mindapax',
-      theme: ThemeData(primarySwatch: Colors.indigo),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        useMaterial3: true,
+      ),
       home: const HomePage(),
     );
   }
