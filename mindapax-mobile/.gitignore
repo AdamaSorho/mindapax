@@ -3,6 +3,8 @@
 .packages
 build/
 .pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
 
 # IDE files
 .idea/
