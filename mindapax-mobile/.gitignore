@@ -1,0 +1,12 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+build/
+.pub-cache/
+
+# IDE files
+.idea/
+.vscode/
+
+# Generated files
+**/*.generated.dart
