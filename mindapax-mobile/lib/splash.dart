@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class BrandedSplash extends StatelessWidget {
   const BrandedSplash({super.key});
@@ -19,19 +20,10 @@ class BrandedSplash extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Mindapax',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Well-being, reimagined',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white70,
-                    ),
+              SvgPicture.asset(
+                'assets/mindapax_logo.svg',
+                width: 140,
+                height: 140,
               ),
               const SizedBox(height: 24),
               const SizedBox(
@@ -49,4 +41,3 @@ class BrandedSplash extends StatelessWidget {
     );
   }
 }
-
