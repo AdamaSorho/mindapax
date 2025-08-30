@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
+import '../member/nav_prefs.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -38,7 +39,9 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       );
       if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil('/member/dashboard', (r) => false);
+      final target = await NavPrefs.getLastRoute();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil(target, (r) => false);
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
     } finally {

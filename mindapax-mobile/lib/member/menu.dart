@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
+import 'nav_prefs.dart';
 import '../auth/auth_service.dart';
 
 class MemberDrawer extends StatefulWidget {
@@ -37,6 +38,7 @@ class _MemberDrawerState extends State<MemberDrawer> {
       Navigator.pop(context);
     } else {
       Navigator.pop(context);
+      NavPrefs.saveLastRoute(route);
       Navigator.pushReplacementNamed(context, route);
     }
   }
@@ -111,4 +113,3 @@ class _MenuItem {
   final List<String> allowedRoles;
   _MenuItem(this.label, this.route, this.icon, this.allowedRoles);
 }
-

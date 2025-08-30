@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
+import 'nav_prefs.dart';
 import 'menu.dart';
 
 class _NavItem {
@@ -55,11 +56,23 @@ class _MemberScaffoldState extends State<MemberScaffold> {
     if (roles is List) {
       setState(() => _roles = roles.map((e) => e.toString()).toList());
     }
+    // After roles are known, optionally redirect to last saved route if different and permitted
+    final saved = await NavPrefs.getLastRoute();
+    final allowedRoutes = _visibleItems.map((i) => i.route).toSet();
+    if (saved != widget.currentRoute && allowedRoutes.contains(saved)) {
+      // Schedule redirect after first frame to avoid build issues
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(context, saved);
+        });
+      }
+    }
   }
 
   void _onTap(int index) {
     final target = _visibleItems[index].route;
     if (target == widget.currentRoute) return;
+    NavPrefs.saveLastRoute(target);
     Navigator.pushReplacementNamed(context, target);
   }
 
@@ -81,4 +94,3 @@ class _MemberScaffoldState extends State<MemberScaffold> {
     );
   }
 }
-
