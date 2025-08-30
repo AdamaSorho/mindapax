@@ -86,6 +86,18 @@ class AuthApi {
     // Even if logout fails, client will clear local tokens
   }
 
+  Future<AuthTokens> refreshTokens({required String refreshToken}) async {
+    final res = await _client.post(
+      _uri('/auth/refresh-token'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'refreshToken': refreshToken}),
+    );
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      return AuthTokens.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+    }
+    throw Exception(_extractError(res.body));
+  }
+
   String _extractError(String body) {
     try {
       final map = jsonDecode(body) as Map<String, dynamic>;

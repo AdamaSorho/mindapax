@@ -61,4 +61,15 @@ class AuthService {
   }
 
   Future<bool> isAuthenticated() => _storage.hasValidAccessToken();
+
+  Future<void> refresh() async {
+    final refresh = await _storage.getRefreshToken();
+    if (refresh == null || refresh.isEmpty) throw Exception('No refresh token');
+    final tokens = await _api.refreshTokens(refreshToken: refresh);
+    await _storage.saveTokens(
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresInSeconds: tokens.expiresIn,
+    );
+  }
 }
