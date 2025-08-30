@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'menu.dart';
+import 'member_scaffold.dart';
 
 class PlaceholderPage extends StatelessWidget {
   final String title;
@@ -8,13 +8,12 @@ class PlaceholderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      drawer: MemberDrawer(currentRoute: route),
-      body: Center(
+    return MemberScaffold(
+      title: title,
+      currentRoute: route,
+      child: Center(
         child: Text('$title is coming soon', style: const TextStyle(fontSize: 16)),
       ),
     );
   }
 }
-

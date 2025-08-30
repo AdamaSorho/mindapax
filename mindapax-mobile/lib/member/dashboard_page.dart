@@ -3,7 +3,7 @@ import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
 import '../auth/auth_service.dart';
 import '../user/user_api.dart';
-import 'menu.dart';
+import 'member_scaffold.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -47,15 +47,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(onPressed: _logout, icon: const Icon(Icons.logout))
-        ],
-      ),
-      drawer: const MemberDrawer(currentRoute: '/member/dashboard'),
-      body: _loading
+    return MemberScaffold(
+      title: 'Dashboard',
+      currentRoute: '/member/dashboard',
+      child: _loading
           ? const Center(child: CircularProgressIndicator())
           : Center(
               child: Column(
@@ -67,6 +62,12 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 16),
                   if (_user != null)
                     Text('Hello, ${_user!['firstName'] ?? ''} ${_user!['lastName'] ?? ''}'),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: _logout,
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Logout'),
+                  )
                 ],
               ),
             ),
