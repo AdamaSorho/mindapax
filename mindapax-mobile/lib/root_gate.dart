@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'auth/auth_service.dart';
 import 'member/nav_prefs.dart';
 import 'main.dart' show HomePage; // reuse existing HomePage
+import 'splash.dart';
 
 class RootGate extends StatefulWidget {
   const RootGate({super.key});
@@ -36,12 +37,7 @@ class _RootGateState extends State<RootGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (_deciding) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    if (_deciding) return const BrandedSplash();
     return const HomePage();
   }
 }
-
