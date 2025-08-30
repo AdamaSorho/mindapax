@@ -41,5 +41,7 @@ terraform.rc
 target/
 mindapax-backend/mindapax-backend.jar
 mindapax-backend/mindapax-backend.zip
+
+# Flutter/Android mobile metadata
 mindapax-mobile/.metadata
-mindapax-mobile/mindapax_mobile.iml
+mindapax-mobile/*.iml
