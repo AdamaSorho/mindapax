@@ -114,7 +114,10 @@ class HomePage extends StatelessWidget {
           Column(
             children: [
               for (var i = 0; i < steps.length; i++)
-                _StepCard(number: i + 1, title: steps[i].$1, description: steps[i].$2),
+                _StepCard(
+                    number: i + 1,
+                    title: steps[i].$1,
+                    description: steps[i].$2),
             ],
           ),
         ],
@@ -234,7 +237,9 @@ class HomePage extends StatelessWidget {
               ),
               OutlinedButton(
                 onPressed: () {},
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)),
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white)),
                 child: const Text('Learn More'),
               ),
             ],
@@ -250,7 +255,8 @@ class _StepCard extends StatelessWidget {
   final String title;
   final String description;
 
-  const _StepCard({required this.number, required this.title, required this.description});
+  const _StepCard(
+      {required this.number, required this.title, required this.description});
 
   @override
   Widget build(BuildContext context) {
@@ -263,10 +269,15 @@ class _StepCard extends StatelessWidget {
           children: [
             CircleAvatar(
               backgroundColor: Colors.indigo.shade100,
-              child: Text('$number', style: TextStyle(color: Colors.indigo.shade800, fontWeight: FontWeight.bold)),
+              child: Text('$number',
+                  style: TextStyle(
+                      color: Colors.indigo.shade800,
+                      fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Text(description, style: const TextStyle(color: Colors.black54)),
           ],
@@ -281,7 +292,8 @@ class _ServiceCard extends StatelessWidget {
   final String description;
   final Color color;
 
-  const _ServiceCard({required this.title, required this.description, required this.color});
+  const _ServiceCard(
+      {required this.title, required this.description, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -296,9 +308,12 @@ class _ServiceCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                Text(description, style: const TextStyle(color: Colors.black54)),
+                Text(description,
+                    style: const TextStyle(color: Colors.black54)),
               ],
             ),
           )
@@ -313,7 +328,8 @@ class _TestimonialCard extends StatelessWidget {
   final String role;
   final String quote;
 
-  const _TestimonialCard({required this.name, required this.role, required this.quote});
+  const _TestimonialCard(
+      {required this.name, required this.role, required this.quote});
 
   @override
   Widget build(BuildContext context) {
@@ -331,14 +347,18 @@ class _TestimonialCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(role, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                    Text(name,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(role,
+                        style: const TextStyle(
+                            color: Colors.black54, fontSize: 12)),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Text('"$quote"', style: const TextStyle(fontStyle: FontStyle.italic)),
+            Text('"$quote"',
+                style: const TextStyle(fontStyle: FontStyle.italic)),
           ],
         ),
       ),
