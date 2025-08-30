@@ -1,15 +1,24 @@
 import 'dart:async';
 import 'auth_api.dart';
+import 'token_storage.dart';
 
 class AuthService {
   final AuthApi _api;
-  AuthService({AuthApi? api}) : _api = api ?? AuthApi();
+  final TokenStorage _storage;
+  AuthService({AuthApi? api, TokenStorage? storage})
+      : _api = api ?? AuthApi(),
+        _storage = storage ?? TokenStorage();
 
   Future<void> login({required String email, required String password}) async {
     if (email.isEmpty || password.isEmpty) {
       throw Exception('Email and password are required');
     }
-    await _api.login(email: email, password: password);
+    final tokens = await _api.login(email: email, password: password);
+    await _storage.saveTokens(
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresInSeconds: tokens.expiresIn,
+    );
   }
 
   Future<void> register({
@@ -38,4 +47,18 @@ class AuthService {
     // Not implemented in backend yet; simulate latency and success
     await Future.delayed(const Duration(milliseconds: 600));
   }
+
+  Future<void> logout() async {
+    final refresh = await _storage.getRefreshToken();
+    if (refresh != null && refresh.isNotEmpty) {
+      try {
+        await _api.logout(refreshToken: refresh);
+      } catch (_) {
+        // ignore network errors on logout
+      }
+    }
+    await _storage.clear();
+  }
+
+  Future<bool> isAuthenticated() => _storage.hasValidAccessToken();
 }

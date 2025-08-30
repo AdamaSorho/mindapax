@@ -38,10 +38,7 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       );
       if (!mounted) return;
-      Navigator.of(context).popUntil((r) => r.isFirst);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logged in')),
-      );
+      Navigator.of(context).pushNamedAndRemoveUntil('/member/dashboard', (r) => false);
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
     } finally {
@@ -124,4 +121,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-

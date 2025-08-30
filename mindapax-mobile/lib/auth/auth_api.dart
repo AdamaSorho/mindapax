@@ -76,6 +76,16 @@ class AuthApi {
     throw Exception(_extractError(res.body));
   }
 
+  Future<void> logout({required String refreshToken}) async {
+    final res = await _client.post(
+      _uri('/auth/logout'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'refreshToken': refreshToken}),
+    );
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
+    // Even if logout fails, client will clear local tokens
+  }
+
   String _extractError(String body) {
     try {
       final map = jsonDecode(body) as Map<String, dynamic>;
@@ -85,4 +95,3 @@ class AuthApi {
     }
   }
 }
-

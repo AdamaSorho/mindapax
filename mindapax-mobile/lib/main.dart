@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'auth/forgot_password_page.dart';
 import 'auth/login_page.dart';
 import 'auth/register_page.dart';
+import 'auth/require_auth.dart';
+import 'member/dashboard_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,6 +26,7 @@ class MyApp extends StatelessWidget {
         '/auth/login': (_) => const LoginPage(),
         '/auth/register': (_) => const RegisterPage(),
         '/auth/forgot-password': (_) => const ForgotPasswordPage(),
+        '/member/dashboard': (_) => const RequireAuth(child: DashboardPage()),
       },
     );
   }
