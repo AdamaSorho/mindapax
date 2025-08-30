@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'auth/forgot_password_page.dart';
+import 'auth/login_page.dart';
+import 'auth/register_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +18,13 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      initialRoute: '/',
+      routes: {
+        '/': (_) => const HomePage(),
+        '/auth/login': (_) => const LoginPage(),
+        '/auth/register': (_) => const RegisterPage(),
+        '/auth/forgot-password': (_) => const ForgotPasswordPage(),
+      },
     );
   }
 }
@@ -75,7 +84,9 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushNamed(context, '/auth/register');
+            },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
             child: const Text(
               'Get Started',
@@ -230,13 +241,17 @@ class HomePage extends StatelessWidget {
             alignment: WrapAlignment.center,
             children: [
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(context, '/auth/register');
+                },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
                 child: const Text('Sign Up For Free',
                     style: TextStyle(color: Colors.indigo)),
               ),
               OutlinedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(context, '/auth/login');
+                },
                 style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white)),
