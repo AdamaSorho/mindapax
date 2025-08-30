@@ -5,6 +5,7 @@ import 'auth/register_page.dart';
 import 'auth/require_auth.dart';
 import 'member/dashboard_page.dart';
 import 'member/placeholders.dart';
+import 'root_gate.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,7 +24,8 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (_) => const HomePage(),
+        '/': (_) => const RootGate(),
+        '/home': (_) => const HomePage(),
         '/auth/login': (_) => const LoginPage(),
         '/auth/register': (_) => const RegisterPage(),
         '/auth/forgot-password': (_) => const ForgotPasswordPage(),
