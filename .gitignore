@@ -41,3 +41,5 @@ terraform.rc
 target/
 mindapax-backend/mindapax-backend.jar
 mindapax-backend/mindapax-backend.zip
+mindapax-mobile/.metadata
+mindapax-mobile/mindapax_mobile.iml
