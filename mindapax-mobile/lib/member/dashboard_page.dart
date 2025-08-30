@@ -3,6 +3,7 @@ import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
 import '../auth/auth_service.dart';
 import '../user/user_api.dart';
+import 'menu.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -53,6 +54,7 @@ class _DashboardPageState extends State<DashboardPage> {
           IconButton(onPressed: _logout, icon: const Icon(Icons.logout))
         ],
       ),
+      drawer: const MemberDrawer(currentRoute: '/member/dashboard'),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Center(

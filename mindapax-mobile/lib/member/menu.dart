@@ -1,0 +1,114 @@
+import 'package:flutter/material.dart';
+import '../auth/token_storage.dart';
+import '../auth/jwt.dart';
+import '../auth/auth_service.dart';
+
+class MemberDrawer extends StatefulWidget {
+  final String currentRoute;
+  const MemberDrawer({super.key, required this.currentRoute});
+
+  @override
+  State<MemberDrawer> createState() => _MemberDrawerState();
+}
+
+class _MemberDrawerState extends State<MemberDrawer> {
+  final _storage = TokenStorage();
+  final _auth = AuthService();
+  late Future<List<String>> _rolesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _rolesFuture = _loadRoles();
+  }
+
+  Future<List<String>> _loadRoles() async {
+    final token = await _storage.getAccessToken();
+    final payload = token != null ? decodeJwtPayload(token) : null;
+    final roles = payload?['roles'];
+    if (roles is List) {
+      return roles.map((e) => e.toString()).toList();
+    }
+    return const <String>[];
+  }
+
+  void _go(String route) {
+    if (route == widget.currentRoute) {
+      Navigator.pop(context);
+    } else {
+      Navigator.pop(context);
+      Navigator.pushReplacementNamed(context, route);
+    }
+  }
+
+  Future<void> _logout() async {
+    await _auth.logout();
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil('/auth/login', (r) => false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <_MenuItem>[
+      _MenuItem('Home', '/member/dashboard', Icons.home_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Find a Professional', '/member/find-professional', Icons.search, const ['ROLE_USER']),
+      _MenuItem('My Sessions', '/member/sessions', Icons.calendar_today_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
+      _MenuItem('Messages', '/member/messages', Icons.chat_bubble_outline, const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
+      _MenuItem('AI Assistant', '/member/assistant', Icons.smart_toy_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Connections', '/member/connections', Icons.person_add_alt_1_outlined, const ['ROLE_PROFESSIONAL']),
+      _MenuItem('Professionals', '/member/professionals', Icons.people_alt_outlined, const ['ROLE_ADMIN']),
+      _MenuItem('Billing', '/member/billing', Icons.credit_card, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Settings', '/member/settings', Icons.settings_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+    ];
+
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 8),
+            const ListTile(
+              title: Text('Mindapax', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: FutureBuilder<List<String>>(
+                future: _rolesFuture,
+                builder: (context, snapshot) {
+                  final roles = snapshot.data ?? const <String>[];
+                  return ListView(
+                    children: [
+                      for (final i in items)
+                        if (i.allowedRoles.isEmpty || i.allowedRoles.any(roles.contains))
+                          ListTile(
+                            leading: Icon(i.icon),
+                            title: Text(i.label),
+                            selected: widget.currentRoute == i.route,
+                            onTap: () => _go(i.route),
+                          ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: _logout,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuItem {
+  final String label;
+  final String route;
+  final IconData icon;
+  final List<String> allowedRoles;
+  _MenuItem(this.label, this.route, this.icon, this.allowedRoles);
+}
+
