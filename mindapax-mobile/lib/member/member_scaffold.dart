@@ -25,6 +25,7 @@ class MemberScaffold extends StatefulWidget {
 class _MemberScaffoldState extends State<MemberScaffold> {
   final _storage = TokenStorage();
   List<String> _roles = const [];
+  bool _loaded = false;
 
   static const _allItems = <_NavItem>[
     _NavItem('Home', '/member/dashboard', Icons.home_outlined, ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
@@ -56,6 +57,7 @@ class _MemberScaffoldState extends State<MemberScaffold> {
     if (roles is List) {
       setState(() => _roles = roles.map((e) => e.toString()).toList());
     }
+    setState(() => _loaded = true);
     // After roles are known, optionally redirect to last saved route if different and permitted
     final saved = await NavPrefs.getLastRoute();
     final allowedRoutes = _visibleItems.map((i) => i.route).toSet();
@@ -78,7 +80,14 @@ class _MemberScaffoldState extends State<MemberScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final items = _visibleItems;
+    var items = _visibleItems;
+    // Ensure at least two items to satisfy BottomNavigationBar assertion
+    if (!_loaded || items.length < 2) {
+      items = const [
+        _NavItem('Home', '/member/dashboard', Icons.home_outlined, []),
+        _NavItem('Settings', '/member/settings', Icons.settings_outlined, []),
+      ];
+    }
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
       drawer: MemberDrawer(currentRoute: widget.currentRoute),
