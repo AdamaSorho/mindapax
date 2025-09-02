@@ -3,6 +3,8 @@ import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
 import 'nav_prefs.dart';
 import '../auth/auth_service.dart';
+import 'package:flutter/foundation.dart';
+import '../dev/role_override.dart';
 
 class MemberDrawer extends StatefulWidget {
   final String currentRoute;
@@ -24,13 +26,26 @@ class _MemberDrawerState extends State<MemberDrawer> {
   }
 
   Future<List<String>> _loadRoles() async {
+    // Use override in debug mode when set
+    if (kDebugMode && RoleOverride.roles != null) {
+      return RoleOverride.roles!;
+    }
     final token = await _storage.getAccessToken();
     final payload = token != null ? decodeJwtPayload(token) : null;
-    final roles = payload?['roles'];
-    if (roles is List) {
-      return roles.map((e) => e.toString()).toList();
+    final raw = payload?['roles'];
+    List<String> result = const <String>[];
+    if (raw is List) {
+      result = raw.map((e) => e.toString()).toList();
+    } else if (raw is String) {
+      // Backend sets a single authority string like "ROLE_USER"
+      // Also handle comma-separated just in case
+      result = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
     }
-    return const <String>[];
+    // Normalize to ROLE_* format for matching
+    result = result
+        .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
+        .toList(growable: false);
+    return result;
   }
 
   void _go(String route) {
@@ -88,6 +103,47 @@ class _MemberDrawerState extends State<MemberDrawer> {
                             selected: widget.currentRoute == i.route,
                             onTap: () => _go(i.route),
                           ),
+                      if (kDebugMode) const Divider(),
+                      if (kDebugMode)
+                        const ListTile(
+                          title: Text('Debug: Roles Override', style: TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                      if (kDebugMode)
+                        ListTile(
+                          leading: const Icon(Icons.person_outline),
+                          title: const Text('As USER'),
+                          onTap: () async {
+                            RoleOverride.setRoles(const ['ROLE_USER']);
+                            setState(() => _rolesFuture = _loadRoles());
+                          },
+                        ),
+                      if (kDebugMode)
+                        ListTile(
+                          leading: const Icon(Icons.badge_outlined),
+                          title: const Text('As PROFESSIONAL'),
+                          onTap: () async {
+                            RoleOverride.setRoles(const ['ROLE_PROFESSIONAL']);
+                            setState(() => _rolesFuture = _loadRoles());
+                          },
+                        ),
+                      if (kDebugMode)
+                        ListTile(
+                          leading: const Icon(Icons.admin_panel_settings_outlined),
+                          title: const Text('As ADMIN'),
+                          onTap: () async {
+                            RoleOverride.setRoles(const ['ROLE_ADMIN']);
+                            setState(() => _rolesFuture = _loadRoles());
+                          },
+                        ),
+                      if (kDebugMode)
+                        ListTile(
+                          leading: const Icon(Icons.clear),
+                          title: const Text('Clear Override'),
+                          onTap: () async {
+                            RoleOverride.setRoles(null);
+                            setState(() => _rolesFuture = _loadRoles());
+                          },
+                        ),
                     ],
                   );
                 },

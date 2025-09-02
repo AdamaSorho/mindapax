@@ -5,6 +5,7 @@ import 'auth/register_page.dart';
 import 'auth/require_auth.dart';
 import 'member/dashboard_page.dart';
 import 'member/placeholders.dart';
+import 'member/find_professional_page.dart';
 import 'root_gate.dart';
 
 void main() {
@@ -30,7 +31,7 @@ class MyApp extends StatelessWidget {
         '/auth/register': (_) => const RegisterPage(),
         '/auth/forgot-password': (_) => const ForgotPasswordPage(),
         '/member/dashboard': (_) => const RequireAuth(child: DashboardPage()),
-        '/member/find-professional': (_) => const RequireAuth(child: PlaceholderPage(title: 'Find a Professional', route: '/member/find-professional')),
+        '/member/find-professional': (_) => const RequireAuth(child: FindProfessionalPage()),
         '/member/sessions': (_) => const RequireAuth(child: PlaceholderPage(title: 'My Sessions', route: '/member/sessions')),
         '/member/messages': (_) => const RequireAuth(child: PlaceholderPage(title: 'Messages', route: '/member/messages')),
         '/member/assistant': (_) => const RequireAuth(child: PlaceholderPage(title: 'AI Assistant', route: '/member/assistant')),

@@ -3,6 +3,8 @@ import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
 import 'nav_prefs.dart';
 import 'menu.dart';
+import 'package:flutter/foundation.dart';
+import '../dev/role_override.dart';
 
 class _NavItem {
   final String label;
@@ -51,11 +53,26 @@ class _MemberScaffoldState extends State<MemberScaffold> {
   }
 
   Future<void> _loadRoles() async {
-    final token = await _storage.getAccessToken();
-    final payload = token != null ? decodeJwtPayload(token) : null;
-    final roles = payload?['roles'];
-    if (roles is List) {
-      setState(() => _roles = roles.map((e) => e.toString()).toList());
+    List<String> rolesList = const [];
+    // Use override in debug when present
+    if (kDebugMode && RoleOverride.roles != null) {
+      rolesList = RoleOverride.roles!;
+    } else {
+      final token = await _storage.getAccessToken();
+      final payload = token != null ? decodeJwtPayload(token) : null;
+      final raw = payload?['roles'];
+      if (raw is List) {
+        rolesList = raw.map((e) => e.toString()).toList();
+      } else if (raw is String) {
+        rolesList = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      }
+      // Normalize to ROLE_* format
+      rolesList = rolesList
+          .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
+          .toList(growable: false);
+    }
+    if (rolesList.isNotEmpty) {
+      setState(() => _roles = rolesList);
     }
     setState(() => _loaded = true);
     // After roles are known, optionally redirect to last saved route if different and permitted
