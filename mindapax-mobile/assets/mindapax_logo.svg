@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="64" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#312E81"/>
+      <stop offset="1" stop-color="#4338CA"/>
+    </linearGradient>
+    <filter id="soft" x="0" y="0" width="512" height="512" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded square background with brand gradient -->
+  <rect x="32" y="32" width="448" height="448" rx="92" fill="url(#g)"/>
+
+  <!-- Stylized M mark -->
+  <g filter="url(#soft)">
+    <path fill="#FFFFFF" d="
+      M 120 372
+      L 120 160
+      L 196 268
+      L 256 168
+      L 316 268
+      L 392 160
+      L 392 372
+      L 348 372
+      L 348 248
+      L 316 296
+      L 256 200
+      L 196 296
+      L 164 248
+      L 164 372
+      Z"/>
+  </g>
+
+  <!-- Accent dot to suggest “mind” and balance -->
+  <circle cx="392" cy="140" r="16" fill="#FFFFFF" fill-opacity="0.9"/>
+</svg>
+

@@ -22,7 +22,7 @@ spring:
     openai:
       api-key: ${OPENAI_API_KEY}
       model: ${OPENAI_MODEL:gpt-4o-mini}
-
+      organization-id: ${OPENAI_ORGANIZATION_ID}
 # debug: true
 logging:
   level:
