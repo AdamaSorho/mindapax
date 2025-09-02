@@ -6,6 +6,9 @@ import 'auth/require_auth.dart';
 import 'member/dashboard_page.dart';
 import 'member/placeholders.dart';
 import 'member/find_professional_page.dart';
+import 'member/sessions_page.dart';
+import 'member/zoom_webview_page.dart';
+import 'member/settings_page.dart';
 import 'root_gate.dart';
 
 void main() {
@@ -32,13 +35,14 @@ class MyApp extends StatelessWidget {
         '/auth/forgot-password': (_) => const ForgotPasswordPage(),
         '/member/dashboard': (_) => const RequireAuth(child: DashboardPage()),
         '/member/find-professional': (_) => const RequireAuth(child: FindProfessionalPage()),
-        '/member/sessions': (_) => const RequireAuth(child: PlaceholderPage(title: 'My Sessions', route: '/member/sessions')),
+        '/member/sessions': (_) => const RequireAuth(child: SessionsPage()),
+        // '/member/zoom-call' route is handled by the web frontend via WebView; we keep native route reserved if needed.
         '/member/messages': (_) => const RequireAuth(child: PlaceholderPage(title: 'Messages', route: '/member/messages')),
         '/member/assistant': (_) => const RequireAuth(child: PlaceholderPage(title: 'AI Assistant', route: '/member/assistant')),
         '/member/connections': (_) => const RequireAuth(child: PlaceholderPage(title: 'Connections', route: '/member/connections')),
         '/member/professionals': (_) => const RequireAuth(child: PlaceholderPage(title: 'Professionals', route: '/member/professionals')),
         '/member/billing': (_) => const RequireAuth(child: PlaceholderPage(title: 'Billing', route: '/member/billing')),
-        '/member/settings': (_) => const RequireAuth(child: PlaceholderPage(title: 'Settings', route: '/member/settings')),
+        '/member/settings': (_) => const RequireAuth(child: SettingsPage()),
       },
     );
   }
