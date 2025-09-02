@@ -68,7 +68,12 @@ class _SessionsPageState extends State<SessionsPage> {
       ));
       setState(() => _upcoming = res.content);
     } catch (e) {
-      setState(() => _error = e.toString());
+      final msg = e.toString();
+      String hint = '';
+      if (msg.contains('403')) {
+        hint = ' (forbidden). Ensure you are signed in with the correct role. If you are a professional, sessions may require your professional profile to be set up.';
+      }
+      setState(() => _error = 'Failed to load upcoming sessions: $msg$hint');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -92,7 +97,12 @@ class _SessionsPageState extends State<SessionsPage> {
       ));
       setState(() => _past = res.content);
     } catch (e) {
-      setState(() => _error = e.toString());
+      final msg = e.toString();
+      String hint = '';
+      if (msg.contains('403')) {
+        hint = ' (forbidden). Ensure you are signed in with the correct role.';
+      }
+      setState(() => _error = 'Failed to load past sessions: $msg$hint');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

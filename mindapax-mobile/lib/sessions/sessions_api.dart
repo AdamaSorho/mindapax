@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../auth/authorized_client.dart';
 import '../auth/token_storage.dart';
@@ -62,8 +63,12 @@ class SessionsApi {
     ).toQueryParams();
 
     final uri = _uri('/sessions/by-user', query);
+    assert(() {
+      debugPrint('[SessionsApi] GET ' + uri.toString());
+      return true;
+    }());
     http.Response res = await client.get(uri);
-    if (res.statusCode == 401) {
+    if (res.statusCode == 401 || res.statusCode == 403) {
       await _auth.refresh();
       final retry = AuthorizedHttpClient(_storage);
       res = await retry.get(uri);
@@ -91,4 +96,3 @@ class SessionsApi {
     throw Exception('Failed to get meeting signature: ${res.statusCode}');
   }
 }
-
