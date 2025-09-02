@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
 import '../auth/auth_service.dart';
-import '../professional/models.dart' show PagedResponse;
+import '../professional/models.dart' show PagedResponse, Professional;
+import '../professional/professional_api.dart';
 import '../member/member_scaffold.dart';
 import '../sessions/models.dart';
 import '../sessions/sessions_api.dart';
@@ -23,6 +24,7 @@ class _SessionsPageState extends State<SessionsPage> {
   late final SessionsApi _api = widget.api ?? SessionsApi();
   final _storage = TokenStorage();
   final _auth = AuthService();
+  final _proApi = ProfessionalApi();
 
   bool _loading = false;
   String? _error;
@@ -32,7 +34,7 @@ class _SessionsPageState extends State<SessionsPage> {
   int _page = 0;
   int _pageSize = 10;
 
-  int? _userId;
+  int? _ownerId; // userId for clients, professionalId for professionals
 
   @override
   void initState() {
@@ -43,7 +45,28 @@ class _SessionsPageState extends State<SessionsPage> {
   Future<void> _init() async {
     final token = await _storage.getAccessToken();
     final payload = token != null ? decodeJwtPayload(token) : null;
-    _userId = (payload?['id'] as num?)?.toInt();
+    final userId = (payload?['id'] as num?)?.toInt();
+    // Determine roles
+    List<String> roles = [];
+    final raw = payload?['roles'];
+    if (raw is List) {
+      roles = raw.map((e) => e.toString()).toList();
+    } else if (raw is String) {
+      roles = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    roles = roles.map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}').toList();
+    // If professional, resolve professionalId from backend, else use userId
+    if (roles.contains('ROLE_PROFESSIONAL')) {
+      try {
+        final me = await _proApi.getMe();
+        _ownerId = me.id;
+      } catch (e) {
+        // Fallback to userId if professional profile lookup fails
+        _ownerId = userId;
+      }
+    } else {
+      _ownerId = userId;
+    }
     await Future.wait([
       _fetchUpcoming(resetPage: true),
       _fetchPast(resetPage: true),
@@ -58,7 +81,7 @@ class _SessionsPageState extends State<SessionsPage> {
     });
     try {
       final res = await _api.getSessions(SessionQueryParams(
-        userId: _userId ?? 0,
+        userId: _ownerId ?? 0,
         filter: SessionTimeFilter.UPCOMING,
         date: DateTime.now(),
         status: SessionStatus.SCHEDULED,
@@ -87,7 +110,7 @@ class _SessionsPageState extends State<SessionsPage> {
     });
     try {
       final res = await _api.getSessions(SessionQueryParams(
-        userId: _userId ?? 0,
+        userId: _ownerId ?? 0,
         filter: SessionTimeFilter.PAST,
         date: DateTime.now(),
         status: SessionStatus.SCHEDULED,
