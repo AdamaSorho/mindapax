@@ -155,4 +155,14 @@ public class ProfessionalController {
       Page<UserDTO> connectedUsers = professionalService.getConnectedUsers(professional.getId(), pageable);
       return ResponseEntity.ok(connectedUsers);
   }
+
+  @GetMapping("/me")
+  @PreAuthorize("hasRole('PROFESSIONAL')")
+  public ResponseEntity<ProfessionalDTO> getMyProfessionalProfile(Authentication authentication) {
+      String email = authentication.getName();
+      log.info("Fetching professional profile for authenticated user: {}", email);
+      Professional professional = professionalRepository.findByUserEmail(email)
+              .orElseThrow(() -> new EntityNotFoundException("Professional not found for email: " + email));
+      return ResponseEntity.ok(professionalMapper.toDTO(professional));
+  }
 }

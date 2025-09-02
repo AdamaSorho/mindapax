@@ -55,6 +55,22 @@ class ProfessionalApi {
     throw Exception('Failed to fetch professionals: ${res.statusCode}');
   }
 
+  Future<Professional> getMe() async {
+    final client = AuthorizedHttpClient(_storage);
+    final uri = _uri('/professionals/me');
+    http.Response res = await client.get(uri);
+    if (res.statusCode == 401) {
+      await _auth.refresh();
+      final retry = AuthorizedHttpClient(_storage);
+      res = await retry.get(uri);
+    }
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      final json = jsonDecode(res.body) as Map<String, dynamic>;
+      return Professional.fromJson(json);
+    }
+    throw Exception('Failed to fetch current professional profile: ${res.statusCode}');
+  }
+
   Future<void> connectWithProfessional(int professionalId) async {
     final token = await _storage.getAccessToken();
     final payload = token != null ? decodeJwtPayload(token) : null;
