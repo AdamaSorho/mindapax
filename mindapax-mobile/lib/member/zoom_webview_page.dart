@@ -219,7 +219,7 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(),
+                    color: Colors.black.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(

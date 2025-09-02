@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mindapax_mobile/member/sessions_page.dart';
 import 'package:mindapax_mobile/professional/models.dart' show PagedResponse;
 import 'package:mindapax_mobile/sessions/models.dart';
@@ -34,8 +35,13 @@ class _FakeSessionsApi extends SessionsApi {
 }
 
 void main() {
+  setUpAll(() {
+    FlutterSecureStorage.setMockInitialValues({});
+  });
+
   testWidgets('renders sessions list with one item', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: SessionsPage(api: _FakeSessionsApi())));
+    await tester
+        .pumpWidget(MaterialApp(home: SessionsPage(api: _FakeSessionsApi())));
     // Initial frame
     await tester.pump();
     // Allow async loads
