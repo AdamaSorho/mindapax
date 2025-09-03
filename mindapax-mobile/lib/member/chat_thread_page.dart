@@ -35,6 +35,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
   bool _hasMore = true;
   bool _loadingMore = false;
   bool _showJumpToLatest = false;
+  int? _unreadDividerIndex; // index of first unread message in ascending list
 
   @override
   void initState() {
@@ -65,8 +66,26 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
         try {
           final m = ChatMessage.fromJson(json);
           if (m.conversationId == widget.conversationId) {
-            setState(() => _messages = List.of(_messages)..add(m));
-            _scrollToBottom();
+            // Decide whether to auto-scroll or mark unread
+            double distFromBottom = 0;
+            if (_scrollCtrl.hasClients) {
+              final pos = _scrollCtrl.position;
+              distFromBottom = pos.maxScrollExtent - pos.pixels;
+            }
+            final willAutoScroll = distFromBottom <= 60;
+            setState(() {
+              // Append new message
+              _messages = List.of(_messages)..add(m);
+              if (willAutoScroll) {
+                _unreadDividerIndex = null;
+              } else {
+                // Mark divider at first unread if not already set
+                _unreadDividerIndex ??= _messages.length - 1;
+              }
+            });
+            if (willAutoScroll) {
+              _scrollToBottom();
+            }
           }
         } catch (_) {}
       },
@@ -125,6 +144,9 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
           _messages = [...olderAsc, ..._messages];
           // hasMore becomes false if we reached last page index
           _hasMore = !page.isLast;
+          if (_unreadDividerIndex != null) {
+            _unreadDividerIndex = _unreadDividerIndex! + olderAsc.length;
+          }
         });
         // After frame, restore scroll offset relative to bottom so content doesn't jump
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -151,8 +173,24 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
       final existingIds = _messages.map((m) => m.id).toSet();
       final additions = latestAsc.where((m) => !existingIds.contains(m.id)).toList(growable: false);
       if (additions.isNotEmpty) {
-        setState(() => _messages = [..._messages, ...additions]);
-        _scrollToBottom();
+        // Decide whether to auto-scroll or mark unread
+        double distFromBottom = 0;
+        if (_scrollCtrl.hasClients) {
+          final pos = _scrollCtrl.position;
+          distFromBottom = pos.maxScrollExtent - pos.pixels;
+        }
+        final willAutoScroll = distFromBottom <= 60;
+        setState(() {
+          _messages = [..._messages, ...additions];
+          if (willAutoScroll) {
+            _unreadDividerIndex = null;
+          } else {
+            _unreadDividerIndex ??= _messages.length - additions.length;
+          }
+        });
+        if (willAutoScroll) {
+          _scrollToBottom();
+        }
       }
     } catch (_) {}
   }
@@ -165,6 +203,9 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
     }
     final distFromBottom = pos.maxScrollExtent - pos.pixels;
     final shouldShow = distFromBottom > 200;
+    if (distFromBottom <= 40 && _unreadDividerIndex != null) {
+      setState(() => _unreadDividerIndex = null);
+    }
     if (shouldShow != _showJumpToLatest) {
       setState(() => _showJumpToLatest = shouldShow);
     }
@@ -246,7 +287,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
                 final idx = _loadingMore ? i - 1 : i;
                 final m = _messages[idx];
                 final isMine = me != null && m.senderId == me;
-                return Align(
+                final bubble = Align(
                   alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
@@ -268,6 +309,27 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
                     ),
                   ),
                 );
+                if (_unreadDividerIndex != null && idx == _unreadDividerIndex) {
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          children: const [
+                            Expanded(child: Divider()),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Text('New messages', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                            ),
+                            Expanded(child: Divider()),
+                          ],
+                        ),
+                      ),
+                      bubble,
+                    ],
+                  );
+                }
+                return bubble;
               },
             ),
           ),
