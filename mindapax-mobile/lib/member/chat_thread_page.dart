@@ -64,6 +64,29 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
       token: _token,
       onMessage: (json) {
         try {
+          if (json['type'] == 'read_receipt') {
+            final readerId = (json['readerId'] as num?)?.toInt();
+            final lastId = (json['lastReadMessageId'] as num?)?.toInt();
+            if (readerId != null && _currentUserId != null && readerId != _currentUserId) {
+              // The other participant read messages; mark my messages up to lastId as read
+              setState(() {
+                for (int i = 0; i < _messages.length; i++) {
+                  final m = _messages[i];
+                  if (m.senderId == _currentUserId && (lastId == null || m.id <= lastId)) {
+                    _messages[i] = ChatMessage(
+                      id: m.id,
+                      conversationId: m.conversationId,
+                      senderId: m.senderId,
+                      content: m.content,
+                      timestamp: m.timestamp,
+                      isRead: true,
+                    );
+                  }
+                }
+              });
+            }
+            return;
+          }
           final m = ChatMessage.fromJson(json);
           if (m.conversationId == widget.conversationId) {
             // Decide whether to auto-scroll or mark unread
@@ -328,6 +351,13 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
                           m.timestamp.toLocal().toString().split('.')[0],
                           style: const TextStyle(fontSize: 11, color: Colors.black54),
                         ),
+                        if (isMine &&
+                            (idx == _lastMyMessageIndex(me)) &&
+                            m.isRead)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2.0),
+                            child: Text('Seen', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                          ),
                       ],
                     ),
                   ),
@@ -412,5 +442,13 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
             )
           : null,
     );
+  }
+
+  int _lastMyMessageIndex(int? me) {
+    if (me == null) return -1;
+    for (int i = _messages.length - 1; i >= 0; i--) {
+      if (_messages[i].senderId == me) return i;
+    }
+    return -1;
   }
 }

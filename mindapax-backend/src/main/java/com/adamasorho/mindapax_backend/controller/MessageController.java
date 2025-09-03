@@ -5,6 +5,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.SortDefault;
 import org.springframework.data.web.SortDefault.SortDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,7 @@ import com.adamasorho.mindapax_backend.service.MessageService;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/messages")
@@ -28,6 +30,8 @@ import lombok.AllArgsConstructor;
 public class MessageController {
   private final MessageService messageService;
   private final MessageMapper messageMapper;
+  private final SimpMessagingTemplate messagingTemplate;
+  private final com.adamasorho.mindapax_backend.repository.MessageRepository messageRepository;
 
   @PostMapping
   public ResponseEntity<MessageDTO> send(@RequestBody @Valid MessageDTO dto) {
@@ -41,6 +45,17 @@ public class MessageController {
             @RequestParam Long conversationId,
             @RequestParam Long readerId) {
         int count = messageService.markConversationAsRead(conversationId, readerId);
+        messageRepository.findTopByConversationIdAndSenderIdNotOrderByTimestampDesc(conversationId, readerId)
+            .ifPresent(last -> {
+                var payload = Map.of(
+                    "type", "read_receipt",
+                    "conversationId", conversationId,
+                    "readerId", readerId,
+                    "lastReadMessageId", last.getId(),
+                    "lastReadTimestamp", last.getTimestamp().toString()
+                );
+                messagingTemplate.convertAndSend("/topic/messages/" + conversationId, payload);
+            });
         return ResponseEntity.ok(new com.adamasorho.mindapax_backend.dto.response.MessageResponse("Marked " + count + " messages as read"));
     }
 

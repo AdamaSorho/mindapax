@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
+import 'package:stomp_dart_client/stomp_handler.dart';
 import '../env.dart';
 
 typedef OnMessage = void Function(Map<String, dynamic> json);
@@ -17,7 +18,8 @@ class MessageRealtime {
     // apiBaseUrl example: http://localhost:8080/api/v1
     final cleaned = apiBaseUrl.replaceAll(RegExp(r'/+$'), '');
     final uri = Uri.parse(cleaned);
-    final host = (uri.host == 'localhost' && Platform.isAndroid) ? '10.0.2.2' : uri.host;
+    final host =
+        (uri.host == 'localhost' && Platform.isAndroid) ? '10.0.2.2' : uri.host;
     final scheme = uri.scheme == 'https' ? 'wss' : 'ws';
     final port = (uri.hasPort) ? ':${uri.port}' : '';
     // Connect directly to SockJS websocket transport
@@ -43,9 +45,10 @@ class MessageRealtime {
               try {
                 final body = f.body;
                 if (body != null) {
-                  onMessage.call(Map<String, dynamic>.from(
-                      // ignore: avoid_dynamic_calls
-                      (jsonDecode(body) as dynamic)));
+                  final dynamic decoded = jsonDecode(body);
+                  if (decoded is Map<String, dynamic>) {
+                    onMessage.call(decoded);
+                  }
                 }
               } catch (_) {}
             },
@@ -53,8 +56,10 @@ class MessageRealtime {
         },
         onDisconnect: (f) => onStatus?.call(false),
         onWebSocketError: (e) => onStatus?.call(false),
-        stompConnectHeaders: token != null ? {'Authorization': 'Bearer $token'} : {},
-        webSocketConnectHeaders: token != null ? {'Authorization': 'Bearer $token'} : {},
+        stompConnectHeaders:
+            token != null ? {'Authorization': 'Bearer $token'} : {},
+        webSocketConnectHeaders:
+            token != null ? {'Authorization': 'Bearer $token'} : {},
         reconnectDelay: const Duration(milliseconds: 5000),
       ),
     );

@@ -20,4 +20,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
      Optional<Message> findTopByConversationOrderByTimestampDesc(Conversation conversation); // Added method
 
      java.util.List<Message> findByConversationIdAndSenderIdNotAndIsReadFalse(Long conversationId, Long senderId);
+
+     java.util.Optional<Message> findTopByConversationIdAndSenderIdNotOrderByTimestampDesc(Long conversationId, Long senderId);
 }
