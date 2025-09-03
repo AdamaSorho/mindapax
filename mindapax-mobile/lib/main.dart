@@ -9,6 +9,7 @@ import 'member/find_professional_page.dart';
 import 'member/sessions_page.dart';
 import 'member/schedule_session_page.dart';
 import 'member/settings_page.dart';
+import 'member/connections_page.dart';
 import 'root_gate.dart';
 
 void main() {
@@ -45,9 +46,7 @@ class MyApp extends StatelessWidget {
         '/member/assistant': (_) => const RequireAuth(
             child: PlaceholderPage(
                 title: 'AI Assistant', route: '/member/assistant')),
-        '/member/connections': (_) => const RequireAuth(
-            child: PlaceholderPage(
-                title: 'Connections', route: '/member/connections')),
+        '/member/connections': (_) => const RequireAuth(child: ConnectionsPage()),
         '/member/professionals': (_) => const RequireAuth(
             child: PlaceholderPage(
                 title: 'Professionals', route: '/member/professionals')),
