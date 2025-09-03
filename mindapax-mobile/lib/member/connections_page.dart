@@ -360,6 +360,20 @@ class _ConnectionCard extends StatelessWidget {
             const SizedBox(height: 8),
             if ((item.message ?? '').isNotEmpty)
               Text(item.message!, style: const TextStyle(color: Colors.black87)),
+            if (item.status == ConnectionStatus.TRANSFERRED && (item.transferReason ?? '').isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: Colors.black45),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text('Reason: ${item.transferReason}',
+                        style: const TextStyle(color: Colors.black54)),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 8),
             Row(
               children: [

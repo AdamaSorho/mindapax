@@ -100,6 +100,9 @@ public class ConnectionServiceImpl implements ConnectionService {
     Professional target = professionalService.getProfessionalById(targetProfessionalId);
     connection.setProfessional(target);
     connection.setStatus(ConnectionStatus.TRANSFERRED);
+    if (reason != null && !reason.trim().isEmpty()) {
+      connection.setTransferReason(reason.trim());
+    }
     // Optionally, start a conversation with the new professional
     conversationService.startOrGetConversation(connection.getUser().getId(), target.getId());
     return connectionRepository.save(connection);

@@ -51,7 +51,9 @@ public class Connection {
     @Enumerated(EnumType.STRING)
     private UrgencyStatus urgencyStatus;
 
+    // Optional reason provided when transferring a connection to another professional
+    private String transferReason;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }
-

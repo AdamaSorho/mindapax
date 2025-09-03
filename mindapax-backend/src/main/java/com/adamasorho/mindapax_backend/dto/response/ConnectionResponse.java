@@ -23,5 +23,6 @@ public class ConnectionResponse {
   private UrgencyStatus urgencyStatus;
   private UserDTO user;
   private ConnectionStatus status;
+  private String transferReason;
   private LocalDateTime createdAt;
 }

@@ -26,6 +26,7 @@ class ConnectionItem {
   final ConnectionStatus status;
   final DateTime createdAt;
   final String? message;
+  final String? transferReason;
   final String? requestType; // Specialization enum name
   final String? urgency; // UrgencyStatus enum name
   final int userId;
@@ -40,6 +41,7 @@ class ConnectionItem {
     required this.status,
     required this.createdAt,
     required this.message,
+    required this.transferReason,
     required this.requestType,
     required this.urgency,
     required this.userId,
@@ -63,6 +65,7 @@ class ConnectionItem {
       status: status,
       createdAt: created,
       message: j['message']?.toString(),
+      transferReason: j['transferReason']?.toString(),
       requestType: j['requestType']?.toString(),
       urgency: (j['urgencyStatus'] ?? j['urgency'])?.toString(),
       userId: (user['id'] as num?)?.toInt() ?? 0,
@@ -74,4 +77,3 @@ class ConnectionItem {
     );
   }
 }
-
