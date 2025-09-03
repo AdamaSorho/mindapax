@@ -8,7 +8,23 @@ import '../user/user_api.dart';
 class ScheduleSessionPage extends StatefulWidget {
   final SessionsApi? api;
   final UserApi? userApi;
-  const ScheduleSessionPage({super.key, this.api, this.userApi});
+  // Test seams (optional): when provided, bypass auth/init fetch.
+  final bool? isProfessionalOverride;
+  final List<UserBasic>? initialUsers;
+  final int? initialSelectedUserId;
+  final DateTime? initialDate;
+  final TimeOfDay? initialTime;
+
+  const ScheduleSessionPage({
+    super.key,
+    this.api,
+    this.userApi,
+    this.isProfessionalOverride,
+    this.initialUsers,
+    this.initialSelectedUserId,
+    this.initialDate,
+    this.initialTime,
+  });
 
   @override
   State<ScheduleSessionPage> createState() => _ScheduleSessionPageState();
@@ -37,7 +53,17 @@ class _ScheduleSessionPageState extends State<ScheduleSessionPage> {
   @override
   void initState() {
     super.initState();
-    _init();
+    // If overrides provided (e.g., tests), seed state and skip async init.
+    if (widget.isProfessionalOverride != null) {
+      _isProfessional = widget.isProfessionalOverride!;
+      _connectedUsers = widget.initialUsers ?? const [];
+      _selectedUserId = widget.initialSelectedUserId;
+      _selectedDate = widget.initialDate;
+      _selectedTime = widget.initialTime;
+      setState(() {});
+    } else {
+      _init();
+    }
   }
 
   Future<void> _init() async {
