@@ -258,9 +258,8 @@
           <select [(ngModel)]="selectedProfessional" id="selectProfessional"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
             <option value="" disabled>Choose a professional</option>
-            <option *ngFor="let prof of professionals" [value]="prof.id" [disabled]="!prof.availability">
-              {{prof.user.firstName}} {{prof.user.lastName}} - {{prof.specialization}} {{!prof.availability ?
-              '(Unavailable)' : ''}}
+            <option *ngFor="let prof of professionals" [value]="prof.id">
+              {{prof.user.firstName}} {{prof.user.lastName}} - {{prof.specialization}}
             </option>
           </select>
         </div>

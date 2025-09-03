@@ -13,4 +13,5 @@ export interface Connection {
   requestType?: Specialization;
   message?: string;
   urgency?: UrgencyStatus;
+  transferReason?: string;
 }

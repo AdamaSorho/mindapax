@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Professional } from '../../models/professional.model';
 import { ConnectionService } from '../../services/connection.service';
+import { ProfessionalService } from '../../services/professional.service';
 import { AuthService } from '../../services/auth.service';
 import { Connection } from '../../models/connection.model';
 import { ConnectionStatus } from '../../models/enums/connectionStatus';
@@ -36,7 +37,8 @@ export class ConnectionsComponent {
 
   constructor(
     private connectionService: ConnectionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private professionalService: ProfessionalService
   ) {
     this.currentUserId = this.authService.getUserId();
   }
@@ -44,6 +46,17 @@ export class ConnectionsComponent {
   ngOnInit(): void {
     this.loadConnections();
     this.applyFilters();
+    this.loadProfessionals();
+  }
+
+  loadProfessionals(): void {
+    // Load a list of professionals to choose for transfer. Adjust filters as needed.
+    this.professionalService
+      .getAllProfessionals(undefined, undefined, undefined, undefined, undefined, undefined, 0, 50)
+      .subscribe({
+        next: (page) => (this.professionals = page.content || []),
+        error: (err) => console.error('Error loading professionals:', err),
+      });
   }
 
   loadConnections(): void {
@@ -152,15 +165,23 @@ export class ConnectionsComponent {
     const connection = this.connections.find(
       (c) => c.id === this.currentConnectionId
     );
-    if (connection && this.selectedProfessional) {
-      connection.status = ConnectionStatus.TRANSFERRED;
-      this.applyFilters();
-      this.isTransferModalOpen = false;
-      this.updateConnection(
-        this.currentConnectionId,
-        ConnectionStatus.TRANSFERRED
-      );
-    }
+    if (!connection || !this.selectedProfessional) return;
+    const proId = Number(this.selectedProfessional);
+    this.connectionService
+      .transferConnection(this.currentConnectionId, proId, this.transferReason)
+      .subscribe({
+        next: (updated) => {
+          // Replace in local list
+          const idx = this.connections.findIndex((c) => c.id === updated.id);
+          if (idx >= 0) this.connections[idx] = updated;
+          this.applyFilters();
+          this.isTransferModalOpen = false;
+        },
+        error: (error) => {
+          console.error('Error transferring connection:', error);
+        },
+      });
+  }
   }
 
   openAdminModal(connectionId: number): void {

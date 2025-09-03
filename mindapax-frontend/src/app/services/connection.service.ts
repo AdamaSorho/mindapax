@@ -42,4 +42,17 @@ export class ConnectionService {
       }
     );
   }
+
+  transferConnection(
+    connectionId: number,
+    professionalId: number,
+    reason?: string
+  ): Observable<Connection> {
+    const body: any = { professionalId };
+    if (reason && reason.trim().length > 0) body.reason = reason.trim();
+    return this.http.put<Connection>(
+      `${this.baseUrl}/${connectionId}/transfer`,
+      body
+    );
+  }
 }
