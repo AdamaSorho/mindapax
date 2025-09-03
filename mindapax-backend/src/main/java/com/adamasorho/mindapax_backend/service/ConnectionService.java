@@ -13,4 +13,5 @@ public interface ConnectionService {
   List<Connection> getUserConnections(Long userId);
   List<Connection> getProfessionalConnections(Long professionalId);
   Connection updateStutus(Long connectionId, ConnectionStatus status);
+  Connection transferConnection(Long connectionId, Long targetProfessionalId, String reason);
 }

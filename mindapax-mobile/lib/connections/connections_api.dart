@@ -78,5 +78,25 @@ class ConnectionsApi {
     }
     throw Exception('Failed to update connection: ${res.statusCode}');
   }
-}
 
+  Future<ConnectionItem> transferConnection({
+    required int connectionId,
+    required int professionalId,
+    String? reason,
+  }) async {
+    final client = AuthorizedHttpClient(_storage);
+    final uri = _uri('/connections/$connectionId/transfer');
+    final body = jsonEncode({'professionalId': professionalId, if (reason != null) 'reason': reason});
+    http.Response res = await client.put(uri, headers: {'Content-Type': 'application/json'}, body: body);
+    if (res.statusCode == 401) {
+      await _auth.refresh();
+      final retry = AuthorizedHttpClient(_storage);
+      res = await retry.put(uri, headers: {'Content-Type': 'application/json'}, body: body);
+    }
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      final json = jsonDecode(res.body) as Map<String, dynamic>;
+      return ConnectionItem.fromJson(json);
+    }
+    throw Exception('Failed to transfer connection: ${res.statusCode}');
+  }
+}

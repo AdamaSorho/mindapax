@@ -93,4 +93,15 @@ public class ConnectionServiceImpl implements ConnectionService {
    return connectionRepository.findByProfessionalId(professionalId);
   }
   
+  @Override
+  @Transactional
+  public Connection transferConnection(Long connectionId, Long targetProfessionalId, String reason) {
+    Connection connection = this.getConnectionById(connectionId);
+    Professional target = professionalService.getProfessionalById(targetProfessionalId);
+    connection.setProfessional(target);
+    connection.setStatus(ConnectionStatus.TRANSFERRED);
+    // Optionally, start a conversation with the new professional
+    conversationService.startOrGetConversation(connection.getUser().getId(), target.getId());
+    return connectionRepository.save(connection);
+  }
 }

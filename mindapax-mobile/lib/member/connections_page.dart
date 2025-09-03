@@ -3,7 +3,7 @@ import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
 import '../dev/role_override.dart';
 import '../professional/professional_api.dart';
-import '../professional/models.dart' show specializationLabels;
+import '../professional/models.dart' show specializationLabels, ProfessionalFilterParams;
 import '../connections/models.dart';
 import '../connections/connections_api.dart';
 import 'member_scaffold.dart';
@@ -111,6 +111,131 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
     }
   }
 
+  Future<void> _openTransfer(ConnectionItem c) async {
+    if (!_isProfessional) return;
+    int? selectedProId;
+    String reason = '';
+    final controller = TextEditingController();
+    List<dynamic> pros = const [];
+    String q = '';
+    int page = 0;
+    bool loading = true;
+    Future<void> load() async {
+      loading = true;
+      setState(() {});
+      try {
+        final res = await _proApi.search(ProfessionalFilterParams(
+          firstName: q.isEmpty ? null : q,
+          page: page,
+          size: 20,
+        ));
+        pros = res.content;
+      } catch (_) {
+        pros = const [];
+      } finally {
+        loading = false;
+        if (mounted) setState(() {});
+      }
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        // initial load
+        load();
+        return StatefulBuilder(builder: (context, setModal) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 16,
+              right: 16,
+              top: 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Transfer Connection', style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                      border: OutlineInputBorder(), hintText: 'Search professional by first name'),
+                  onChanged: (v) {
+                    q = v.trim();
+                    page = 0;
+                    load();
+                    setModal(() {});
+                  },
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 240,
+                  child: loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                          itemCount: pros.length,
+                          itemBuilder: (_, i) {
+                            final p = pros[i];
+                            final name = '${p.user.firstName} ${p.user.lastName}';
+                            return RadioListTile<int>(
+                              value: p.id as int,
+                              groupValue: selectedProId,
+                              onChanged: (v) => setModal(() => selectedProId = v),
+                              title: Text(name),
+                              subtitle: Text(p.specialization?.toString() ?? ''),
+                            );
+                          },
+                        ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Reason for transfer (optional)',
+                  ),
+                  onChanged: (v) => reason = v,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel')),
+                    const Spacer(),
+                    FilledButton(
+                        onPressed: selectedProId == null
+                            ? null
+                            : () async {
+                                Navigator.pop(context);
+                                setState(() => _loading = true);
+                                try {
+                                  final updated = await _api.transferConnection(
+                                      connectionId: c.id, professionalId: selectedProId!, reason: reason.trim().isEmpty ? null : reason.trim());
+                                  final idx = _all.indexWhere((x) => x.id == c.id);
+                                  if (idx >= 0) _all = List.of(_all)..[idx] = updated;
+                                  setState(() {});
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Transfer failed: $e')));
+                                  }
+                                } finally {
+                                  if (mounted) setState(() => _loading = false);
+                                }
+                              },
+                        child: const Text('Transfer')),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
+          );
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MemberScaffold(
@@ -161,7 +286,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
                         item: _filtered[i],
                         isProfessional: _isProfessional,
                         onAccept: () => _updateStatus(_filtered[i], ConnectionStatus.ACCEPTED),
-                        onTransfer: () => _updateStatus(_filtered[i], ConnectionStatus.TRANSFERRED),
+                        onTransfer: () => _openTransfer(_filtered[i]),
                         onEscalate: () => _updateStatus(_filtered[i], ConnectionStatus.ESCALATED),
                       ),
                     ),
@@ -319,4 +444,3 @@ class _ConnectionCard extends StatelessWidget {
     }
   }
 }
-

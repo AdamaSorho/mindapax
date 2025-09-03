@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.adamasorho.mindapax_backend.dto.request.ConnectionRequest;
+import com.adamasorho.mindapax_backend.dto.request.TransferConnectionRequest;
 import com.adamasorho.mindapax_backend.dto.response.ConnectionResponse;
 import com.adamasorho.mindapax_backend.mapper.ConnectionMapper;
 import com.adamasorho.mindapax_backend.model.enums.ConnectionStatus;
@@ -65,5 +66,14 @@ public class ConnectionController {
         .map(connectionMapper::toDTO)
         .toList()
     );
+  }
+
+  @PutMapping("/{id}/transfer")
+  public ResponseEntity<ConnectionResponse> transfer(
+      @PathVariable Long id,
+      @RequestBody @Valid TransferConnectionRequest request) {
+    return ResponseEntity.ok(
+        connectionMapper.toDTO(
+            connectionService.transferConnection(id, request.getProfessionalId(), request.getReason())));
   }
 }
