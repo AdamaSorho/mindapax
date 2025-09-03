@@ -105,7 +105,12 @@ class SessionQueryParams {
       'userId': userId.toString(),
       'filter': filter.toString().split('.').last,
     };
-    if (date != null) map['date'] = date!.toIso8601String();
+    if (date != null) {
+      final d = date!;
+      // Backend expects OffsetDateTime; ensure an explicit offset by using UTC (ends with 'Z').
+      final isoWithOffset = (d.isUtc ? d : d.toUtc()).toIso8601String();
+      map['date'] = isoWithOffset;
+    }
     final s = sessionStatusToString(status);
     if (s != null) map['status'] = s;
     if (page != null) map['page'] = page.toString();
@@ -137,4 +142,3 @@ class ZoomSignatureResponse {
     );
   }
 }
-
