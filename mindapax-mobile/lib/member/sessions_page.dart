@@ -35,6 +35,7 @@ class _SessionsPageState extends State<SessionsPage> {
   final int _pageSize = 10;
 
   int? _ownerId; // userId for clients, professionalId for professionals
+  bool _isProfessional = false;
 
   @override
   void initState() {
@@ -63,6 +64,7 @@ class _SessionsPageState extends State<SessionsPage> {
         .toList();
     // If professional, resolve professionalId from backend, else use userId
     if (roles.contains('ROLE_PROFESSIONAL')) {
+      _isProfessional = true;
       try {
         final me = await _proApi.getMe();
         _ownerId = me.id;
@@ -304,7 +306,15 @@ class _SessionsPageState extends State<SessionsPage> {
   }
 
   void _bookNew() {
-    Navigator.pushNamed(context, '/member/find-professional');
+    if (_isProfessional) {
+      Navigator.pushNamed(context, '/member/schedule-session').then((value) async {
+        if (value == true) {
+          await _fetchUpcoming(resetPage: true);
+        }
+      });
+    } else {
+      Navigator.pushNamed(context, '/member/find-professional');
+    }
   }
 
   @override

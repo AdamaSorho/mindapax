@@ -95,4 +95,33 @@ class SessionsApi {
     }
     throw Exception('Failed to get meeting signature: ${res.statusCode}');
   }
+
+  Future<Session> scheduleSessionByProfessional({
+    required int userId,
+    required String startTimeIso,
+    required int durationMinutes,
+    required SessionMode mode,
+    String? notes,
+  }) async {
+    final client = AuthorizedHttpClient(_storage);
+    final uri = _uri('/sessions/professional/schedule');
+    final body = jsonEncode({
+      'userId': userId,
+      'startTime': startTimeIso,
+      'durationMinutes': durationMinutes,
+      'mode': sessionModeToString(mode),
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+    });
+    http.Response res = await client.post(uri, headers: {'Content-Type': 'application/json'}, body: body);
+    if (res.statusCode == 401) {
+      await _auth.refresh();
+      final retry = AuthorizedHttpClient(_storage);
+      res = await retry.post(uri, headers: {'Content-Type': 'application/json'}, body: body);
+    }
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      final json = jsonDecode(res.body) as Map<String, dynamic>;
+      return Session.fromJson(json);
+    }
+    throw Exception('Failed to schedule session: ${res.statusCode}');
+  }
 }

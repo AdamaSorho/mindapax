@@ -7,6 +7,7 @@ import 'member/dashboard_page.dart';
 import 'member/placeholders.dart';
 import 'member/find_professional_page.dart';
 import 'member/sessions_page.dart';
+import 'member/schedule_session_page.dart';
 import 'member/settings_page.dart';
 import 'root_gate.dart';
 
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
         '/member/find-professional': (_) =>
             const RequireAuth(child: FindProfessionalPage()),
         '/member/sessions': (_) => const RequireAuth(child: SessionsPage()),
+        '/member/schedule-session': (_) => const RequireAuth(child: ScheduleSessionPage()),
         // '/member/zoom-call' route is handled by the web frontend via WebView; we keep native route reserved if needed.
         '/member/messages': (_) => const RequireAuth(
             child:
