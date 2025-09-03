@@ -5,6 +5,8 @@ class ChatMessage {
   final String content;
   final DateTime timestamp;
   final bool isRead;
+  final bool delivered; // local-only indicator (true for server-provided messages)
+  final String? clientTag; // to match WS echo
 
   ChatMessage({
     required this.id,
@@ -13,6 +15,8 @@ class ChatMessage {
     required this.content,
     required this.timestamp,
     required this.isRead,
+    this.delivered = true,
+    this.clientTag,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> j) {
@@ -23,6 +27,8 @@ class ChatMessage {
       content: j['content']?.toString() ?? '',
       timestamp: DateTime.tryParse(j['timestamp']?.toString() ?? '') ?? DateTime.now(),
       isRead: (j['isRead'] as bool?) ?? false,
+      delivered: true,
+      clientTag: j['clientTag']?.toString(),
     );
   }
 }
@@ -64,4 +70,3 @@ class ConversationSummary {
     );
   }
 }
-

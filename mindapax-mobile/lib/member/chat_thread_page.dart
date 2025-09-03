@@ -97,8 +97,16 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
             }
             final willAutoScroll = distFromBottom <= 60;
             setState(() {
-              // Append new message
-              _messages = List.of(_messages)..add(m);
+              if (m.senderId == _currentUserId && m.clientTag != null) {
+                final idx = _messages.lastIndexWhere((x) => x.clientTag == m.clientTag && x.senderId == _currentUserId);
+                if (idx != -1) {
+                  _messages[idx] = m; // replace pending with delivered
+                } else {
+                  _messages = List.of(_messages)..add(m);
+                }
+              } else {
+                _messages = List.of(_messages)..add(m);
+              }
               if (willAutoScroll) {
                 _unreadDividerIndex = null;
               } else {
@@ -242,18 +250,34 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
     final text = _controller.text.trim();
     if (text.isEmpty || _currentUserId == null) return;
     if (_rt.connected) {
+      // Pending bubble with clientTag
+      final tag = DateTime.now().microsecondsSinceEpoch.toString();
+      final pending = ChatMessage(
+        id: 0,
+        conversationId: widget.conversationId,
+        senderId: _currentUserId!,
+        content: text,
+        timestamp: DateTime.now(),
+        isRead: false,
+        delivered: false,
+        clientTag: tag,
+      );
+      setState(() => _messages = List.of(_messages)..add(pending));
+      _scrollToBottom();
       _rt.send(body: {
         'conversationId': widget.conversationId,
         'senderId': _currentUserId,
         'content': text,
+        'clientTag': tag,
       }, token: _token);
       _controller.clear();
     } else {
       setState(() => _loading = true);
       try {
-        await _api.sendMessage(conversationId: widget.conversationId, senderId: _currentUserId!, content: text);
+        final sent = await _api.sendMessage(conversationId: widget.conversationId, senderId: _currentUserId!, content: text);
+        setState(() => _messages = List.of(_messages)..add(sent));
         _controller.clear();
-        await _refreshLatest();
+        _scrollToBottom();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
@@ -351,12 +375,15 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
                           m.timestamp.toLocal().toString().split('.')[0],
                           style: const TextStyle(fontSize: 11, color: Colors.black54),
                         ),
-                        if (isMine &&
-                            (idx == _lastMyMessageIndex(me)) &&
-                            m.isRead)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 2.0),
-                            child: Text('Seen', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                        if (isMine && (idx == _lastMyMessageIndex(me)))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2.0),
+                            child: Text(
+                              m.isRead
+                                  ? 'Seen'
+                                  : (m.delivered ? 'Delivered' : 'Sending…'),
+                              style: const TextStyle(fontSize: 11, color: Colors.black54),
+                            ),
                           ),
                       ],
                     ),

@@ -22,4 +22,6 @@ public class MessageDTO {
   private String content;
   private LocalDateTime timestamp;
   private boolean isRead;
+  // Optional client-supplied tag to correlate deliveries over WebSocket; not persisted
+  private String clientTag;
 }
