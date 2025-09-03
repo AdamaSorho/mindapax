@@ -19,7 +19,6 @@ import com.adamasorho.mindapax_backend.dto.RefreshTokenRequest;
 import com.adamasorho.mindapax_backend.dto.UserDTO;
 import com.adamasorho.mindapax_backend.dto.request.AuthRequest;
 import com.adamasorho.mindapax_backend.dto.request.LoginRequest;
-import com.adamasorho.mindapax_backend.dto.response.MessageResponse;
 import com.adamasorho.mindapax_backend.mapper.UserMapper;
 import com.adamasorho.mindapax_backend.model.RefreshToken;
 import com.adamasorho.mindapax_backend.model.User;
@@ -107,10 +106,17 @@ public class AuthController {
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
         String requestToken = request.getRefreshToken();
+        if (requestToken == null || requestToken.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                HttpStatus.UNAUTHORIZED, "Refresh token is required"
+            );
+        }
 
         RefreshToken refreshToken = refreshTokenService.findByToken(requestToken)
                 .map(refreshTokenService::verifyExpiration)
-                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Refresh token not found"
+                ));
 
         User user = refreshToken.getUser();
 
@@ -123,16 +129,14 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<MessageResponse> logout(@RequestBody @Valid LogoutRequest request) {
+    public ResponseEntity<String> logout(@RequestBody @Valid LogoutRequest request) {
         String refreshToken = request.getRefreshToken();
-        
-        RefreshToken token = refreshTokenService.findByToken(refreshToken)
-                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
 
-        refreshTokenService.deleteByUser(token.getUser());
+        // Make logout idempotent: if token is missing or already deleted, still respond OK.
+        refreshTokenService.findByToken(refreshToken)
+            .ifPresent(token -> refreshTokenService.deleteByUser(token.getUser()));
 
-        return ResponseEntity.ok(new MessageResponse("Logout successful. Refresh token deleted."));
+        return ResponseEntity.ok("Logout successful. Refresh token deleted.");
     }
 
 }
-
