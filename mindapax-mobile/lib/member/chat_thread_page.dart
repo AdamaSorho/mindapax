@@ -108,6 +108,11 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
     if (_loadingMore || !_hasMore) return;
     setState(() => _loadingMore = true);
     try {
+      // Preserve scroll position relative to bottom
+      final prevMax = _scrollCtrl.hasClients ? _scrollCtrl.position.maxScrollExtent : 0.0;
+      final prevFromBottom = _scrollCtrl.hasClients
+          ? (prevMax - _scrollCtrl.position.pixels)
+          : 0.0;
       final nextPage = _pageDesc + 1;
       final page = await _api.getMessages(widget.conversationId, page: nextPage, size: _pageSize, sort: 'timestamp,desc');
       final olderAsc = List<ChatMessage>.from(page.content.reversed);
@@ -119,6 +124,15 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
           _messages = [...olderAsc, ..._messages];
           // hasMore becomes false if we reached last page index
           _hasMore = !page.isLast;
+        });
+        // After frame, restore scroll offset relative to bottom so content doesn't jump
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollCtrl.hasClients) {
+            final newMax = _scrollCtrl.position.maxScrollExtent;
+            final target = (newMax - prevFromBottom).clamp(
+                _scrollCtrl.position.minScrollExtent, _scrollCtrl.position.maxScrollExtent);
+            _scrollCtrl.jumpTo(target);
+          }
         });
       }
     } catch (e) {
@@ -199,9 +213,22 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
             child: ListView.builder(
               controller: _scrollCtrl,
               padding: const EdgeInsets.all(12),
-              itemCount: _messages.length,
+              itemCount: _messages.length + (_loadingMore ? 1 : 0),
               itemBuilder: (_, i) {
-                final m = _messages[i];
+                if (_loadingMore && i == 0) {
+                  return const Padding(
+                    padding: EdgeInsets.only(bottom: 8.0),
+                    child: Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                }
+                final idx = _loadingMore ? i - 1 : i;
+                final m = _messages[idx];
                 final isMine = me != null && m.senderId == me;
                 return Align(
                   alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
