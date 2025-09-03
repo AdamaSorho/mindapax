@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
 import '../messages/messages_api.dart';
+import '../messages/realtime.dart';
 import '../messages/models.dart';
 
 class ChatThreadPage extends StatefulWidget {
@@ -26,6 +27,8 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
   bool _loading = false;
   String? _error;
   Timer? _pollTimer;
+  final _rt = MessageRealtime();
+  String? _token;
 
   @override
   void initState() {
@@ -43,10 +46,32 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
 
   Future<void> _init() async {
     final token = await _storage.getAccessToken();
+    _token = token;
     final payload = token != null ? decodeJwtPayload(token) : null;
     _currentUserId = (payload?['id'] as num?)?.toInt();
     await _loadMessages();
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _loadMessages());
+    // Start realtime; if disconnected, fall back to polling
+    _rt.connect(
+      conversationId: widget.conversationId,
+      token: _token,
+      onMessage: (json) {
+        try {
+          final m = ChatMessage.fromJson(json);
+          if (m.conversationId == widget.conversationId) {
+            setState(() => _messages = List.of(_messages)..add(m));
+            _scrollToBottom();
+          }
+        } catch (_) {}
+      },
+      onStatus: (connected) {
+        if (connected) {
+          _pollTimer?.cancel();
+        } else {
+          _pollTimer ??= Timer.periodic(const Duration(seconds: 5), (_) => _loadMessages());
+        }
+      },
+    );
+    _pollTimer ??= Timer.periodic(const Duration(seconds: 5), (_) => _loadMessages());
   }
 
   Future<void> _loadMessages() async {
@@ -59,9 +84,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
       setState(() => _messages = page.content);
       // Scroll to bottom
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollCtrl.hasClients) {
-          _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
-        }
+        _scrollToBottom();
       });
     } catch (e) {
       setState(() => _error = 'Failed to load messages: $e');
@@ -73,17 +96,32 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _currentUserId == null) return;
-    setState(() => _loading = true);
-    try {
-      await _api.sendMessage(conversationId: widget.conversationId, senderId: _currentUserId!, content: text);
+    if (_rt.connected) {
+      _rt.send(body: {
+        'conversationId': widget.conversationId,
+        'senderId': _currentUserId,
+        'content': text,
+      }, token: _token);
       _controller.clear();
-      await _loadMessages();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
+    } else {
+      setState(() => _loading = true);
+      try {
+        await _api.sendMessage(conversationId: widget.conversationId, senderId: _currentUserId!, content: text);
+        _controller.clear();
+        await _loadMessages();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
+        }
+      } finally {
+        if (mounted) setState(() => _loading = false);
       }
-    } finally {
-      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollCtrl.hasClients) {
+      _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
     }
   }
 
@@ -160,4 +198,3 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
     );
   }
 }
-
