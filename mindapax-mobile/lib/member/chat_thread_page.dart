@@ -73,7 +73,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
         if (connected) {
           _pollTimer?.cancel();
         } else {
-          _pollTimer ??= Timer.periodic(const Duration(seconds: 5), (_) => _loadMessages());
+          _pollTimer ??= Timer.periodic(const Duration(seconds: 5), (_) => _refreshLatest());
         }
       },
     );
@@ -165,7 +165,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
       try {
         await _api.sendMessage(conversationId: widget.conversationId, senderId: _currentUserId!, content: text);
         _controller.clear();
-        await _loadMessages();
+        await _refreshLatest();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
