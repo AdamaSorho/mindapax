@@ -55,9 +55,15 @@ class MessagesApi {
     throw Exception('Failed to fetch conversations: ${res.statusCode}');
   }
 
-  Future<PagedResponse<ChatMessage>> getMessages(int conversationId, {int page = 0, int size = 50}) async {
+  Future<PagedResponse<ChatMessage>> getMessages(int conversationId, {int page = 0, int size = 50, String? sort}) async {
     final client = AuthorizedHttpClient(_storage);
-    final uri = _uri('/messages', {'conversationId': '$conversationId', 'page': '$page', 'size': '$size'});
+    final query = <String, String>{
+      'conversationId': '$conversationId',
+      'page': '$page',
+      'size': '$size',
+      if (sort != null && sort.isNotEmpty) 'sort': sort,
+    };
+    final uri = _uri('/messages', query);
     http.Response res = await client.get(uri);
     if (res.statusCode == 401) {
       await _auth.refresh();
@@ -88,4 +94,3 @@ class MessagesApi {
     throw Exception('Failed to send message: ${res.statusCode}');
   }
 }
-

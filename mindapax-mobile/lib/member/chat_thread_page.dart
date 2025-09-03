@@ -29,11 +29,17 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
   Timer? _pollTimer;
   final _rt = MessageRealtime();
   String? _token;
+  // Pagination state (server returns pages sorted by timestamp)
+  static const int _pageSize = 50;
+  int _pageDesc = 0; // using sort=timestamp,desc
+  bool _hasMore = true;
+  bool _loadingMore = false;
 
   @override
   void initState() {
     super.initState();
     _init();
+    _scrollCtrl.addListener(_onScroll);
   }
 
   @override
@@ -49,7 +55,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
     _token = token;
     final payload = token != null ? decodeJwtPayload(token) : null;
     _currentUserId = (payload?['id'] as num?)?.toInt();
-    await _loadMessages();
+    await _loadInitial();
     // Start realtime; if disconnected, fall back to polling
     _rt.connect(
       conversationId: widget.conversationId,
@@ -71,17 +77,22 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
         }
       },
     );
-    _pollTimer ??= Timer.periodic(const Duration(seconds: 5), (_) => _loadMessages());
+    _pollTimer ??= Timer.periodic(const Duration(seconds: 5), (_) => _refreshLatest());
   }
 
-  Future<void> _loadMessages() async {
+  Future<void> _loadInitial() async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final page = await _api.getMessages(widget.conversationId, page: 0, size: 100);
-      setState(() => _messages = page.content);
+      _pageDesc = 0;
+      final page = await _api.getMessages(widget.conversationId, page: _pageDesc, size: _pageSize, sort: 'timestamp,desc');
+      final itemsAsc = List<ChatMessage>.from(page.content.reversed);
+      setState(() {
+        _messages = itemsAsc;
+        _hasMore = page.totalPages > 1;
+      });
       // Scroll to bottom
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToBottom();
@@ -90,6 +101,52 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
       setState(() => _error = 'Failed to load messages: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadOlder() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final nextPage = _pageDesc + 1;
+      final page = await _api.getMessages(widget.conversationId, page: nextPage, size: _pageSize, sort: 'timestamp,desc');
+      final olderAsc = List<ChatMessage>.from(page.content.reversed);
+      if (olderAsc.isEmpty) {
+        _hasMore = false;
+      } else {
+        setState(() {
+          _pageDesc = nextPage;
+          _messages = [...olderAsc, ..._messages];
+          // hasMore becomes false if we reached last page index
+          _hasMore = !page.isLast;
+        });
+      }
+    } catch (e) {
+      // ignore, keep existing items
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
+  Future<void> _refreshLatest() async {
+    try {
+      final page = await _api.getMessages(widget.conversationId, page: 0, size: _pageSize, sort: 'timestamp,desc');
+      final latestAsc = List<ChatMessage>.from(page.content.reversed);
+      // Merge new items at the end by id
+      final existingIds = _messages.map((m) => m.id).toSet();
+      final additions = latestAsc.where((m) => !existingIds.contains(m.id)).toList(growable: false);
+      if (additions.isNotEmpty) {
+        setState(() => _messages = [..._messages, ...additions]);
+        _scrollToBottom();
+      }
+    } catch (_) {}
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.positions.isEmpty) return;
+    final pos = _scrollCtrl.position;
+    if (pos.pixels <= 48.0) {
+      _loadOlder();
     }
   }
 
