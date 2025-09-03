@@ -238,7 +238,13 @@
       </div>
 
       <div class="border-t border-gray-200 p-4">
-        <p class="text-gray-700">{{connection.message}}</p>
+        <p class="text-gray-700" *ngIf="connection.message">{{connection.message}}</p>
+        <div *ngIf="connection.status === connectionStatus.TRANSFERRED && connection.transferReason" class="mt-2 flex items-start text-sm text-gray-600">
+          <svg class="mr-2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"></path>
+          </svg>
+          <span>Reason: {{ connection.transferReason }}</span>
+        </div>
       </div>
     </div>
   </div>
