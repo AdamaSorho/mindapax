@@ -34,6 +34,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
   int _pageDesc = 0; // using sort=timestamp,desc
   bool _hasMore = true;
   bool _loadingMore = false;
+  bool _showJumpToLatest = false;
 
   @override
   void initState() {
@@ -162,6 +163,11 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
     if (pos.pixels <= 48.0) {
       _loadOlder();
     }
+    final distFromBottom = pos.maxScrollExtent - pos.pixels;
+    final shouldShow = distFromBottom > 200;
+    if (shouldShow != _showJumpToLatest) {
+      setState(() => _showJumpToLatest = shouldShow);
+    }
   }
 
   Future<void> _send() async {
@@ -193,6 +199,16 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
   void _scrollToBottom() {
     if (_scrollCtrl.hasClients) {
       _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+    }
+  }
+
+  void _scrollToBottomAnimated() {
+    if (_scrollCtrl.hasClients) {
+      _scrollCtrl.animateTo(
+        _scrollCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
     }
   }
 
@@ -279,6 +295,12 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
           )
         ],
       ),
+      floatingActionButton: _showJumpToLatest
+          ? FloatingActionButton.small(
+              onPressed: _scrollToBottomAnimated,
+              child: const Icon(Icons.arrow_downward),
+            )
+          : null,
     );
   }
 }
