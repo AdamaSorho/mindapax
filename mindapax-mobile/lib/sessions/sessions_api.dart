@@ -64,7 +64,7 @@ class SessionsApi {
 
     final uri = _uri('/sessions/by-user', query);
     assert(() {
-      debugPrint('[SessionsApi] GET ' + uri.toString());
+      debugPrint('[SessionsApi] GET $uri');
       return true;
     }());
     http.Response res = await client.get(uri);

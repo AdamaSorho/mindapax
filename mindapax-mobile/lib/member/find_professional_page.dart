@@ -39,7 +39,9 @@ class _FindProfessionalPageState extends State<FindProfessionalPage> {
     });
     try {
       final filters = ProfessionalFilterParams(
-        firstName: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
+        firstName: _searchController.text.trim().isEmpty
+            ? null
+            : _searchController.text.trim(),
         specialization: _specialization,
         experience: _experience,
         availabilityDate: _availabilityDate?.toIso8601String(),
@@ -171,8 +173,9 @@ class _FindProfessionalPageState extends State<FindProfessionalPage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<Specialization?>(
-                    value: _specialization,
-                    decoration: const InputDecoration(labelText: 'Specialization'),
+                    initialValue: _specialization,
+                    decoration:
+                        const InputDecoration(labelText: 'Specialization'),
                     items: [
                       const DropdownMenuItem<Specialization?>(
                         value: null,
@@ -190,8 +193,9 @@ class _FindProfessionalPageState extends State<FindProfessionalPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<int?>(
-                    value: _experience,
-                    decoration: const InputDecoration(labelText: 'Experience (years)'),
+                    initialValue: _experience,
+                    decoration:
+                        const InputDecoration(labelText: 'Experience (years)'),
                     items: const [
                       DropdownMenuItem<int?>(value: null, child: Text('Any')),
                       DropdownMenuItem<int?>(value: 0, child: Text('0')),
@@ -216,12 +220,17 @@ class _FindProfessionalPageState extends State<FindProfessionalPage> {
               children: [
                 Expanded(
                   child: InputDecorator(
-                    decoration: const InputDecoration(labelText: 'Availability date'),
+                    decoration:
+                        const InputDecoration(labelText: 'Availability date'),
                     child: Row(
                       children: [
                         Text(_availabilityDate == null
                             ? 'Any'
-                            : _availabilityDate!.toLocal().toString().split(' ').first),
+                            : _availabilityDate!
+                                .toLocal()
+                                .toString()
+                                .split(' ')
+                                .first),
                         const Spacer(),
                         IconButton(
                           icon: const Icon(Icons.calendar_today),
@@ -230,7 +239,8 @@ class _FindProfessionalPageState extends State<FindProfessionalPage> {
                         if (_availabilityDate != null)
                           IconButton(
                             icon: const Icon(Icons.clear),
-                            onPressed: () => setState(() => _availabilityDate = null),
+                            onPressed: () =>
+                                setState(() => _availabilityDate = null),
                           )
                       ],
                     ),
@@ -305,7 +315,8 @@ class _ProfessionalCard extends StatelessWidget {
             CircleAvatar(
               radius: 28,
               backgroundImage: NetworkImage(
-                professional.user.avatar ?? 'https://placehold.co/200x200?text=Profile',
+                professional.user.avatar ??
+                    'https://placehold.co/200x200?text=Profile',
               ),
             ),
             const SizedBox(width: 12),
@@ -319,7 +330,8 @@ class _ProfessionalCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    specializationLabels[professional.specialization] ?? professional.specialization.toString(),
+                    specializationLabels[professional.specialization] ??
+                        professional.specialization.toString(),
                     style: const TextStyle(color: Colors.black54),
                   ),
                   const SizedBox(height: 8),
@@ -344,7 +356,8 @@ class _ProfessionalCard extends StatelessWidget {
 class _ProfessionalSheet extends StatelessWidget {
   final Professional professional;
   final VoidCallback onConnect;
-  const _ProfessionalSheet({required this.professional, required this.onConnect});
+  const _ProfessionalSheet(
+      {required this.professional, required this.onConnect});
 
   @override
   Widget build(BuildContext context) {
@@ -364,7 +377,8 @@ class _ProfessionalSheet extends StatelessWidget {
                   CircleAvatar(
                     radius: 28,
                     backgroundImage: NetworkImage(
-                      professional.user.avatar ?? 'https://placehold.co/200x200?text=Profile',
+                      professional.user.avatar ??
+                          'https://placehold.co/200x200?text=Profile',
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -374,10 +388,12 @@ class _ProfessionalSheet extends StatelessWidget {
                       children: [
                         Text(
                           '${professional.user.firstName} ${professional.user.lastName}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w600),
                         ),
                         Text(
-                          specializationLabels[professional.specialization] ?? professional.specialization.toString(),
+                          specializationLabels[professional.specialization] ??
+                              professional.specialization.toString(),
                           style: const TextStyle(color: Colors.black54),
                         ),
                       ],
@@ -394,18 +410,24 @@ class _ProfessionalSheet extends StatelessWidget {
                 child: ListView(
                   controller: controller,
                   children: [
-                    const Text('About', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const Text('About',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
-                    Text(professional.bio.isEmpty ? 'No bio provided' : professional.bio),
+                    Text(professional.bio.isEmpty
+                        ? 'No bio provided'
+                        : professional.bio),
                     const SizedBox(height: 12),
-                    if ((professional.certifications ?? const []).isNotEmpty) ...[
-                      const Text('Experience & Certifications', style: TextStyle(fontWeight: FontWeight.w600)),
+                    if ((professional.certifications ?? const [])
+                        .isNotEmpty) ...[
+                      const Text('Experience & Certifications',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
                       for (final c in professional.certifications!)
                         ListTile(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.verified, color: Colors.green),
+                          leading:
+                              const Icon(Icons.verified, color: Colors.green),
                           title: Text(c.name),
                           subtitle: Text(c.issuingOrganization ?? ''),
                         ),
@@ -415,7 +437,8 @@ class _ProfessionalSheet extends StatelessWidget {
                       children: [
                         const Icon(Icons.star, color: Colors.amber, size: 18),
                         const SizedBox(width: 4),
-                        Text('Rating: ${(professional.rating ?? 0).toStringAsFixed(1)}'),
+                        Text(
+                            'Rating: ${(professional.rating ?? 0).toStringAsFixed(1)}'),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -423,7 +446,10 @@ class _ProfessionalSheet extends StatelessWidget {
                       const Text('Availability'),
                       Wrap(
                         spacing: 8,
-                        children: [for (final a in professional.availability!) Chip(label: Text(a))],
+                        children: [
+                          for (final a in professional.availability!)
+                            Chip(label: Text(a))
+                        ],
                       ),
                     ],
                   ],
@@ -434,7 +460,8 @@ class _ProfessionalSheet extends StatelessWidget {
                   Expanded(
                     child: FilledButton(
                       onPressed: onConnect,
-                      child: Text('Connect with ${professional.user.firstName}'),
+                      child:
+                          Text('Connect with ${professional.user.firstName}'),
                     ),
                   ),
                 ],

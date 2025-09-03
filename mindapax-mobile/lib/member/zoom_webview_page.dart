@@ -72,8 +72,9 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
           },
         ))
         ..addJavaScriptChannel('MPX', onMessageReceived: (message) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint('[WebView] JS channel message: ${message.message}');
+          }
           if (message.message == 'continue') {
             setState(() {
               _loading = true;
@@ -90,9 +91,10 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
       // Grant camera/mic permission requests from WebView (getUserMedia)
       androidCtrl.setOnPlatformPermissionRequest((request) {
         try {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint(
                 '[WebView][Android] Permission request received, granting.');
+          }
           // Prefer granting requested resources when API provides them
           // ignore: invalid_use_of_visible_for_testing_member
           // ignore: invalid_use_of_protected_member
@@ -103,8 +105,9 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
           request.grant();
         } catch (_) {
           try {
-            if (kDebugMode)
+            if (kDebugMode) {
               debugPrint('[WebView][Android] Fallback grant with resources.');
+            }
             // Attempt grant with resources if available
             // dynamic call to avoid type errors across versions
             // ignore: avoid_dynamic_calls
@@ -132,8 +135,9 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
           },
         ))
         ..addJavaScriptChannel('MPX', onMessageReceived: (message) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint('[WebView] JS channel message: ${message.message}');
+          }
           if (message.message == 'continue') {
             setState(() {
               _loading = true;
@@ -158,8 +162,9 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
           },
         ))
         ..addJavaScriptChannel('MPX', onMessageReceived: (message) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint('[WebView] JS channel message: ${message.message}');
+          }
           if (message.message == 'continue') {
             setState(() {
               _loading = true;

@@ -32,7 +32,7 @@ class _SessionsPageState extends State<SessionsPage> {
   List<Session> _upcoming = const [];
   List<Session> _past = const [];
   int _page = 0;
-  int _pageSize = 10;
+  final int _pageSize = 10;
 
   int? _ownerId; // userId for clients, professionalId for professionals
 
@@ -52,9 +52,15 @@ class _SessionsPageState extends State<SessionsPage> {
     if (raw is List) {
       roles = raw.map((e) => e.toString()).toList();
     } else if (raw is String) {
-      roles = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      roles = raw
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
-    roles = roles.map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}').toList();
+    roles = roles
+        .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
+        .toList();
     // If professional, resolve professionalId from backend, else use userId
     if (roles.contains('ROLE_PROFESSIONAL')) {
       try {
@@ -94,7 +100,8 @@ class _SessionsPageState extends State<SessionsPage> {
       final msg = e.toString();
       String hint = '';
       if (msg.contains('403')) {
-        hint = ' (forbidden). Ensure you are signed in with the correct role. If you are a professional, sessions may require your professional profile to be set up.';
+        hint =
+            ' (forbidden). Ensure you are signed in with the correct role. If you are a professional, sessions may require your professional profile to be set up.';
       }
       setState(() => _error = 'Failed to load upcoming sessions: $msg$hint');
     } finally {
@@ -143,13 +150,15 @@ class _SessionsPageState extends State<SessionsPage> {
   }
 
   bool _isJoinable(Session s) {
-    if (s.mode != SessionMode.VIDEO || s.status != SessionStatus.SCHEDULED) return false;
+    if (s.mode != SessionMode.VIDEO || s.status != SessionStatus.SCHEDULED)
+      return false;
     final now = DateTime.now().millisecondsSinceEpoch;
     final start = s.startTime.millisecondsSinceEpoch;
     final joinWindowStart = start - 15 * 60 * 1000;
-    final joinWindowEnd = start + (s.durationMinutes.clamp(1, 24 * 60)) * 60 * 1000;
+    final joinWindowEnd =
+        start + (s.durationMinutes.clamp(1, 24 * 60)) * 60 * 1000;
     return now >= joinWindowStart && now <= joinWindowEnd;
-    }
+  }
 
   String _relativeDate(DateTime d) {
     final now = DateTime.now();
@@ -161,7 +170,7 @@ class _SessionsPageState extends State<SessionsPage> {
     if (diffDays == -1) return 'Yesterday';
     if (diffDays.abs() < 7) {
       // Weekday label
-      const names = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       return names[d.weekday - 1];
     }
     return '${d.month}/${d.day}/${d.year}';
@@ -180,7 +189,9 @@ class _SessionsPageState extends State<SessionsPage> {
       if (!ok) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Camera and microphone permissions are required to join the session.')),
+          const SnackBar(
+              content: Text(
+                  'Camera and microphone permissions are required to join the session.')),
         );
         return;
       }
@@ -200,7 +211,8 @@ class _SessionsPageState extends State<SessionsPage> {
             '${zoom.password != null && zoom.password!.isNotEmpty ? '?pwd=${Uri.encodeComponent(zoom.password!)}' : ''}');
         bool launched = false;
         try {
-          launched = await launchUrl(zoomUri, mode: LaunchMode.externalApplication);
+          launched =
+              await launchUrl(zoomUri, mode: LaunchMode.externalApplication);
         } catch (_) {}
         if (!launched) {
           await launchUrl(webUri, mode: LaunchMode.externalApplication);
@@ -259,17 +271,24 @@ class _SessionsPageState extends State<SessionsPage> {
       final cam = statuses[Permission.camera];
       final mic = statuses[Permission.microphone];
       final granted = (cam?.isGranted ?? false) && (mic?.isGranted ?? false);
-      if (!granted && ((cam?.isPermanentlyDenied ?? false) || (mic?.isPermanentlyDenied ?? false))) {
+      if (!granted &&
+          ((cam?.isPermanentlyDenied ?? false) ||
+              (mic?.isPermanentlyDenied ?? false))) {
         // Prompt to open settings
         if (!mounted) return false;
         final open = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Permissions needed'),
-            content: const Text('Please enable Camera and Microphone permissions in Settings to join video sessions.'),
+            content: const Text(
+                'Please enable Camera and Microphone permissions in Settings to join video sessions.'),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-              FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Open Settings')),
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel')),
+              FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Open Settings')),
             ],
           ),
         );
@@ -375,7 +394,9 @@ class _SessionsPageState extends State<SessionsPage> {
               const SizedBox(height: 12),
               Text(title, style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 12),
-              OutlinedButton(onPressed: onAction, child: const Text('Find a Professional')),
+              OutlinedButton(
+                  onPressed: onAction,
+                  child: const Text('Find a Professional')),
             ],
           ),
         )
@@ -389,11 +410,14 @@ class _SessionCard extends StatelessWidget {
   final bool joinable;
   final VoidCallback? onJoin;
 
-  const _SessionCard({required this.session, required this.joinable, this.onJoin});
+  const _SessionCard(
+      {required this.session, required this.joinable, this.onJoin});
 
   @override
   Widget build(BuildContext context) {
-    final end = DateTime.tryParse(session.startTime.add(Duration(minutes: session.durationMinutes)).toIso8601String());
+    final end = DateTime.tryParse(session.startTime
+        .add(Duration(minutes: session.durationMinutes))
+        .toIso8601String());
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Padding(
@@ -410,35 +434,41 @@ class _SessionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(session.professionalName ?? 'Professional', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text(session.professionalSpecialization ?? 'Specialization', style: const TextStyle(color: Colors.black54)),
+                  Text(session.professionalName ?? 'Professional',
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Text(session.professionalSpecialization ?? 'Specialization',
+                      style: const TextStyle(color: Colors.black54)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
                       const Icon(Icons.today, size: 16, color: Colors.black54),
                       const SizedBox(width: 6),
-                      Text('${_dateLabel(session.startTime)}'),
+                      Text(_dateLabel(session.startTime)),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.schedule, size: 16, color: Colors.black54),
+                      const Icon(Icons.schedule,
+                          size: 16, color: Colors.black54),
                       const SizedBox(width: 6),
-                      Text('${_timeOf(session.startTime)} - ${end != null ? _timeOf(end) : ''} (${session.durationMinutes} mins)'),
+                      Text(
+                          '${_timeOf(session.startTime)} - ${end != null ? _timeOf(end) : ''} (${session.durationMinutes} mins)'),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(_modeIcon(session.mode), size: 16, color: Colors.black54),
+                      Icon(_modeIcon(session.mode),
+                          size: 16, color: Colors.black54),
                       const SizedBox(width: 6),
                       Text('${sessionModeToString(session.mode)} session'),
                     ],
                   ),
                   if ((session.notes ?? '').isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Text(session.notes!, style: const TextStyle(color: Colors.black87)),
+                    Text(session.notes!,
+                        style: const TextStyle(color: Colors.black87)),
                   ],
                 ],
               ),
@@ -473,7 +503,7 @@ class _SessionCard extends StatelessWidget {
     if (diffDays == 1) return 'Tomorrow';
     if (diffDays == -1) return 'Yesterday';
     if (diffDays.abs() < 7) {
-      const names = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       return names[d.weekday - 1];
     }
     return '${d.month}/${d.day}/${d.year}';
