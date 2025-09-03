@@ -10,7 +10,7 @@ typedef OnStatus = void Function(bool connected);
 
 class MessageRealtime {
   StompClient? _client;
-  String? _subscriptionId;
+  StompUnsubscribe? _unsubscribe;
 
   static String _wsUrl() {
     // Derive ws URL from apiBaseUrl host
@@ -36,7 +36,7 @@ class MessageRealtime {
         url: url,
         onConnect: (frame) {
           onStatus?.call(true);
-          _subscriptionId = _client?.subscribe(
+          _unsubscribe = _client?.subscribe(
             destination: '/topic/messages/$conversationId',
             headers: token != null ? {'Authorization': 'Bearer $token'} : {},
             callback: (StompFrame f) {
@@ -73,8 +73,11 @@ class MessageRealtime {
   }
 
   void disconnect() {
+    try {
+      _unsubscribe?.call();
+    } catch (_) {}
     _client?.deactivate();
     _client = null;
-    _subscriptionId = null;
+    _unsubscribe = null;
   }
 }
