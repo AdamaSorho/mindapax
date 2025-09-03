@@ -18,4 +18,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
      Optional<Message> findTopByConversationIdOrderByTimestampDesc(Long conversationId);
 
      Optional<Message> findTopByConversationOrderByTimestampDesc(Conversation conversation); // Added method
+
+     java.util.List<Message> findByConversationIdAndSenderIdNotAndIsReadFalse(Long conversationId, Long senderId);
 }

@@ -93,4 +93,18 @@ class MessagesApi {
     }
     throw Exception('Failed to send message: ${res.statusCode}');
   }
+
+  Future<void> markRead({required int conversationId, required int readerId}) async {
+    final client = AuthorizedHttpClient(_storage);
+    final uri = _uri('/messages/read', {'conversationId': '$conversationId', 'readerId': '$readerId'});
+    http.Response res = await client.post(uri);
+    if (res.statusCode == 401) {
+      await _auth.refresh();
+      final retry = AuthorizedHttpClient(_storage);
+      res = await retry.post(uri);
+    }
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception('Failed to mark read: ${res.statusCode}');
+    }
+  }
 }

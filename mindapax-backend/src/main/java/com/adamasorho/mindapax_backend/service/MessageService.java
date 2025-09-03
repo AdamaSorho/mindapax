@@ -10,4 +10,5 @@ public interface MessageService {
   Message sendMessage(MessageDTO messageDto);
   Page<Message> getMessageHistory(Long conversationId, Pageable pageable);
   Message getLastMessage(Long conversationId);
+  int markConversationAsRead(Long conversationId, Long readerUserId);
 }

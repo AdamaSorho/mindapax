@@ -116,6 +116,8 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
       // Scroll to bottom
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToBottom();
+        // Mark as read on initial load when at bottom
+        _tryMarkRead();
       });
     } catch (e) {
       setState(() => _error = 'Failed to load messages: $e');
@@ -190,6 +192,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
         });
         if (willAutoScroll) {
           _scrollToBottom();
+          _tryMarkRead();
         }
       }
     } catch (_) {}
@@ -205,6 +208,7 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
     final shouldShow = distFromBottom > 200;
     if (distFromBottom <= 40 && _unreadDividerIndex != null) {
       setState(() => _unreadDividerIndex = null);
+      _tryMarkRead();
     }
     if (shouldShow != _showJumpToLatest) {
       setState(() => _showJumpToLatest = shouldShow);
@@ -251,6 +255,25 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
         curve: Curves.easeOut,
       );
     }
+  }
+
+  int _unreadCountForBadge() {
+    if (_unreadDividerIndex == null) return 0;
+    final start = _unreadDividerIndex!.clamp(0, _messages.length);
+    final me = _currentUserId;
+    int count = 0;
+    for (int i = start; i < _messages.length; i++) {
+      final m = _messages[i];
+      if (me != null && m.senderId != me) count++;
+    }
+    return count;
+  }
+
+  Future<void> _tryMarkRead() async {
+    if (_currentUserId == null) return;
+    try {
+      await _api.markRead(conversationId: widget.conversationId, readerId: _currentUserId!);
+    } catch (_) {}
   }
 
   @override
@@ -358,9 +381,34 @@ class _ChatThreadPageState extends State<ChatThreadPage> {
         ],
       ),
       floatingActionButton: _showJumpToLatest
-          ? FloatingActionButton.small(
-              onPressed: _scrollToBottomAnimated,
-              child: const Icon(Icons.arrow_downward),
+          ? Stack(
+              alignment: Alignment.topRight,
+              children: [
+                FloatingActionButton.small(
+                  onPressed: () {
+                    _scrollToBottomAnimated();
+                    setState(() => _unreadDividerIndex = null);
+                    _tryMarkRead();
+                  },
+                  child: const Icon(Icons.arrow_downward),
+                ),
+                if (_unreadCountForBadge() > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _unreadCountForBadge().toString(),
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
             )
           : null,
     );

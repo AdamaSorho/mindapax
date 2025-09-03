@@ -64,4 +64,16 @@ public class MessageServiceImpl implements MessageService {
     return messageRepository.findTopByConversationIdOrderByTimestampDesc(conversationId)
       .orElse(null);
   }
+
+  @Override
+  public int markConversationAsRead(Long conversationId, Long readerUserId) {
+    var unread = messageRepository.findByConversationIdAndSenderIdNotAndIsReadFalse(conversationId, readerUserId);
+    for (var m : unread) {
+      m.setIsRead(true);
+    }
+    if (!unread.isEmpty()) {
+      messageRepository.saveAll(unread);
+    }
+    return unread.size();
+  }
 }

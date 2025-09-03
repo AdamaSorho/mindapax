@@ -7,6 +7,7 @@ import org.springframework.data.web.SortDefault.SortDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,6 +35,14 @@ public class MessageController {
     
     return ResponseEntity.ok(messageMapper.toDTO(messageService.sendMessage(dto)));
   }
+
+    @PostMapping("/read")
+    public ResponseEntity<com.adamasorho.mindapax_backend.dto.response.MessageResponse> markAsRead(
+            @RequestParam Long conversationId,
+            @RequestParam Long readerId) {
+        int count = messageService.markConversationAsRead(conversationId, readerId);
+        return ResponseEntity.ok(new com.adamasorho.mindapax_backend.dto.response.MessageResponse("Marked " + count + " messages as read"));
+    }
 
     @GetMapping
     public ResponseEntity<PageResponse<MessageDTO>> getMessages(
