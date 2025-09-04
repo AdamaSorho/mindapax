@@ -83,13 +83,11 @@ export class ConnectionsComponent {
 
   applyFilters(): void {
     // First filter by status
+    const target = this.statusFromFilter(this.filterStatus);
     this.filteredConnections =
-      this.filterStatus === 'all'
+      target === null
         ? [...this.connections]
-        : this.connections.filter(
-            (conn) =>
-              conn.status === this.getConnectionStatus(this.filterStatus)
-          );
+        : this.connections.filter((conn) => conn.status === target);
 
     // Then sort
     if (this.sortBy === 'date') {
@@ -222,9 +220,9 @@ export class ConnectionsComponent {
     }
   }
 
-  getConnectionStatus(
+  statusFromFilter(
     tab: 'all' | 'pending' | 'accepted' | 'transferred' | 'escalated'
-  ): string {
+  ): ConnectionStatus | null {
     switch (tab) {
       case 'pending':
         return ConnectionStatus.PENDING;
@@ -234,8 +232,9 @@ export class ConnectionsComponent {
         return ConnectionStatus.TRANSFERRED;
       case 'escalated':
         return ConnectionStatus.ESCALATED;
+      case 'all':
       default:
-        return ConnectionStatus.PENDING;
+        return null;
     }
   }
 }
