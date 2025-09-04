@@ -180,7 +180,6 @@ export class ConnectionsComponent {
         },
       });
   }
-  }
 
   openAdminModal(connectionId: number): void {
     this.currentConnectionId = connectionId;
