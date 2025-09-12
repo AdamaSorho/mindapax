@@ -4,6 +4,10 @@ import '../auth/jwt.dart';
 import 'nav_prefs.dart';
 import '../auth/auth_service.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'dart:io' show Platform;
+import '../auth/authorized_client.dart';
+import '../env.dart';
 import '../dev/role_override.dart';
 
 class MemberDrawer extends StatefulWidget {
@@ -18,11 +22,13 @@ class _MemberDrawerState extends State<MemberDrawer> {
   final _storage = TokenStorage();
   final _auth = AuthService();
   late Future<List<String>> _rolesFuture;
+  int _activeGoals = 0;
 
   @override
   void initState() {
     super.initState();
     _rolesFuture = _loadRoles();
+    _loadActiveGoalsCount();
   }
 
   Future<List<String>> _loadRoles() async {
@@ -46,6 +52,33 @@ class _MemberDrawerState extends State<MemberDrawer> {
         .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
         .toList(growable: false);
     return result;
+  }
+
+  Future<void> _loadActiveGoalsCount() async {
+    try {
+      final client = AuthorizedHttpClient(_storage);
+      String base = apiBaseUrl.replaceAll(RegExp(r'/+$'), '');
+      try {
+        final u = Uri.parse(base);
+        if (u.host == 'localhost' && Platform.isAndroid) {
+          base = base.replaceFirst('localhost', '10.0.2.2');
+        }
+      } catch (_) {}
+      final uri = Uri.parse('$base/assistant/goals');
+      final res = await client.get(uri);
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        final list = (jsonDecode(res.body) as List<dynamic>);
+        int count = 0;
+        for (final e in list) {
+          final m = e as Map<String, dynamic>;
+          final status = (m['status']?.toString() ?? '').toUpperCase();
+          if (status == 'ACTIVE') count++;
+        }
+        if (mounted) setState(() => _activeGoals = count);
+      }
+    } catch (_) {
+      // ignore
+    }
   }
 
   void _go(String route) {
@@ -72,6 +105,7 @@ class _MemberDrawerState extends State<MemberDrawer> {
       _MenuItem('My Sessions', '/member/sessions', Icons.calendar_today_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
       _MenuItem('Messages', '/member/messages', Icons.chat_bubble_outline, const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
       _MenuItem('AI Assistant', '/member/assistant', Icons.smart_toy_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('My Goals${_activeGoals > 0 ? ' (' + _activeGoals.toString() + ')' : ''}', '/member/goals', Icons.flag_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
       _MenuItem('Connections', '/member/connections', Icons.person_add_alt_1_outlined, const ['ROLE_PROFESSIONAL']),
       _MenuItem('Professionals', '/member/professionals', Icons.people_alt_outlined, const ['ROLE_ADMIN']),
       _MenuItem('Billing', '/member/billing', Icons.credit_card, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),

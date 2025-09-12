@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../auth/require_auth.dart';
 import 'member_scaffold.dart';
 import '../professional/professional_api.dart';
 import '../professional/models.dart';

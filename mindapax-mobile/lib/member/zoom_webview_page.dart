@@ -6,6 +6,7 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import '../env.dart';
 import 'package:flutter/foundation.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ZoomWebViewPage extends StatefulWidget {
   final String meetingNumber;
@@ -71,7 +72,7 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
             });
           },
         ))
-        ..addJavaScriptChannel('MPX', onMessageReceived: (message) {
+        ..addJavaScriptChannel('MPX', onMessageReceived: (message) async {
           if (kDebugMode) {
             debugPrint('[WebView] JS channel message: ${message.message}');
           }
@@ -82,6 +83,12 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
               _joining = true;
             });
             _controller.loadRequest(_meetingUri);
+          } else if (message.message == 'requestPermissions') {
+            final ok = await _requestNativePermissions();
+            if (ok && mounted) {
+              // Reload preflight; it will auto-continue if OK
+              await _controller.loadRequest(_preflightDataUri());
+            }
           }
         })
         ..loadRequest(_preflightDataUri());
@@ -134,7 +141,7 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
             });
           },
         ))
-        ..addJavaScriptChannel('MPX', onMessageReceived: (message) {
+        ..addJavaScriptChannel('MPX', onMessageReceived: (message) async {
           if (kDebugMode) {
             debugPrint('[WebView] JS channel message: ${message.message}');
           }
@@ -145,6 +152,11 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
               _joining = true;
             });
             _controller.loadRequest(_meetingUri);
+          } else if (message.message == 'requestPermissions') {
+            final ok = await _requestNativePermissions();
+            if (ok && mounted) {
+              await _controller.loadRequest(_preflightDataUri());
+            }
           }
         })
         ..loadRequest(_preflightDataUri());
@@ -161,7 +173,7 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
             });
           },
         ))
-        ..addJavaScriptChannel('MPX', onMessageReceived: (message) {
+        ..addJavaScriptChannel('MPX', onMessageReceived: (message) async {
           if (kDebugMode) {
             debugPrint('[WebView] JS channel message: ${message.message}');
           }
@@ -172,12 +184,46 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
               _joining = true;
             });
             _controller.loadRequest(_meetingUri);
+          } else if (message.message == 'requestPermissions') {
+            final ok = await _requestNativePermissions();
+            if (ok && mounted) {
+              await _controller.loadRequest(_preflightDataUri());
+            }
           }
         })
         ..loadRequest(_preflightDataUri());
     }
 
     _controller = controller;
+  }
+
+  Future<bool> _requestNativePermissions() async {
+    try {
+      final statuses = await [Permission.camera, Permission.microphone].request();
+      final cam = statuses[Permission.camera];
+      final mic = statuses[Permission.microphone];
+      final granted = (cam?.isGranted ?? false) && (mic?.isGranted ?? false);
+      if (!granted && ((cam?.isPermanentlyDenied ?? false) || (mic?.isPermanentlyDenied ?? false))) {
+        if (!mounted) return false;
+        final open = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Permissions needed'),
+            content: const Text('Please enable Camera and Microphone permissions in Settings to join video sessions.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Open Settings')),
+            ],
+          ),
+        );
+        if (open == true) {
+          await openAppSettings();
+        }
+      }
+      return granted;
+    } catch (_) {
+      return false;
+    }
   }
 
   String _normalizeBaseUrl(String value) {
@@ -278,6 +324,7 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
       const camEl = document.getElementById('cam');
       const micEl = document.getElementById('mic');
       const btn = document.getElementById('go');
+      const perm = document.getElementById('perm');
       try {
         const s = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
         camOk = true; micOk = true;
@@ -297,6 +344,7 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
       micEl.textContent = micOk ? 'Microphone access OK' : 'Microphone access failed';
       micEl.className = micOk ? 'ok' : 'err';
       btn.disabled = !(camOk && micOk);
+      perm.style.display = (camOk && micOk) ? 'none' : 'inline-block';
       if (camOk && micOk) {
         // Auto-continue shortly after successful preflight
         setTimeout(go, 300);
@@ -305,6 +353,11 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
     function go() {
       if (window.MPX && MPX.postMessage) {
         MPX.postMessage('continue');
+      }
+    }
+    function requestPermissions() {
+      if (window.MPX && MPX.postMessage) {
+        MPX.postMessage('requestPermissions');
       }
     }
     window.addEventListener('load', test);
@@ -317,7 +370,10 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
     <div id="mic" class="row">Checking microphone...</div>
   </div>
   <p style="margin-top:12px;color:#6b7280">Grant camera and microphone if prompted.</p>
-  <button id="go" onclick="go()" disabled>Continue to Meeting</button>
+  <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+    <button id="go" onclick="go()" disabled>Continue to Meeting</button>
+    <button id="perm" onclick="requestPermissions()" style="display:none;background:#374151;">Grant Permissions in App</button>
+  </div>
 </body>
 </html>
 ''';

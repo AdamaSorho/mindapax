@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
 import '../auth/auth_service.dart';
-import '../professional/models.dart' show PagedResponse, Professional;
 import '../professional/professional_api.dart';
 import '../member/member_scaffold.dart';
 import '../sessions/models.dart';
 import '../sessions/sessions_api.dart';
+import '../user/user_api.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'zoom_webview_page.dart';
+import 'session_detail_page.dart';
 import 'settings_prefs.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -25,6 +26,7 @@ class _SessionsPageState extends State<SessionsPage> {
   final _storage = TokenStorage();
   final _auth = AuthService();
   final _proApi = ProfessionalApi();
+  final _userApi = UserApi();
 
   bool _loading = false;
   String? _error;
@@ -36,6 +38,7 @@ class _SessionsPageState extends State<SessionsPage> {
 
   int? _ownerId; // userId for clients, professionalId for professionals
   bool _isProfessional = false;
+  final Map<int, String> _userNames = {}; // cache client names by userId
 
   @override
   void initState() {
@@ -152,8 +155,9 @@ class _SessionsPageState extends State<SessionsPage> {
   }
 
   bool _isJoinable(Session s) {
-    if (s.mode != SessionMode.VIDEO || s.status != SessionStatus.SCHEDULED)
+    if (s.mode != SessionMode.VIDEO || s.status != SessionStatus.SCHEDULED) {
       return false;
+    }
     final now = DateTime.now().millisecondsSinceEpoch;
     final start = s.startTime.millisecondsSinceEpoch;
     final joinWindowStart = start - 15 * 60 * 1000;
@@ -307,7 +311,8 @@ class _SessionsPageState extends State<SessionsPage> {
 
   void _bookNew() {
     if (_isProfessional) {
-      Navigator.pushNamed(context, '/member/schedule-session').then((value) async {
+      Navigator.pushNamed(context, '/member/schedule-session')
+          .then((value) async {
         if (value == true) {
           await _fetchUpcoming(resetPage: true);
         }
@@ -332,20 +337,21 @@ class _SessionsPageState extends State<SessionsPage> {
             ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 ChoiceChip(
                   label: const Text('Upcoming'),
                   selected: _activeTab == 'upcoming',
                   onSelected: (v) => setState(() => _activeTab = 'upcoming'),
                 ),
-                const SizedBox(width: 8),
                 ChoiceChip(
                   label: const Text('Past'),
                   selected: _activeTab == 'past',
                   onSelected: (v) => setState(() => _activeTab = 'past'),
                 ),
-                const Spacer(),
                 FilledButton.icon(
                   onPressed: _bookNew,
                   icon: const Icon(Icons.add),
@@ -369,28 +375,103 @@ class _SessionsPageState extends State<SessionsPage> {
                       : ListView.builder(
                           padding: const EdgeInsets.all(12),
                           itemCount: _upcoming.length,
-                          itemBuilder: (context, i) => _SessionCard(
-                            session: _upcoming[i],
-                            joinable: _isJoinable(_upcoming[i]),
-                            onJoin: () => _joinVideo(_upcoming[i]),
-                          ),
+                          itemBuilder: (context, i) {
+                            final s = _upcoming[i];
+                            if (_isProfessional) {
+                              _ensureUserName(s.userId);
+                            }
+                            final title = _isProfessional
+                                ? (_userNames[s.userId] ?? 'Client')
+                                : (s.professionalName ?? 'Professional');
+                            final subtitle = _isProfessional
+                                ? ''
+                                : (s.professionalSpecialization ?? 'Specialization');
+                            final avatar = (title.isNotEmpty ? title[0] : 'U').toUpperCase();
+                            return _SessionCard(
+                              session: s,
+                              title: title,
+                              subtitle: subtitle,
+                              avatarText: avatar,
+                              joinable: _isJoinable(s),
+                              onJoin: () => _joinVideo(s),
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => SessionDetailPage(
+                                    session: s,
+                                    joinable: _isJoinable(s),
+                                    onJoin: () => _joinVideo(s),
+                                    title: title,
+                                    subtitle: subtitle,
+                                    avatarText: avatar,
+                                  ),
+                                ));
+                              },
+                            );
+                          },
                         )
                   : _past.isEmpty
                       ? _emptyState('No past sessions', _bookNew)
                       : ListView.builder(
                           padding: const EdgeInsets.all(12),
                           itemCount: _past.length,
-                          itemBuilder: (context, i) => _SessionCard(
-                            session: _past[i],
-                            joinable: false,
-                            onJoin: null,
-                          ),
+                          itemBuilder: (context, i) {
+                            final s = _past[i];
+                            if (_isProfessional) {
+                              _ensureUserName(s.userId);
+                            }
+                            final title = _isProfessional
+                                ? (_userNames[s.userId] ?? 'Client')
+                                : (s.professionalName ?? 'Professional');
+                            final subtitle = _isProfessional
+                                ? ''
+                                : (s.professionalSpecialization ?? 'Specialization');
+                            final avatar = (title.isNotEmpty ? title[0] : 'U').toUpperCase();
+                            return _SessionCard(
+                              session: s,
+                              title: title,
+                              subtitle: subtitle,
+                              avatarText: avatar,
+                              joinable: false,
+                              onJoin: null,
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => SessionDetailPage(
+                                    session: s,
+                                    joinable: false,
+                                    onJoin: null,
+                                    title: title,
+                                    subtitle: subtitle,
+                                    avatarText: avatar,
+                                  ),
+                                ));
+                              },
+                            );
+                          },
                         ),
             ),
           )
         ],
       ),
     );
+  }
+
+  Future<void> _ensureUserName(int userId) async {
+    if (_userNames.containsKey(userId)) return;
+    try {
+      final u = await _userApi.getUserById(userId);
+      final first = (u['firstName']?.toString() ?? '').trim();
+      final last = (u['lastName']?.toString() ?? '').trim();
+      final name = ('$first $last').trim();
+      if (!mounted) return;
+      setState(() {
+        _userNames[userId] = name.isEmpty ? 'Client' : name;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _userNames[userId] = 'Client';
+      });
+    }
   }
 
   Widget _emptyState(String title, VoidCallback onAction) {
@@ -417,11 +498,23 @@ class _SessionsPageState extends State<SessionsPage> {
 
 class _SessionCard extends StatelessWidget {
   final Session session;
+  final String title;
+  final String subtitle;
+  final String avatarText;
   final bool joinable;
   final VoidCallback? onJoin;
+  final VoidCallback? onTap;
 
-  const _SessionCard(
-      {required this.session, required this.joinable, this.onJoin});
+  const _SessionCard({
+    super.key,
+    required this.session,
+    required this.title,
+    required this.subtitle,
+    required this.avatarText,
+    required this.joinable,
+    this.onJoin,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -430,30 +523,47 @@ class _SessionCard extends StatelessWidget {
         .toIso8601String());
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Padding(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
               radius: 24,
-              child: Text((session.professionalName ?? 'P')[0].toUpperCase()),
+              child: Text(avatarText),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(session.professionalName ?? 'Professional',
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text(session.professionalSpecialization ?? 'Specialization',
-                      style: const TextStyle(color: Colors.black54)),
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (subtitle.trim().isNotEmpty)
+                    Text(
+                      subtitle,
+                      style: const TextStyle(color: Colors.black54),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
                       const Icon(Icons.today, size: 16, color: Colors.black54),
                       const SizedBox(width: 6),
-                      Text(_dateLabel(session.startTime)),
+                      Expanded(
+                        child: Text(
+                          _dateLabel(session.startTime),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -462,8 +572,13 @@ class _SessionCard extends StatelessWidget {
                       const Icon(Icons.schedule,
                           size: 16, color: Colors.black54),
                       const SizedBox(width: 6),
-                      Text(
-                          '${_timeOf(session.startTime)} - ${end != null ? _timeOf(end) : ''} (${session.durationMinutes} mins)'),
+                      Expanded(
+                        child: Text(
+                          '${_timeOf(session.startTime)} - ${end != null ? _timeOf(end) : ''} (${session.durationMinutes} mins)',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -472,13 +587,23 @@ class _SessionCard extends StatelessWidget {
                       Icon(_modeIcon(session.mode),
                           size: 16, color: Colors.black54),
                       const SizedBox(width: 6),
-                      Text('${sessionModeToString(session.mode)} session'),
+                      Expanded(
+                        child: Text(
+                          '${sessionModeToString(session.mode)} session',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   if ((session.notes ?? '').isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Text(session.notes!,
-                        style: const TextStyle(color: Colors.black87)),
+                    Text(
+                      session.notes!,
+                      style: const TextStyle(color: Colors.black87),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ],
               ),
@@ -500,6 +625,7 @@ class _SessionCard extends StatelessWidget {
             )
           ],
         ),
+      ),
       ),
     );
   }

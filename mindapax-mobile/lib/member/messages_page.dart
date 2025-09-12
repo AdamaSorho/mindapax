@@ -4,7 +4,6 @@ import '../auth/jwt.dart';
 import '../professional/professional_api.dart';
 import '../messages/messages_api.dart';
 import '../messages/models.dart';
-import '../professional/models.dart' show PagedResponse;
 import 'member_scaffold.dart';
 import 'chat_thread_page.dart';
 
@@ -46,9 +45,15 @@ class _MessagesPageState extends State<MessagesPage> {
       if (raw is List) {
         roles = raw.map((e) => e.toString()).toList();
       } else if (raw is String) {
-        roles = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        roles = raw
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
       }
-      roles = roles.map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}').toList();
+      roles = roles
+          .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
+          .toList();
 
       if (roles.contains('ROLE_PROFESSIONAL')) {
         // Conversations API expects the user id; for professionals, we still pass their user.id
@@ -104,21 +109,29 @@ class _ConversationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundImage: (item.otherAvatar != null && item.otherAvatar!.isNotEmpty) ? NetworkImage(item.otherAvatar!) : null,
-        child: (item.otherAvatar == null || item.otherAvatar!.isEmpty) ? Text(item.otherName.isNotEmpty ? item.otherName[0].toUpperCase() : 'C') : null,
+        backgroundImage:
+            (item.otherAvatar != null && item.otherAvatar!.isNotEmpty)
+                ? NetworkImage(item.otherAvatar!)
+                : null,
+        child: (item.otherAvatar == null || item.otherAvatar!.isEmpty)
+            ? Text(item.otherName.isNotEmpty
+                ? item.otherName[0].toUpperCase()
+                : 'C')
+            : null,
       ),
       title: Text(item.otherName),
       subtitle: Text(item.lastMessage?.content ?? ''),
-      trailing: Text(item.lastMessage?.timestamp.toLocal().toString().split('.')[0] ?? ''),
+      trailing: Text(
+          item.lastMessage?.timestamp.toLocal().toString().split('.')[0] ?? ''),
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ChatThreadPage(conversationId: item.id, title: item.otherName),
+            builder: (_) =>
+                ChatThreadPage(conversationId: item.id, title: item.otherName),
           ),
         );
       },
     );
   }
 }
-

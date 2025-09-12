@@ -155,7 +155,8 @@ class _ScheduleSessionPageState extends State<ScheduleSessionPage> {
       return;
     }
 
-    final startIsoUtc = (localStart.isUtc ? localStart : localStart.toUtc()).toIso8601String();
+    final startIsoUtc =
+        (localStart.isUtc ? localStart : localStart.toUtc()).toIso8601String();
 
     setState(() => _loading = true);
     try {
@@ -192,20 +193,24 @@ class _ScheduleSessionPageState extends State<ScheduleSessionPage> {
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                    child: Text(_error!,
+                        style: const TextStyle(color: Colors.red)),
                   ),
                 if (_isProfessional) ...[
-                  const Text('Client', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text('Client',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
-                    value: _selectedUserId,
+                    initialValue: _selectedUserId,
                     items: _connectedUsers
                         .map((u) => DropdownMenuItem<int>(
                               value: u.id,
                               child: Text('${u.firstName} ${u.lastName}'),
                             ))
                         .toList(),
-                    onChanged: _loading ? null : (v) => setState(() => _selectedUserId = v),
+                    onChanged: _loading
+                        ? null
+                        : (v) => setState(() => _selectedUserId = v),
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: 'Select client',
@@ -213,7 +218,8 @@ class _ScheduleSessionPageState extends State<ScheduleSessionPage> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                const Text('Date & Time', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text('Date & Time',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -239,29 +245,39 @@ class _ScheduleSessionPageState extends State<ScheduleSessionPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Text('Duration (minutes)', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text('Duration (minutes)',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
-                  value: _durationMinutes,
+                  initialValue: _durationMinutes,
                   items: const [15, 30, 45, 60, 90]
-                      .map((m) => DropdownMenuItem<int>(value: m, child: Text('$m')))
+                      .map((m) =>
+                          DropdownMenuItem<int>(value: m, child: Text('$m')))
                       .toList(),
-                  onChanged: _loading ? null : (v) => setState(() => _durationMinutes = v ?? 30),
-                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  onChanged: _loading
+                      ? null
+                      : (v) => setState(() => _durationMinutes = v ?? 30),
+                  decoration:
+                      const InputDecoration(border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 16),
-                const Text('Mode', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text('Mode',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<SessionMode>(
-                  value: _mode,
+                  initialValue: _mode,
                   items: SessionMode.values
                       .map((m) => DropdownMenuItem<SessionMode>(
                             value: m,
-                            child: Text(sessionModeToString(m) ?? m.toString().split('.').last),
+                            child: Text(sessionModeToString(m) ??
+                                m.toString().split('.').last),
                           ))
                       .toList(),
-                  onChanged: _loading ? null : (v) => setState(() => _mode = v ?? SessionMode.VIDEO),
-                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  onChanged: _loading
+                      ? null
+                      : (v) => setState(() => _mode = v ?? SessionMode.VIDEO),
+                  decoration:
+                      const InputDecoration(border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 16),
                 const Text('Notes'),
@@ -281,7 +297,8 @@ class _ScheduleSessionPageState extends State<ScheduleSessionPage> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Text('Schedule Session'),
                 ),

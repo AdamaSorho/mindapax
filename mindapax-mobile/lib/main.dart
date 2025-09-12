@@ -5,6 +5,9 @@ import 'auth/register_page.dart';
 import 'auth/require_auth.dart';
 import 'member/dashboard_page.dart';
 import 'member/placeholders.dart';
+import 'member/assistant_page.dart';
+import 'member/assistant_context_page.dart';
+import 'member/goals_page.dart';
 import 'member/messages_page.dart';
 import 'member/find_professional_page.dart';
 import 'member/sessions_page.dart';
@@ -42,9 +45,9 @@ class MyApp extends StatelessWidget {
         '/member/schedule-session': (_) => const RequireAuth(child: ScheduleSessionPage()),
         // '/member/zoom-call' route is handled by the web frontend via WebView; we keep native route reserved if needed.
         '/member/messages': (_) => const RequireAuth(child: MessagesPage()),
-        '/member/assistant': (_) => const RequireAuth(
-            child: PlaceholderPage(
-                title: 'AI Assistant', route: '/member/assistant')),
+        '/member/assistant': (_) => const RequireAuth(child: AssistantPage()),
+        '/member/assistant-context': (_) => const RequireAuth(child: AssistantContextPage()),
+        '/member/goals': (_) => const RequireAuth(child: GoalsPage()),
         '/member/connections': (_) => const RequireAuth(child: ConnectionsPage()),
         '/member/professionals': (_) => const RequireAuth(
             child: PlaceholderPage(

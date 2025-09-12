@@ -2,6 +2,28 @@
 
 This is the backend service for the Mindapax application, built with Java and Spring Boot.
 
+## AI Assistant (OpenAI)
+
+Mindapax includes an AI assistant that personalizes responses and can suggest daily/weekly/monthly goals.
+
+Environment variables (use `.env` or your deployment’s secret manager):
+- `OPENAI_API_KEY` (required)
+- `OPENAI_MODEL` (optional, defaults to `gpt-4o-mini`)
+
+Endpoints (require Authorization bearer token):
+- `POST /api/v1/assistant`
+  - Body: `{ "message": string, "requestRecommendations": boolean, "contextOverride": string? }`
+  - Response: `{ "reply": string, "suggestions": [ { "title": string, "frequency": "DAILY|WEEKLY|MONTHLY" } ] }`
+  - Any suggestions returned are stored as `SUGGESTED` goals for the user.
+- `GET /api/v1/assistant/context` → returns stored personalization context
+- `POST /api/v1/assistant/context` → upserts context `{ preferencesJson, notes }`
+- `GET /api/v1/assistant/goals` → lists user’s goals
+- `POST /api/v1/assistant/goals/{goalId}/status?status=ACTIVE|COMPLETED|SKIPPED` → update a goal’s status
+
+Data model:
+- `AssistantContext` stores user-specific preferences/notes (freeform JSON and text)
+- `AssistantGoal` stores goal suggestions and user-accepted goals with a frequency and status
+
 ## Prerequisites
 
 - Java JDK (version specified in `pom.xml`, e.g., 17 or newer)
