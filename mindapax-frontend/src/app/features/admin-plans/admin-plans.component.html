@@ -1,0 +1,108 @@
+<div class="p-4">
+  <h2 class="text-xl font-semibold mb-4">Admin: Plans</h2>
+
+  <div *ngIf="error" class="mb-3 p-3 bg-red-100 text-red-700 rounded">{{error}}</div>
+  <div *ngIf="loading" class="mb-3 text-gray-500">Loading…</div>
+
+  <div class="grid md:grid-cols-2 gap-6">
+    <div>
+      <h3 class="font-semibold mb-2">Existing Plans</h3>
+      <div *ngFor="let p of plans" class="p-3 border rounded mb-3">
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-semibold">{{p.name}}</div>
+            <div class="text-sm text-gray-600">{{p.price}} {{p.currency}} / {{p.billingCycle.toLowerCase()}}</div>
+            <div class="text-sm">Sessions per cycle: {{p.sessionAllowance}}</div>
+            <div class="text-sm" *ngIf="p.description">{{p.description}}</div>
+            <div class="text-xs mt-1" [ngClass]="p.active ? 'text-green-600' : 'text-gray-400'">{{p.active ? 'ACTIVE' : 'INACTIVE'}}</div>
+          </div>
+          <div class="space-x-2">
+            <button class="px-3 py-1 bg-blue-600 text-white rounded" (click)="edit(p)">Edit</button>
+            <button class="px-3 py-1 bg-red-600 text-white rounded" (click)="remove(p.id)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="font-semibold mb-2">{{ editing ? 'Edit Plan' : 'Create Plan' }}</h3>
+      <div class="p-3 border rounded space-y-3">
+        <ng-container *ngIf="!editing; else editForm">
+          <label class="block text-sm">Name
+            <input class="w-full border rounded p-2" [(ngModel)]="draft.name" />
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block text-sm">Price
+              <input type="number" class="w-full border rounded p-2" [(ngModel)]="draft.price" />
+            </label>
+            <label class="block text-sm">Currency
+              <input class="w-full border rounded p-2" [(ngModel)]="draft.currency" />
+            </label>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block text-sm">Billing Cycle
+              <select class="w-full border rounded p-2" [(ngModel)]="draft.billingCycle">
+                <option value="MONTHLY">MONTHLY</option>
+                <option value="YEARLY">YEARLY</option>
+              </select>
+            </label>
+            <label class="block text-sm">Sessions per cycle
+              <input type="number" class="w-full border rounded p-2" [(ngModel)]="draft.sessionAllowance" />
+            </label>
+          </div>
+          <label class="block text-sm">Features (one per line)
+            <textarea class="w-full border rounded p-2" [(ngModel)]="draftFeaturesText" rows="4" placeholder="e.g. AI Assistant\nGoal recommendations\nPriority booking"></textarea>
+          </label>
+          <label class="block text-sm">Description
+            <textarea class="w-full border rounded p-2" [(ngModel)]="draft.description"></textarea>
+          </label>
+          <label class="inline-flex items-center space-x-2 text-sm">
+            <input type="checkbox" [(ngModel)]="draft.active" />
+            <span>Active</span>
+          </label>
+          <div class="pt-2">
+            <button class="px-3 py-1 bg-green-600 text-white rounded" (click)="saveNew()" [disabled]="loading">Create</button>
+          </div>
+        </ng-container>
+        <ng-template #editForm>
+          <label class="block text-sm">Name
+            <input class="w-full border rounded p-2" [(ngModel)]="editing!.name" />
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block text-sm">Price
+              <input type="number" class="w-full border rounded p-2" [(ngModel)]="editing!.price" />
+            </label>
+            <label class="block text-sm">Currency
+              <input class="w-full border rounded p-2" [(ngModel)]="editing!.currency" />
+            </label>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block text-sm">Billing Cycle
+              <select class="w-full border rounded p-2" [(ngModel)]="editing!.billingCycle">
+                <option value="MONTHLY">MONTHLY</option>
+                <option value="YEARLY">YEARLY</option>
+              </select>
+            </label>
+            <label class="block text-sm">Sessions per cycle
+              <input type="number" class="w-full border rounded p-2" [(ngModel)]="editing!.sessionAllowance" />
+            </label>
+          </div>
+          <label class="block text-sm">Features (one per line)
+            <textarea class="w-full border rounded p-2" [(ngModel)]="editFeaturesText" rows="4" placeholder="e.g. AI Assistant\nGoal recommendations\nPriority booking"></textarea>
+          </label>
+          <label class="block text-sm">Description
+            <textarea class="w-full border rounded p-2" [(ngModel)]="editing!.description"></textarea>
+          </label>
+          <label class="inline-flex items-center space-x-2 text-sm">
+            <input type="checkbox" [(ngModel)]="editing!.active" />
+            <span>Active</span>
+          </label>
+          <div class="pt-2 space-x-2">
+            <button class="px-3 py-1 bg-blue-600 text-white rounded" (click)="saveEdit()" [disabled]="loading">Save</button>
+            <button class="px-3 py-1 bg-gray-200 rounded" (click)="cancel()">Cancel</button>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>

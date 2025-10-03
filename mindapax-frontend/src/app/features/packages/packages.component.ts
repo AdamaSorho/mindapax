@@ -83,7 +83,7 @@ export class PackagesComponent {
     });
   }
 
-  featuresFor(p: PlanDTO): string[] {
+  private fallbackFeatures(p: PlanDTO): string[] {
     const sessions = p.sessionAllowance || 0;
     const common = [
       'AI Assistant with personalized context',
@@ -112,5 +112,11 @@ export class PackagesComponent {
       ...common,
       `${sessions} sessions per cycle`,
     ];
+  }
+
+  featuresFor(p: PlanDTO): string[] {
+    const server = (p.features || []).map(f => (f || '').toString().trim()).filter(Boolean);
+    if (server.length > 0) return server;
+    return this.fallbackFeatures(p);
   }
 }

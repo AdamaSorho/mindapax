@@ -117,7 +117,7 @@ class _PackagesPageState extends State<PackagesPage> {
                         final billing = (p['billingCycle']?.toString() ?? 'MONTHLY').toLowerCase();
                         final sessions = (p['sessionAllowance'] as num?)?.toInt() ?? 0;
                         final price = _formatAmount(priceNum, currency, deviceLocale);
-                        final features = _featuresFor(name, sessions);
+                        final features = _featuresFromApi(p) ?? _featuresFor(name, sessions);
                         return Card(
                           child: Padding(
                             padding: const EdgeInsets.all(12),
@@ -202,5 +202,14 @@ class _PackagesPageState extends State<PackagesPage> {
       ...common,
       '$sessions sessions per cycle',
     ];
+  }
+
+  List<String>? _featuresFromApi(Map<String, dynamic> p) {
+    final raw = p['features'];
+    if (raw is List) {
+      final list = raw.map((e) => e?.toString().trim() ?? '').where((s) => s.isNotEmpty).toList();
+      if (list.isNotEmpty) return list;
+    }
+    return null;
   }
 }
