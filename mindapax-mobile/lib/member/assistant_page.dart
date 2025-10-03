@@ -51,9 +51,11 @@ class _AssistantPageState extends State<AssistantPage> {
     // Try to load from server and reconcile
     try {
       final client = AuthorizedHttpClient(_storage);
-      final uri = Uri.parse(_normalizeBaseUrl(apiBaseUrl) + '/assistant/prefs');
+      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/prefs');
       final res = await client.get(uri);
-      if (res.statusCode >= 200 && res.statusCode < 300 && res.body.isNotEmpty) {
+      if (res.statusCode >= 200 &&
+          res.statusCode < 300 &&
+          res.body.isNotEmpty) {
         final m = jsonDecode(res.body) as Map<String, dynamic>;
         final sUse = m['useContext'] == true;
         final sProg = m['includeProgress'] == true;
@@ -85,20 +87,27 @@ class _AssistantPageState extends State<AssistantPage> {
       final base = _normalizeBaseUrl(apiBaseUrl);
       // Lightweight status endpoint for banner/indicator
       try {
-        final resStatus = await client.get(Uri.parse(base + '/assistant/context/completed'));
-        if (resStatus.statusCode >= 200 && resStatus.statusCode < 300 && resStatus.body.isNotEmpty) {
+        final resStatus =
+            await client.get(Uri.parse('$base/assistant/context/completed'));
+        if (resStatus.statusCode >= 200 &&
+            resStatus.statusCode < 300 &&
+            resStatus.body.isNotEmpty) {
           final m = jsonDecode(resStatus.body) as Map<String, dynamic>;
           if (mounted) setState(() => _hasContext = (m['completed'] == true));
         }
       } catch (_) {}
       // Fetch full context only for preview text (optional)
       try {
-        final res = await client.get(Uri.parse(base + '/assistant/context'));
-        if (res.statusCode >= 200 && res.statusCode < 300 && res.body.isNotEmpty && res.body != 'null') {
+        final res = await client.get(Uri.parse('$base/assistant/context'));
+        if (res.statusCode >= 200 &&
+            res.statusCode < 300 &&
+            res.body.isNotEmpty &&
+            res.body != 'null') {
           final json = jsonDecode(res.body) as Map<String, dynamic>;
           if (mounted) {
             setState(() {
-              _contextPrefs = (json['preferencesJson']?.toString() ?? '').trim();
+              _contextPrefs =
+                  (json['preferencesJson']?.toString() ?? '').trim();
               _contextNotes = (json['notes']?.toString() ?? '').trim();
             });
           }
@@ -117,7 +126,7 @@ class _AssistantPageState extends State<AssistantPage> {
     });
     try {
       final client = AuthorizedHttpClient(_storage);
-      final uri = Uri.parse(_normalizeBaseUrl(apiBaseUrl) + '/assistant');
+      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant');
       final res = await client.post(uri,
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
@@ -143,12 +152,15 @@ class _AssistantPageState extends State<AssistantPage> {
               final freq = m['frequency']?.toString() ?? '';
               return GoalSuggestion(title: title, frequency: freq);
             }).toList(growable: false);
-            _messages.add(_Msg(role: 'assistant', text: 'Suggested goals', suggestions: list));
+            _messages.add(_Msg(
+                role: 'assistant', text: 'Suggested goals', suggestions: list));
           }
         });
       } else {
         setState(() {
-          _messages.add(_Msg(role: 'assistant', text: 'Sorry, I could not reply (status ${res.statusCode}).'));
+          _messages.add(_Msg(
+              role: 'assistant',
+              text: 'Sorry, I could not reply (status ${res.statusCode}).'));
         });
       }
     } catch (e) {
@@ -178,42 +190,52 @@ class _AssistantPageState extends State<AssistantPage> {
     if (_accepted.contains(key)) return;
     try {
       final client = AuthorizedHttpClient(_storage);
-      final uri = Uri.parse(_normalizeBaseUrl(apiBaseUrl) + '/assistant/goals/accept');
+      final uri =
+          Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/goals/accept');
       final body = jsonEncode([
-        { 'title': s.title, 'frequency': s.frequency.toUpperCase() }
+        {'title': s.title, 'frequency': s.frequency.toUpperCase()}
       ]);
-      final res = await client.post(uri, headers: {'Content-Type': 'application/json'}, body: body);
+      final res = await client.post(uri,
+          headers: {'Content-Type': 'application/json'}, body: body);
       if (res.statusCode >= 200 && res.statusCode < 300) {
         if (!mounted) return;
-        setState(() { _accepted.add(key); _activeGoals += 1; });
+        setState(() {
+          _accepted.add(key);
+          _activeGoals += 1;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Goal accepted'),
             action: SnackBarAction(
               label: 'View goals',
-              onPressed: () { Navigator.of(context).pushNamed('/member/goals'); },
+              onPressed: () {
+                Navigator.of(context).pushNamed('/member/goals');
+              },
             ),
           ),
         );
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Accept failed (${res.statusCode})')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Accept failed (${res.statusCode})')));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
   Widget _suggestionTile(GoalSuggestion s) {
     final accepted = _accepted.contains(_keyFor(s));
-    return _suggestionTileBuilder(context, s, accepted, () => _acceptSuggestion(s));
+    return _suggestionTileBuilder(
+        context, s, accepted, () => _acceptSuggestion(s));
   }
 
   Future<void> _loadGoalsCount() async {
     try {
       final client = AuthorizedHttpClient(_storage);
-      final uri = Uri.parse(_normalizeBaseUrl(apiBaseUrl) + '/assistant/goals');
+      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/goals');
       final res = await client.get(uri);
       if (res.statusCode >= 200 && res.statusCode < 300) {
         final list = (jsonDecode(res.body) as List<dynamic>);
@@ -245,15 +267,20 @@ class _AssistantPageState extends State<AssistantPage> {
                 right: -6,
                 top: -6,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(
                     color: Colors.redAccent,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  constraints: const BoxConstraints(minWidth: 18, minHeight: 16),
+                  constraints:
+                      const BoxConstraints(minWidth: 18, minHeight: 16),
                   child: Text(
                     _activeGoals.toString(),
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -267,13 +294,14 @@ class _AssistantPageState extends State<AssistantPage> {
   Future<void> _saveServerPrefs() async {
     try {
       final client = AuthorizedHttpClient(_storage);
-      final uri = Uri.parse(_normalizeBaseUrl(apiBaseUrl) + '/assistant/prefs');
+      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/prefs');
       final body = jsonEncode({
         'useContext': _useContext,
         'includeProgress': _includeProgress,
         'suggestGoals': _askSuggestions,
       });
-      await client.post(uri, headers: {'Content-Type': 'application/json'}, body: body);
+      await client.post(uri,
+          headers: {'Content-Type': 'application/json'}, body: body);
     } catch (_) {}
   }
 
@@ -281,12 +309,12 @@ class _AssistantPageState extends State<AssistantPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
+        title: Wrap(
+          spacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const Text('AI Assistant'),
-            if (_hasContext) ...[
-              const SizedBox(width: 8),
+            if (_hasContext)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -294,14 +322,15 @@ class _AssistantPageState extends State<AssistantPage> {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: const [
                     Icon(Icons.check_circle, size: 14, color: Colors.green),
                     SizedBox(width: 4),
-                    Text('Using context', style: TextStyle(fontSize: 12, color: Colors.green)),
+                    Text('Using context',
+                        style: TextStyle(fontSize: 12, color: Colors.green)),
                   ],
                 ),
               ),
-            ],
           ],
         ),
         leading: IconButton(
@@ -322,7 +351,8 @@ class _AssistantPageState extends State<AssistantPage> {
             icon: const Icon(Icons.tune),
             tooltip: 'Context',
             onPressed: () async {
-              final saved = await Navigator.of(context).pushNamed('/member/assistant-context');
+              final saved = await Navigator.of(context)
+                  .pushNamed('/member/assistant-context');
               if (saved == true) {
                 await _loadContext();
               }
@@ -351,9 +381,11 @@ class _AssistantPageState extends State<AssistantPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Personalize your assistant', style: TextStyle(fontWeight: FontWeight.w600)),
+                        const Text('Personalize your assistant',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
-                        const Text('Set your goals and preferences so the AI can tailor its guidance to you.'),
+                        const Text(
+                            'Set your goals and preferences so the AI can tailor its guidance to you.'),
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
@@ -361,7 +393,8 @@ class _AssistantPageState extends State<AssistantPage> {
                           children: [
                             OutlinedButton.icon(
                               onPressed: () async {
-                                final saved = await Navigator.of(context).pushNamed('/member/assistant-context');
+                                final saved = await Navigator.of(context)
+                                    .pushNamed('/member/assistant-context');
                                 if (saved == true) {
                                   await _loadContext();
                                 }
@@ -381,7 +414,8 @@ class _AssistantPageState extends State<AssistantPage> {
                 ],
               ),
             ),
-          if ((_contextPrefs?.isNotEmpty ?? false) || (_contextNotes?.isNotEmpty ?? false))
+          if ((_contextPrefs?.isNotEmpty ?? false) ||
+              (_contextNotes?.isNotEmpty ?? false))
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               child: Card(
@@ -396,16 +430,21 @@ class _AssistantPageState extends State<AssistantPage> {
                         children: [
                           const Icon(Icons.tune, size: 16),
                           const SizedBox(width: 6),
-                          const Text('Using context', style: TextStyle(fontWeight: FontWeight.w600)),
+                          const Text('Using context',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
                         ],
                       ),
                       if ((_contextPrefs?.isNotEmpty ?? false)) ...[
                         const SizedBox(height: 6),
-                        Text(_shorten(_contextPrefs!, 160), style: const TextStyle(color: Colors.black87)),
+                        Text(
+                          'Your preferences are saved and will be used to personalize suggestions.',
+                          style: const TextStyle(color: Colors.black87),
+                        ),
                       ],
                       if ((_contextNotes?.isNotEmpty ?? false)) ...[
                         const SizedBox(height: 6),
-                        Text(_shorten(_contextNotes!, 160), style: const TextStyle(color: Colors.black54)),
+                        Text(_shorten(_contextNotes!, 160),
+                            style: const TextStyle(color: Colors.black54)),
                       ],
                     ],
                   ),
@@ -420,20 +459,28 @@ class _AssistantPageState extends State<AssistantPage> {
                 final m = _messages[i];
                 final isUser = m.role == 'user';
                 return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.8),
                     decoration: BoxDecoration(
-                      color: isUser ? Theme.of(context).colorScheme.primaryContainer : Colors.grey.shade100,
+                      color: isUser
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(m.text.isEmpty ? '…' : m.text, style: TextStyle(color: isUser ? null : Colors.black87)),
-                        if (!isUser && (m.suggestions?.isNotEmpty ?? false)) ...[
+                        Text(m.text.isEmpty ? '…' : m.text,
+                            style: TextStyle(
+                                color: isUser ? null : Colors.black87)),
+                        if (!isUser &&
+                            (m.suggestions?.isNotEmpty ?? false)) ...[
                           const SizedBox(height: 8),
                           for (final s in m.suggestions!) _suggestionTile(s),
                         ],
@@ -491,7 +538,8 @@ class _AssistantPageState extends State<AssistantPage> {
                           controller: _controller,
                           minLines: 1,
                           maxLines: 4,
-                          decoration: const InputDecoration(hintText: 'Type your message…'),
+                          decoration: const InputDecoration(
+                              hintText: 'Type your message…'),
                           onSubmitted: (_) => _send(),
                         ),
                       ),
@@ -499,7 +547,11 @@ class _AssistantPageState extends State<AssistantPage> {
                       FilledButton.icon(
                         onPressed: _loading ? null : _send,
                         icon: _loading
-                            ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                            ? const SizedBox(
+                                height: 16,
+                                width: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(Icons.send),
                         label: const Text('Send'),
                       )
@@ -520,16 +572,18 @@ class _AssistantPageState extends State<AssistantPage> {
       builder: (context) => AlertDialog(
         title: const Text('Why personalize?'),
         content: const Text(
-          'Sharing your goals and preferences helps the assistant tailor guidance to you. '
-          'For example, if improving sleep is a focus, suggestions can factor your bedtime, '
-          'preferred times, and reminder cadence. You can edit this anytime and only what you choose to share is used.'
-        ),
+            'Sharing your goals and preferences helps the assistant tailor guidance to you. '
+            'For example, if improving sleep is a focus, suggestions can factor your bedtime, '
+            'preferred times, and reminder cadence. You can edit this anytime and only what you choose to share is used.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close')),
           FilledButton(
             onPressed: () async {
               Navigator.pop(context);
-              final saved = await Navigator.of(context).pushNamed('/member/assistant-context');
+              final saved = await Navigator.of(context)
+                  .pushNamed('/member/assistant-context');
               if (saved == true) {
                 await _loadContext();
               }
@@ -547,7 +601,12 @@ class _Msg {
   final String text;
   final bool isNote;
   final List<GoalSuggestion>? suggestions;
-  _Msg({required this.role, required this.text, this.isNote = false, this.suggestions});
+  _Msg({
+    required this.role,
+    required this.text,
+    this.isNote = false,
+    this.suggestions,
+  });
 }
 
 class GoalSuggestion {
@@ -556,7 +615,8 @@ class GoalSuggestion {
   GoalSuggestion({required this.title, required this.frequency});
 }
 
-Widget _suggestionTileBuilder(BuildContext context, GoalSuggestion s, bool accepted, VoidCallback onAccept) {
+Widget _suggestionTileBuilder(BuildContext context, GoalSuggestion s,
+    bool accepted, VoidCallback onAccept) {
   return Container(
     margin: const EdgeInsets.symmetric(vertical: 4),
     child: Row(
@@ -565,7 +625,8 @@ Widget _suggestionTileBuilder(BuildContext context, GoalSuggestion s, bool accep
         const Icon(Icons.bolt, size: 16, color: Colors.black54),
         const SizedBox(width: 6),
         Expanded(
-          child: Text('[${s.frequency}] ${s.title}', maxLines: 3, overflow: TextOverflow.ellipsis),
+          child: Text('[${s.frequency}] ${s.title}',
+              maxLines: 3, overflow: TextOverflow.ellipsis),
         ),
         const SizedBox(width: 8),
         accepted
@@ -576,8 +637,7 @@ Widget _suggestionTileBuilder(BuildContext context, GoalSuggestion s, bool accep
   );
 }
 
-
 String _shorten(String s, int max) {
   if (s.length <= max) return s;
-  return s.substring(0, max - 1) + '…';
+  return '${s.substring(0, max - 1)}…';
 }
