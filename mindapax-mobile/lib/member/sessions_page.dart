@@ -12,6 +12,7 @@ import 'zoom_webview_page.dart';
 import 'session_detail_page.dart';
 import 'settings_prefs.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../subscriptions/subscriptions_api.dart';
 
 class SessionsPage extends StatefulWidget {
   final SessionsApi? api;
@@ -39,6 +40,7 @@ class _SessionsPageState extends State<SessionsPage> {
   int? _ownerId; // userId for clients, professionalId for professionals
   bool _isProfessional = false;
   final Map<int, String> _userNames = {}; // cache client names by userId
+  int? _remainingCredits;
 
   @override
   void initState() {
@@ -78,10 +80,35 @@ class _SessionsPageState extends State<SessionsPage> {
     } else {
       _ownerId = userId;
     }
+    // load subscription info for clients
+    if (!_isProfessional) {
+      await _loadSubscriptionInfo();
+    }
     await Future.wait([
       _fetchUpcoming(resetPage: true),
       _fetchPast(resetPage: true),
     ]);
+  }
+
+  Future<void> _loadSubscriptionInfo() async {
+    try {
+      final api = SubscriptionsApi();
+      final subs = await api.listMySubscriptions();
+      int? remain;
+      for (final s in subs) {
+        final st = (s['status']?.toString() ?? '').toUpperCase();
+        if (st == 'ACTIVE') {
+          final r = s['remainingSessions'];
+          if (r is num) {
+            remain = r.toInt();
+          } else {
+            remain = int.tryParse(r?.toString() ?? '');
+          }
+          break;
+        }
+      }
+      if (mounted) setState(() => _remainingCredits = remain);
+    } catch (_) {}
   }
 
   Future<void> _fetchUpcoming({bool resetPage = false}) async {
@@ -360,6 +387,29 @@ class _SessionsPageState extends State<SessionsPage> {
               ],
             ),
           ),
+          if (!_isProfessional && _remainingCredits != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Card(
+                color: Colors.green.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.credit_score, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Remaining session credits: $_remainingCredits'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pushNamed('/member/subscriptions'),
+                        child: const Text('View'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
@@ -385,8 +435,10 @@ class _SessionsPageState extends State<SessionsPage> {
                                 : (s.professionalName ?? 'Professional');
                             final subtitle = _isProfessional
                                 ? ''
-                                : (s.professionalSpecialization ?? 'Specialization');
-                            final avatar = (title.isNotEmpty ? title[0] : 'U').toUpperCase();
+                                : (s.professionalSpecialization ??
+                                    'Specialization');
+                            final avatar = (title.isNotEmpty ? title[0] : 'U')
+                                .toUpperCase();
                             return _SessionCard(
                               session: s,
                               title: title,
@@ -424,8 +476,10 @@ class _SessionsPageState extends State<SessionsPage> {
                                 : (s.professionalName ?? 'Professional');
                             final subtitle = _isProfessional
                                 ? ''
-                                : (s.professionalSpecialization ?? 'Specialization');
-                            final avatar = (title.isNotEmpty ? title[0] : 'U').toUpperCase();
+                                : (s.professionalSpecialization ??
+                                    'Specialization');
+                            final avatar = (title.isNotEmpty ? title[0] : 'U')
+                                .toUpperCase();
                             return _SessionCard(
                               session: s,
                               title: title,
@@ -506,7 +560,6 @@ class _SessionCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const _SessionCard({
-    super.key,
     required this.session,
     required this.title,
     required this.subtitle,
@@ -526,106 +579,107 @@ class _SessionCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 24,
-              child: Text(avatarText),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (subtitle.trim().isNotEmpty)
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 24,
+                child: Text(avatarText),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      subtitle,
-                      style: const TextStyle(color: Colors.black54),
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.today, size: 16, color: Colors.black54),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          _dateLabel(session.startTime),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                    if (subtitle.trim().isNotEmpty)
+                      Text(
+                        subtitle,
+                        style: const TextStyle(color: Colors.black54),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.schedule,
-                          size: 16, color: Colors.black54),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          '${_timeOf(session.startTime)} - ${end != null ? _timeOf(end) : ''} (${session.durationMinutes} mins)',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.today,
+                            size: 16, color: Colors.black54),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _dateLabel(session.startTime),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(_modeIcon(session.mode),
-                          size: 16, color: Colors.black54),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          '${sessionModeToString(session.mode)} session',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if ((session.notes ?? '').isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      session.notes!,
-                      style: const TextStyle(color: Colors.black87),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
+                      ],
                     ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.schedule,
+                            size: 16, color: Colors.black54),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${_timeOf(session.startTime)} - ${end != null ? _timeOf(end) : ''} (${session.durationMinutes} mins)',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(_modeIcon(session.mode),
+                            size: 16, color: Colors.black54),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${sessionModeToString(session.mode)} session',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if ((session.notes ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        session.notes!,
+                        style: const TextStyle(color: Colors.black87),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              children: [
-                if (joinable)
-                  FilledButton(
-                    onPressed: onJoin,
-                    child: const Text('Join'),
-                  )
-                else
-                  OutlinedButton(
-                    onPressed: null,
-                    child: const Text('Join'),
-                  ),
-              ],
-            )
-          ],
+              const SizedBox(width: 12),
+              Column(
+                children: [
+                  if (joinable)
+                    FilledButton(
+                      onPressed: onJoin,
+                      child: const Text('Join'),
+                    )
+                  else
+                    OutlinedButton(
+                      onPressed: null,
+                      child: const Text('Join'),
+                    ),
+                ],
+              )
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

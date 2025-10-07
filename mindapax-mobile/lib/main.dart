@@ -7,14 +7,21 @@ import 'member/dashboard_page.dart';
 import 'member/placeholders.dart';
 import 'member/assistant_page.dart';
 import 'member/assistant_context_page.dart';
+import 'member/onboarding_flow.dart';
 import 'member/goals_page.dart';
 import 'member/messages_page.dart';
 import 'member/find_professional_page.dart';
 import 'member/sessions_page.dart';
 import 'member/schedule_session_page.dart';
+import 'member/payment_checkout_page.dart';
+import 'member/payment_history_page.dart';
+import 'member/billing_page.dart';
+import 'member/packages_page.dart';
+import 'member/my_subscriptions_page.dart';
 import 'member/settings_page.dart';
 import 'member/connections_page.dart';
 import 'root_gate.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,6 +38,15 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('fr', 'FR'),
+      ],
       initialRoute: '/',
       routes: {
         '/': (_) => const RootGate(),
@@ -43,17 +59,21 @@ class MyApp extends StatelessWidget {
             const RequireAuth(child: FindProfessionalPage()),
         '/member/sessions': (_) => const RequireAuth(child: SessionsPage()),
         '/member/schedule-session': (_) => const RequireAuth(child: ScheduleSessionPage()),
+        '/member/pay': (_) => const RequireAuth(child: PaymentCheckoutPage()),
+        '/member/payments': (_) => const RequireAuth(child: PaymentHistoryPage()),
+        '/member/packages': (_) => const RequireAuth(child: PackagesPage()),
+        '/member/subscriptions': (_) => const RequireAuth(child: MySubscriptionsPage()),
         // '/member/zoom-call' route is handled by the web frontend via WebView; we keep native route reserved if needed.
         '/member/messages': (_) => const RequireAuth(child: MessagesPage()),
         '/member/assistant': (_) => const RequireAuth(child: AssistantPage()),
         '/member/assistant-context': (_) => const RequireAuth(child: AssistantContextPage()),
+        '/member/onboarding': (_) => const RequireAuth(child: OnboardingFlowPage()),
         '/member/goals': (_) => const RequireAuth(child: GoalsPage()),
         '/member/connections': (_) => const RequireAuth(child: ConnectionsPage()),
         '/member/professionals': (_) => const RequireAuth(
             child: PlaceholderPage(
                 title: 'Professionals', route: '/member/professionals')),
-        '/member/billing': (_) => const RequireAuth(
-            child: PlaceholderPage(title: 'Billing', route: '/member/billing')),
+        '/member/billing': (_) => const RequireAuth(child: BillingPage()),
         '/member/settings': (_) => const RequireAuth(child: SettingsPage()),
       },
     );

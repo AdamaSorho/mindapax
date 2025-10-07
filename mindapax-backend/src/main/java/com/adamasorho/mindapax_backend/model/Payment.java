@@ -32,4 +32,14 @@ public class Payment {
   private LocalDateTime paymentDate;
   @Enumerated(EnumType.STRING)
   private PaymentStatus status; // PENDING, COMPLETED, FAILED
+
+  // Phase 1 CinetPay integration fields
+  private String provider; // e.g., CINETPAY
+  private String currency; // e.g., XOF, USD
+  private String externalRef; // provider transaction/reference id
+  private String checkoutUrl; // hosted payment page
+  private String description; // human readable purpose
+
+  @jakarta.persistence.Column(columnDefinition = "TEXT")
+  private String metadataJson; // optional provider payloads
 }

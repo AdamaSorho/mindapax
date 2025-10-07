@@ -60,9 +60,27 @@ export class MemberSidebarComponent implements OnInit {
       allowedRoles: ['ROLE_ADMIN'],
     },
     {
+      label: 'Admin: Plans',
+      route: '/member/admin/plans',
+      icon: 'settings-outline',
+      allowedRoles: ['ROLE_ADMIN'],
+    },
+    {
       label: 'Billing',
       route: '/member/billing',
       icon: 'card-outline',
+      allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'],
+    },
+    {
+      label: 'Packages',
+      route: '/member/packages',
+      icon: 'pricetags-outline',
+      allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'],
+    },
+    {
+      label: 'My Subscriptions',
+      route: '/member/subscriptions',
+      icon: 'receipt-outline',
       allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN'],
     },
     {

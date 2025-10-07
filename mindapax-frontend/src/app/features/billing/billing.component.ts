@@ -4,6 +4,7 @@ import { Invoice } from '../../models/invoice.model';
 import { PaymentMethod } from '../../models/payment-method.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-billing',
@@ -129,7 +130,7 @@ export class BillingComponent implements OnInit {
     },
   ];
 
-  constructor() {}
+  constructor(private toast: ToastService) {}
 
   ngOnInit(): void {}
 
@@ -141,6 +142,9 @@ export class BillingComponent implements OnInit {
 
   togglePaymentModal(): void {
     this.showAddPaymentModal = !this.showAddPaymentModal;
+    if (this.showAddPaymentModal) {
+      this.toast.info('Adding payment methods is managed by our payment provider. This is a demo UI.');
+    }
   }
 
   toggleCancelSubscriptionModal(): void {
@@ -152,21 +156,24 @@ export class BillingComponent implements OnInit {
       ...method,
       isDefault: method.id === id,
     }));
+    this.toast.success('Default payment method updated');
   }
 
   removePaymentMethod(id: string): void {
     this.paymentMethods = this.paymentMethods.filter(
       (method) => method.id !== id
     );
+    this.toast.info('Payment method removed');
   }
 
   downloadInvoice(id: string): void {
-    console.log(`Downloading invoice ${id}`);
-    // In a real application, this would trigger a download of the invoice
+    this.toast.info(`Preparing invoice ${id}…`);
+    // In a real app, trigger the download here
   }
 
   changePlan(planId: string): void {
-    console.log(`Changing to plan: ${planId}`);
-    // In a real application, this would update the subscription
+    this.toast.info('To change plans, subscribe to another package.', 6000, [
+      { label: 'View packages', route: '/member/packages' },
+    ]);
   }
 }

@@ -47,7 +47,8 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
     setState(() => _loading = true);
     try {
       final client = AuthorizedHttpClient(_storage);
-      final uri = Uri.parse(_normalizeBaseUrl(apiBaseUrl) + '/assistant/context');
+      final uri =
+          Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/context');
       final res = await client.get(uri);
       if (res.statusCode >= 200 && res.statusCode < 300) {
         if (res.body.isNotEmpty && res.body != 'null') {
@@ -74,23 +75,28 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
     setState(() => _loading = true);
     try {
       final client = AuthorizedHttpClient(_storage);
-      final uri = Uri.parse(_normalizeBaseUrl(apiBaseUrl) + '/assistant/context');
+      final uri =
+          Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/context');
       final body = jsonEncode({
         'preferencesJson': prefs,
         'notes': _notesCtrl.text.trim(),
       });
-      final res = await client.post(uri, headers: {'Content-Type': 'application/json'}, body: body);
+      final res = await client.post(uri,
+          headers: {'Content-Type': 'application/json'}, body: body);
       if (res.statusCode >= 200 && res.statusCode < 300) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Context saved')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Context saved')));
         Navigator.pop(context, true);
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed (${res.statusCode})')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Save failed (${res.statusCode})')));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -111,8 +117,13 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
     if (raw.isEmpty) return;
     try {
       final m = jsonDecode(raw) as Map<String, dynamic>;
-      final focus = (m['focus'] as List<dynamic>?)?.map((e) => e.toString()).toSet() ?? <String>{};
-      final times = (m['preferredTimes'] as List<dynamic>?)?.map((e) => e.toString().toLowerCase()).toSet() ?? <String>{};
+      final focus =
+          (m['focus'] as List<dynamic>?)?.map((e) => e.toString()).toSet() ??
+              <String>{};
+      final times = (m['preferredTimes'] as List<dynamic>?)
+              ?.map((e) => e.toString().toLowerCase())
+              .toSet() ??
+          <String>{};
       final sleep = (m['sleepHours'] as num?)?.toDouble() ?? 7.0;
       final ex = (m['exerciseDaysPerWeek'] as num?)?.toInt() ?? 3;
       final rem = (m['reminders']?.toString().toUpperCase()) ?? 'WEEKLY';
@@ -157,7 +168,10 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
           TextButton.icon(
             onPressed: _loading ? null : _save,
             icon: _loading
-                ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.save),
             label: const Text('Save'),
           )
@@ -168,7 +182,8 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text('Primary goal', style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text('Primary goal',
+                style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             TextField(
               controller: _primaryGoalCtrl,
@@ -178,17 +193,30 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Focus areas', style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text('Focus areas',
+                style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 8,
               runSpacing: 4,
               children: [
-                for (final f in const ['sleep','stress','productivity','nutrition','exercise','mindfulness','finance','relationships','time-management'])
+                for (final f in const [
+                  'sleep',
+                  'stress',
+                  'productivity',
+                  'nutrition',
+                  'exercise',
+                  'mindfulness',
+                  'finance',
+                  'relationships',
+                  'time-management'
+                ])
                   FilterChip(
                     label: Text(f),
                     selected: _focus.contains(f),
-                    onSelected: (v) => setState(() { v ? _focus.add(f) : _focus.remove(f); }),
+                    onSelected: (v) => setState(() {
+                      v ? _focus.add(f) : _focus.remove(f);
+                    }),
                   ),
               ],
             ),
@@ -228,7 +256,8 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
                         max: 7,
                         divisions: 7,
                         label: _exerciseDays.toString(),
-                        onChanged: (v) => setState(() => _exerciseDays = v.round()),
+                        onChanged: (v) =>
+                            setState(() => _exerciseDays = v.round()),
                       ),
                     ],
                   ),
@@ -240,25 +269,32 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _reminders,
-                    decoration: const InputDecoration(labelText: 'Reminders cadence'),
+                    initialValue: _reminders,
+                    decoration:
+                        const InputDecoration(labelText: 'Reminders cadence'),
                     items: const [
                       DropdownMenuItem(value: 'DAILY', child: Text('Daily')),
                       DropdownMenuItem(value: 'WEEKLY', child: Text('Weekly')),
-                      DropdownMenuItem(value: 'MONTHLY', child: Text('Monthly')),
+                      DropdownMenuItem(
+                          value: 'MONTHLY', child: Text('Monthly')),
                     ],
-                    onChanged: (v) => setState(() => _reminders = v ?? 'WEEKLY'),
+                    onChanged: (v) =>
+                        setState(() => _reminders = v ?? 'WEEKLY'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _tone,
-                    decoration: const InputDecoration(labelText: 'Assistant style'),
+                    initialValue: _tone,
+                    decoration:
+                        const InputDecoration(labelText: 'Assistant style'),
                     items: const [
-                      DropdownMenuItem(value: 'SUPPORTIVE', child: Text('Supportive')),
-                      DropdownMenuItem(value: 'COACHING', child: Text('Coaching')),
-                      DropdownMenuItem(value: 'CONCISE', child: Text('Concise')),
+                      DropdownMenuItem(
+                          value: 'SUPPORTIVE', child: Text('Supportive')),
+                      DropdownMenuItem(
+                          value: 'COACHING', child: Text('Coaching')),
+                      DropdownMenuItem(
+                          value: 'CONCISE', child: Text('Concise')),
                     ],
                     onChanged: (v) => setState(() => _tone = v ?? 'SUPPORTIVE'),
                   ),
@@ -266,16 +302,19 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
               ],
             ),
             const SizedBox(height: 16),
-            const Text('Preferred times', style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text('Preferred times',
+                style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 8,
               children: [
-                for (final t in const ['morning','afternoon','evening'])
+                for (final t in const ['morning', 'afternoon', 'evening'])
                   FilterChip(
                     label: Text(t),
                     selected: _times.contains(t),
-                    onSelected: (v) => setState(() { v ? _times.add(t) : _times.remove(t); }),
+                    onSelected: (v) => setState(() {
+                      v ? _times.add(t) : _times.remove(t);
+                    }),
                   ),
               ],
             ),
@@ -296,8 +335,11 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Advanced JSON', style: TextStyle(fontWeight: FontWeight.w600)),
-                Switch(value: _showAdvanced, onChanged: (v) => setState(() => _showAdvanced = v)),
+                const Text('Advanced JSON',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+                Switch(
+                    value: _showAdvanced,
+                    onChanged: (v) => setState(() => _showAdvanced = v)),
               ],
             ),
             if (_showAdvanced) ...[
@@ -307,7 +349,8 @@ class _AssistantContextPageState extends State<AssistantContextPage> {
                 minLines: 4,
                 maxLines: 10,
                 decoration: InputDecoration(
-                  hintText: '{ "focus": ["sleep", "stress"], "reminders": "weekly" }',
+                  hintText:
+                      '{ "focus": ["sleep", "stress"], "reminders": "weekly" }',
                   border: const OutlineInputBorder(),
                   errorText: _prefsError,
                 ),

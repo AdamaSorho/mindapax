@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ public class AssistantPreferences {
     private Long id;
 
     @OneToOne(optional = false)
+    @JsonIgnore
     private User user;
 
     private boolean useContext = true;
@@ -28,4 +30,3 @@ public class AssistantPreferences {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 }
-

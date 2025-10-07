@@ -45,7 +45,11 @@ class _MemberDrawerState extends State<MemberDrawer> {
     } else if (raw is String) {
       // Backend sets a single authority string like "ROLE_USER"
       // Also handle comma-separated just in case
-      result = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      result = raw
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
     // Normalize to ROLE_* format for matching
     result = result
@@ -100,16 +104,40 @@ class _MemberDrawerState extends State<MemberDrawer> {
   @override
   Widget build(BuildContext context) {
     final items = <_MenuItem>[
-      _MenuItem('Home', '/member/dashboard', Icons.home_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
-      _MenuItem('Find a Professional', '/member/find-professional', Icons.search, const ['ROLE_USER']),
-      _MenuItem('My Sessions', '/member/sessions', Icons.calendar_today_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
-      _MenuItem('Messages', '/member/messages', Icons.chat_bubble_outline, const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
-      _MenuItem('AI Assistant', '/member/assistant', Icons.smart_toy_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
-      _MenuItem('My Goals${_activeGoals > 0 ? ' (' + _activeGoals.toString() + ')' : ''}', '/member/goals', Icons.flag_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
-      _MenuItem('Connections', '/member/connections', Icons.person_add_alt_1_outlined, const ['ROLE_PROFESSIONAL']),
-      _MenuItem('Professionals', '/member/professionals', Icons.people_alt_outlined, const ['ROLE_ADMIN']),
-      _MenuItem('Billing', '/member/billing', Icons.credit_card, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
-      _MenuItem('Settings', '/member/settings', Icons.settings_outlined, const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Home', '/member/dashboard', Icons.home_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Find a Professional', '/member/find-professional',
+          Icons.search, const ['ROLE_USER']),
+      _MenuItem(
+          'My Sessions',
+          '/member/sessions',
+          Icons.calendar_today_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
+      _MenuItem('Messages', '/member/messages', Icons.chat_bubble_outline,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
+      _MenuItem('AI Assistant', '/member/assistant', Icons.smart_toy_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem(
+          'My Goals${_activeGoals > 0 ? ' ($_activeGoals)' : ''}',
+          '/member/goals',
+          Icons.flag_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Connections', '/member/connections',
+          Icons.person_add_alt_1_outlined, const ['ROLE_PROFESSIONAL']),
+      _MenuItem('Professionals', '/member/professionals',
+          Icons.people_alt_outlined, const ['ROLE_ADMIN']),
+      _MenuItem('Billing', '/member/billing', Icons.credit_card,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Packages', '/member/packages', Icons.subscriptions_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('My Subscriptions', '/member/subscriptions', Icons.receipt_long,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Make a Payment', '/member/pay', Icons.payment_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Payment History', '/member/payments', Icons.receipt_long_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+      _MenuItem('Settings', '/member/settings', Icons.settings_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
     ];
 
     return Drawer(
@@ -119,7 +147,8 @@ class _MemberDrawerState extends State<MemberDrawer> {
           children: [
             const SizedBox(height: 8),
             const ListTile(
-              title: Text('Mindapax', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              title: Text('Mindapax',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             ),
             const Divider(height: 1),
             Expanded(
@@ -130,7 +159,8 @@ class _MemberDrawerState extends State<MemberDrawer> {
                   return ListView(
                     children: [
                       for (final i in items)
-                        if (i.allowedRoles.isEmpty || i.allowedRoles.any(roles.contains))
+                        if (i.allowedRoles.isEmpty ||
+                            i.allowedRoles.any(roles.contains))
                           ListTile(
                             leading: Icon(i.icon),
                             title: Text(i.label),
@@ -140,7 +170,8 @@ class _MemberDrawerState extends State<MemberDrawer> {
                       if (kDebugMode) const Divider(),
                       if (kDebugMode)
                         const ListTile(
-                          title: Text('Debug: Roles Override', style: TextStyle(fontWeight: FontWeight.w600)),
+                          title: Text('Debug: Roles Override',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
                         ),
                       if (kDebugMode)
                         ListTile(
@@ -162,7 +193,8 @@ class _MemberDrawerState extends State<MemberDrawer> {
                         ),
                       if (kDebugMode)
                         ListTile(
-                          leading: const Icon(Icons.admin_panel_settings_outlined),
+                          leading:
+                              const Icon(Icons.admin_panel_settings_outlined),
                           title: const Text('As ADMIN'),
                           onTap: () async {
                             RoleOverride.setRoles(const ['ROLE_ADMIN']);

@@ -599,12 +599,10 @@ class _AssistantPageState extends State<AssistantPage> {
 class _Msg {
   final String role; // 'user' | 'assistant'
   final String text;
-  final bool isNote;
   final List<GoalSuggestion>? suggestions;
   _Msg({
     required this.role,
     required this.text,
-    this.isNote = false,
     this.suggestions,
   });
 }

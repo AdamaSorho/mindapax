@@ -15,6 +15,7 @@ import { User } from '../../models/user.model';
 import { SessionMode } from '../../models/enums/SessionFilter';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-schedule-session',
@@ -30,12 +31,14 @@ export class ScheduleSessionComponent
   sessionModes = Object.values(SessionMode);
   errorMessage: string | null = null;
   successMessage: string | null = null;
+  paymentRequired = false;
 
   constructor(
     private fb: FormBuilder,
     private sessionService: SessionService,
     private userService: UserService,
-    private router: Router
+    private router: Router,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -172,10 +175,23 @@ export class ScheduleSessionComponent
         this.router.navigate(['/member/sessions']);
       },
       error: (error: HttpErrorResponse) => {
-        this.errorMessage =
-          'Failed to schedule session: ' +
-          (error.error?.message || error.message);
         console.error('Error scheduling session:', error);
+        this.paymentRequired = error.status === 402 ||
+          /payment required|no session credits/i.test(error.error?.message || '');
+        // Use global toast notifications instead of inline error block
+        if (this.paymentRequired) {
+          this.toast.error(
+            'Client has no active package or session credits.',
+            7000,
+            [
+              { label: 'View packages', route: '/member/packages' },
+              { label: 'Go to Billing', route: '/member/billing' },
+            ],
+          );
+        } else {
+          this.toast.error('Failed to schedule session: ' + (error.error?.message || error.message));
+        }
+        this.errorMessage = null;
       },
     });
   }

@@ -8,6 +8,7 @@ import {
   SessionTimeFilter,
 } from '../../models/enums/SessionFilter';
 import { Router } from '@angular/router';
+import { SubscriptionsService, SubscriptionDTO } from '../../services/subscriptions.service';
 import { ZoomSignatureResponse } from '../../models/zoom-signature-response.model';
 
 @Component({
@@ -21,6 +22,7 @@ export class SessionsComponent implements OnInit {
   pastSessions: Session[] = [];
   activeTab: 'upcoming' | 'past' = 'upcoming';
   loading: boolean = true;
+  remainingCredits?: number;
 
   currentPage = 0;
   pageSize = 10;
@@ -28,12 +30,26 @@ export class SessionsComponent implements OnInit {
   constructor(
     private sessionService: SessionService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private subsService: SubscriptionsService,
   ) {}
 
   ngOnInit(): void {
     this.fetchUpcomingSessions();
     this.fetchPastSessions();
+    this.loadSubscriptionCredits();
+  }
+
+  loadSubscriptionCredits(): void {
+    this.subsService.mySubscriptions().subscribe({
+      next: (subs: SubscriptionDTO[]) => {
+        const active = subs.find(s => s.status === 'ACTIVE');
+        if (active && active.remainingSessions != null) {
+          this.remainingCredits = active.remainingSessions;
+        }
+      },
+      error: () => {}
+    });
   }
 
   public getCalculatedEndTime(session: Session): Date | null {

@@ -7,5 +7,5 @@ import com.adamasorho.mindapax_backend.model.Payment;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-  
+  java.util.Optional<Payment> findByExternalRef(String externalRef);
 }

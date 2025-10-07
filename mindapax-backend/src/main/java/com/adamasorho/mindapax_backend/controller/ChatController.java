@@ -14,6 +14,7 @@ import com.adamasorho.mindapax_backend.dto.request.ChatRequest;
 import com.adamasorho.mindapax_backend.dto.response.AssistantChatResponse;
 import com.adamasorho.mindapax_backend.dto.assistant.AssistantContextDTO;
 import com.adamasorho.mindapax_backend.dto.assistant.AssistantPrefsDTO;
+import com.adamasorho.mindapax_backend.dto.response.assistant.AssistantContextResponse;
 import com.adamasorho.mindapax_backend.dto.response.assistant.GoalSuggestionDTO;
 import com.adamasorho.mindapax_backend.dto.response.assistant.ContextStatusResponse;
 import com.adamasorho.mindapax_backend.model.AssistantContext;
@@ -52,25 +53,25 @@ public class ChatController {
     }
 
     @PostMapping("/context")
-    public ResponseEntity<AssistantContext> upsertContext(@RequestBody AssistantContextDTO body) {
+    public ResponseEntity<AssistantContextResponse> upsertContext(@RequestBody AssistantContextDTO body) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !(auth.getPrincipal() instanceof CustomUserDetails)) {
             return ResponseEntity.status(401).build();
         }
         User user = ((CustomUserDetails) auth.getPrincipal()).getUser();
         AssistantContext ctx = assistantService.upsertContext(user, body);
-        return ResponseEntity.ok(ctx);
+        return ResponseEntity.ok(AssistantContextResponse.fromEntity(ctx));
     }
 
     @GetMapping("/context")
-    public ResponseEntity<AssistantContext> getContext() {
+    public ResponseEntity<AssistantContextResponse> getContext() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !(auth.getPrincipal() instanceof CustomUserDetails)) {
             return ResponseEntity.status(401).build();
         }
         User user = ((CustomUserDetails) auth.getPrincipal()).getUser();
         AssistantContext ctx = assistantService.getContext(user);
-        return ResponseEntity.ok(ctx);
+        return ResponseEntity.ok(AssistantContextResponse.fromEntity(ctx));
     }
 
     @GetMapping("/context/completed")

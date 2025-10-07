@@ -16,6 +16,9 @@ import com.adamasorho.mindapax_backend.model.Session;
 import com.adamasorho.mindapax_backend.model.User;
 import com.adamasorho.mindapax_backend.model.enums.SessionStatus;
 import com.adamasorho.mindapax_backend.repository.ProfessionalRepository;
+import com.adamasorho.mindapax_backend.repository.SubscriptionRepository;
+import com.adamasorho.mindapax_backend.model.Subscription;
+import com.adamasorho.mindapax_backend.model.enums.SubscriptionStatus;
 import com.adamasorho.mindapax_backend.repository.SessionRepository;
 import com.adamasorho.mindapax_backend.repository.UserRepository;
 import com.adamasorho.mindapax_backend.service.SessionService;
@@ -39,12 +42,14 @@ public class SessionServiceImpl implements SessionService {
   private final SessionMapper mapper;
   private final UserRepository userRepository;
   private final ProfessionalRepository professionalRepository;
+  private final SubscriptionRepository subscriptionRepository;
 
-  public SessionServiceImpl(SessionRepository sessionRepository, SessionMapper mapper, UserRepository userRepository, ProfessionalRepository professionalRepository) {
+  public SessionServiceImpl(SessionRepository sessionRepository, SessionMapper mapper, UserRepository userRepository, ProfessionalRepository professionalRepository, SubscriptionRepository subscriptionRepository) {
     this.sessionRepository = sessionRepository;
     this.mapper = mapper;
     this.userRepository = userRepository;
     this.professionalRepository = professionalRepository;
+    this.subscriptionRepository = subscriptionRepository;
   }
 
   @Override
@@ -76,9 +81,14 @@ public class SessionServiceImpl implements SessionService {
   public SessionDTO updateSessionStatus(Long id, SessionDTO dto) {
     Session session = sessionRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Session not found"));
-
+    SessionStatus previous = session.getStatus();
     session.setStatus(dto.getStatus());
-    return mapper.toDTO(sessionRepository.save(session));
+    Session saved = sessionRepository.save(session);
+    // Deduct credit when transitioning to COMPLETED
+    if (previous != SessionStatus.COMPLETED && dto.getStatus() == SessionStatus.COMPLETED) {
+      try { deductCreditIfPossible(saved.getUser()); } catch (Exception ignored) {}
+    }
+    return mapper.toDTO(saved);
   }
 
   @Override
@@ -199,12 +209,44 @@ private Page<Session> getSessionsFromClient(Long clientId, OffsetDateTime date,
         }
     }
 
+    // Enforce subscription credit availability for client
+    enforceHasCredits(clientUser);
+
     // Save the Session entity
     Session savedSession = sessionRepository.save(session);
 
 
     // Return the saved Session mapped back to a SessionDTO
     return mapper.toDTO(savedSession);
+  }
+
+  private void enforceHasCredits(User user) {
+    List<Subscription> subs = subscriptionRepository.findByUserAndStatusOrderByIdDesc(user, SubscriptionStatus.ACTIVE);
+    OffsetDateTime now = OffsetDateTime.now();
+    for (Subscription s : subs) {
+      if (s.getCurrentPeriodEnd() == null || s.getCurrentPeriodEnd().isAfter(now)) {
+        Integer rem = s.getRemainingSessions();
+        if (rem != null && rem > 0) {
+          return; // ok
+        }
+      }
+    }
+    throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "No session credits available");
+  }
+
+  private void deductCreditIfPossible(User user) {
+    List<Subscription> subs = subscriptionRepository.findByUserAndStatusOrderByIdDesc(user, SubscriptionStatus.ACTIVE);
+    OffsetDateTime now = OffsetDateTime.now();
+    for (Subscription s : subs) {
+      if (s.getCurrentPeriodEnd() == null || s.getCurrentPeriodEnd().isAfter(now)) {
+        Integer rem = s.getRemainingSessions();
+        if (rem != null && rem > 0) {
+          s.setRemainingSessions(rem - 1);
+          subscriptionRepository.save(s);
+          return;
+        }
+      }
+    }
   }
 
   @Override

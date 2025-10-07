@@ -32,4 +32,9 @@ public class PaymentServiceImpl implements PaymentService {
             .map(mapper::toDTO)
             .collect(Collectors.toList());
   }
+
+  @Override
+  public PaymentDTO getPayment(Long id) {
+    return repository.findById(id).map(mapper::toDTO).orElse(null);
+  }
 }

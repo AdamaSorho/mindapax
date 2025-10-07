@@ -22,6 +22,10 @@
 
 
   <div *ngIf="!loading">
+    <!-- Credits indicator for clients -->
+    <div *ngIf="remainingCredits != null" class="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+      Remaining session credits: <strong>{{remainingCredits}}</strong>. <a routerLink="/member/subscriptions" class="text-blue-600 underline">View subscriptions</a>
+    </div>
     <!-- Tabs -->
     <div class="border-b border-gray-200 mb-6">
       <ul class="flex flex-wrap -mb-px text-sm font-medium text-center">

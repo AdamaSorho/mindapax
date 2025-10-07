@@ -28,13 +28,18 @@ class _GoalsPageState extends State<GoalsPage> {
   }
 
   Future<void> _fetch() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final client = AuthorizedHttpClient(_storage);
-      final uri = Uri.parse(_normalizeBaseUrl(apiBaseUrl) + '/assistant/goals');
+      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/goals');
       final res = await client.get(uri);
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        final list = (jsonDecode(res.body) as List<dynamic>).map((e) => AssistantGoal.fromJson(e as Map<String, dynamic>)).toList(growable: false);
+        final list = (jsonDecode(res.body) as List<dynamic>)
+            .map((e) => AssistantGoal.fromJson(e as Map<String, dynamic>))
+            .toList(growable: false);
         setState(() => _goals = list);
       } else {
         setState(() => _error = 'Failed to load (${res.statusCode})');
@@ -50,19 +55,23 @@ class _GoalsPageState extends State<GoalsPage> {
     try {
       final client = AuthorizedHttpClient(_storage);
       final base = _normalizeBaseUrl(apiBaseUrl);
-      final uri = Uri.parse('$base/assistant/goals/${g.id}/status?status=$status');
+      final uri =
+          Uri.parse('$base/assistant/goals/${g.id}/status?status=$status');
       final res = await client.post(uri);
       if (res.statusCode >= 200 && res.statusCode < 300) {
         await _fetch();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Updated')));
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Update failed (${res.statusCode})')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Update failed (${res.statusCode})')));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -79,7 +88,9 @@ class _GoalsPageState extends State<GoalsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _goals.where((g) => _filter == 'ALL' ? true : g.status == _filter).toList(growable: false);
+    final filtered = _goals
+        .where((g) => _filter == 'ALL' ? true : g.status == _filter)
+        .toList(growable: false);
     return MemberScaffold(
       title: 'My Goals',
       currentRoute: '/member/goals',
@@ -96,9 +107,16 @@ class _GoalsPageState extends State<GoalsPage> {
             child: Wrap(
               spacing: 8,
               children: [
-                for (final f in const ['ALL','SUGGESTED','ACTIVE','COMPLETED','SKIPPED'])
+                for (final f in const [
+                  'ALL',
+                  'SUGGESTED',
+                  'ACTIVE',
+                  'COMPLETED',
+                  'SKIPPED'
+                ])
                   ChoiceChip(
-                    label: Text(f.toLowerCase().substring(0,1).toUpperCase() + f.toLowerCase().substring(1)),
+                    label: Text(f.toLowerCase().substring(0, 1).toUpperCase() +
+                        f.toLowerCase().substring(1)),
                     selected: _filter == f,
                     onSelected: (_) => setState(() => _filter = f),
                   ),
@@ -140,7 +158,8 @@ class _GoalsPageState extends State<GoalsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(g.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Text(g.title,
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
                   Row(children: [
                     _chip(g.frequency, Colors.indigo),
@@ -160,11 +179,15 @@ class _GoalsPageState extends State<GoalsPage> {
 
   Color _statusColor(String s) {
     switch (s) {
-      case 'ACTIVE': return Colors.green;
-      case 'COMPLETED': return Colors.blueGrey;
-      case 'SKIPPED': return Colors.orange;
+      case 'ACTIVE':
+        return Colors.green;
+      case 'COMPLETED':
+        return Colors.blueGrey;
+      case 'SKIPPED':
+        return Colors.orange;
       case 'SUGGESTED':
-      default: return Colors.grey;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -180,14 +203,20 @@ class _GoalsPageState extends State<GoalsPage> {
   Widget _actionsFor(AssistantGoal g) {
     switch (g.status) {
       case 'SUGGESTED':
-        return OutlinedButton(onPressed: () => _updateStatus(g, 'ACTIVE'), child: const Text('Activate'));
+        return OutlinedButton(
+            onPressed: () => _updateStatus(g, 'ACTIVE'),
+            child: const Text('Activate'));
       case 'ACTIVE':
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            OutlinedButton(onPressed: () => _updateStatus(g, 'COMPLETED'), child: const Text('Complete')),
+            OutlinedButton(
+                onPressed: () => _updateStatus(g, 'COMPLETED'),
+                child: const Text('Complete')),
             const SizedBox(width: 8),
-            TextButton(onPressed: () => _updateStatus(g, 'SKIPPED'), child: const Text('Skip')),
+            TextButton(
+                onPressed: () => _updateStatus(g, 'SKIPPED'),
+                child: const Text('Skip')),
           ],
         );
       case 'COMPLETED':
@@ -205,7 +234,12 @@ class AssistantGoal {
   final String status; // SUGGESTED|ACTIVE|COMPLETED|SKIPPED
   final DateTime? createdAt;
 
-  AssistantGoal({required this.id, required this.title, required this.frequency, required this.status, this.createdAt});
+  AssistantGoal(
+      {required this.id,
+      required this.title,
+      required this.frequency,
+      required this.status,
+      this.createdAt});
 
   factory AssistantGoal.fromJson(Map<String, dynamic> j) {
     return AssistantGoal(
@@ -213,7 +247,9 @@ class AssistantGoal {
       title: j['title']?.toString() ?? '',
       frequency: j['frequency']?.toString().toUpperCase() ?? 'DAILY',
       status: j['status']?.toString().toUpperCase() ?? 'SUGGESTED',
-      createdAt: j['createdAt'] != null ? DateTime.tryParse(j['createdAt'].toString()) : null,
+      createdAt: j['createdAt'] != null
+          ? DateTime.tryParse(j['createdAt'].toString())
+          : null,
     );
   }
 }

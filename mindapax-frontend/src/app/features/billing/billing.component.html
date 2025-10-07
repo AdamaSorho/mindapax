@@ -46,12 +46,18 @@
           titlecase }}</span>
       </div>
       <div class="mb-4">
-        <p class="text-gray-600">${{ currentPlan.price }}/{{ currentPlan.billingCycle }}</p>
+        <p class="text-gray-600">{{ currentPlan.price | currencyFmt:'USD' }}/{{ currentPlan.billingCycle }}</p>
         <p class="text-gray-600">Next billing: {{ currentPlan.nextBillingDate | date:'mediumDate' }}</p>
       </div>
-      <button
-        class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2"
-        (click)="setActiveTab('subscription')">Manage Subscription</button>
+      <div class="flex gap-2">
+        <button
+          class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2"
+          (click)="setActiveTab('subscription')">Manage Subscription</button>
+        <a routerLink="/member/packages"
+          class="text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 focus:ring-4 focus:ring-blue-100 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2">
+          Subscribe
+        </a>
+      </div>
     </div>
 
     <!-- Recent Invoices -->
@@ -75,7 +81,7 @@
           <tbody class="bg-white divide-y divide-gray-200">
             <tr *ngFor="let invoice of invoices.slice(0, 3)">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invoice.date | date:'mediumDate' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${{ invoice.amount }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ invoice.amount | currencyFmt:'USD' }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span [ngClass]="{
                   'bg-green-100 text-green-800': invoice.status === 'paid',
@@ -184,7 +190,7 @@
       <div *ngFor="let plan of plans" class="border rounded-lg p-4"
         [ngClass]="{'border-blue-500 bg-blue-50': plan.id === currentPlan.id, 'border-gray-200': plan.id !== currentPlan.id}">
         <h4 class="text-lg font-medium mb-2">{{ plan.name }}</h4>
-        <p class="text-2xl font-bold mb-2">${{ plan.price }}<span class="text-sm font-normal text-gray-500">/{{
+        <p class="text-2xl font-bold mb-2">{{ plan.price | currencyFmt:'USD' }}<span class="text-sm font-normal text-gray-500">/{{
             plan.billingCycle }}</span></p>
         <ul class="mb-4 space-y-2">
           <li *ngFor="let feature of plan.features" class="flex items-start">

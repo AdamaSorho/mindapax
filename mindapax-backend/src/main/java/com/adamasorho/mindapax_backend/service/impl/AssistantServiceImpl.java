@@ -9,6 +9,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.adamasorho.mindapax_backend.dto.assistant.AssistantContextDTO;
 import com.adamasorho.mindapax_backend.dto.assistant.AssistantPrefsDTO;
@@ -61,11 +62,25 @@ public class AssistantServiceImpl implements com.adamasorho.mindapax_backend.ser
                                 + "{\n  \"reply\": string,\n  \"goals\": [ { \"title\": string, \"frequency\": \"DAILY\"|\"WEEKLY\"|\"MONTHLY\" } ]\n}\n"
                         : "");
 
-        Prompt prompt = new Prompt(List.of(new SystemMessage(system), new UserMessage(userMsg)));
-        org.springframework.ai.chat.model.ChatResponse ai = chatModel.call(prompt);
-        String text = (ai != null && ai.getResult() != null && ai.getResult().getOutput() != null)
-                ? ai.getResult().getOutput().getText()
-                : "";
+        String text = "";
+        try {
+            Prompt prompt = new Prompt(List.of(new SystemMessage(system), new UserMessage(userMsg)));
+            org.springframework.ai.chat.model.ChatResponse ai = chatModel.call(prompt);
+            text = (ai != null && ai.getResult() != null && ai.getResult().getOutput() != null)
+                    ? ai.getResult().getOutput().getText()
+                    : "";
+        } catch (Exception ex) {
+            // Graceful fallback when OpenAI quota or network errors occur
+            String hint = "";
+            String msg = ex.getMessage();
+            if (msg != null && msg.toLowerCase().contains("quota")) {
+                hint = " (OpenAI quota exceeded)";
+            }
+            return new AssistantChatResponse(
+                "Sorry, the AI assistant is temporarily unavailable" + hint + ". Please try again later.",
+                java.util.List.of()
+            );
+        }
 
         // Parse JSON from code fence if present; fall back to plain reply
         String json = extractJson(text);
@@ -106,6 +121,7 @@ public class AssistantServiceImpl implements com.adamasorho.mindapax_backend.ser
     }
 
     @Override
+    @Transactional
     public AssistantContext upsertContext(User user, AssistantContextDTO body) {
         AssistantContext ctx = contextRepo.findByUser(user).orElseGet(() -> {
             AssistantContext c = new AssistantContext();
@@ -130,6 +146,7 @@ public class AssistantServiceImpl implements com.adamasorho.mindapax_backend.ser
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AssistantContext getContext(User user) {
         return contextRepo.findByUser(user).orElse(null);
     }

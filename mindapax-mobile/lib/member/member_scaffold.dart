@@ -75,17 +75,10 @@ class _MemberScaffoldState extends State<MemberScaffold> {
       setState(() => _roles = rolesList);
     }
     setState(() => _loaded = true);
-    // After roles are known, optionally redirect to last saved route if different and permitted
-    final saved = await NavPrefs.getLastRoute();
-    final allowedRoutes = _visibleItems.map((i) => i.route).toSet();
-    if (saved != widget.currentRoute && allowedRoutes.contains(saved)) {
-      // Schedule redirect after first frame to avoid build issues
-      if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushReplacementNamed(context, saved);
-        });
-      }
-    }
+    // Do not auto-redirect here. RootGate performs the initial
+    // navigation to the last saved route after authentication.
+    // Auto-redirecting from every MemberScaffold causes pages like
+    // Packages to bounce back to the previously saved route.
   }
 
   void _onTap(int index) {

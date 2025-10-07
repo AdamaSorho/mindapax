@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'auth_service.dart';
+import 'authorized_client.dart';
+import 'token_storage.dart';
+import '../env.dart';
+import 'dart:io' show Platform;
+import '../member/onboarding_prefs.dart';
 import '../member/nav_prefs.dart';
 
 class LoginPage extends StatefulWidget {
@@ -19,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _error;
 
   final _auth = AuthService();
+  final _storage = TokenStorage();
 
   @override
   void dispose() {
@@ -41,12 +48,76 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       final target = await NavPrefs.getLastRoute();
       if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil(target, (r) => false);
+      final needsOnboarding = await _shouldRunOnboarding();
+      if (!mounted) return;
+      if (needsOnboarding) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/member/onboarding', (r) => false);
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil(target, (r) => false);
+      }
     } catch (e) {
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      final friendly = _friendlyLoginError(e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(friendly)),
+        );
+        setState(() => _error = friendly);
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  String _friendlyLoginError(Object e) {
+    final t = e.toString().toLowerCase().replaceFirst('exception: ', '');
+    // Common auth failures
+    if (t.contains('unauthorized') ||
+        t.contains('invalid') ||
+        t.contains('bad credentials') ||
+        t.contains('wrong') ||
+        t.contains('not found')) {
+      return 'Incorrect email or password. Please try again.';
+    }
+    // Network/connectivity/timeouts
+    if (t.contains('socket') ||
+        t.contains('failed host lookup') ||
+        t.contains('timed out') ||
+        t.contains('timeout') ||
+        t.contains('network') ||
+        t.contains('connection refused')) {
+      return 'Unable to reach the server. Check your internet connection and try again.';
+    }
+    // Generic
+    return 'We couldn\'t sign you in. Please try again in a moment.';
+  }
+
+  Future<bool> _shouldRunOnboarding() async {
+    // If already completed locally, skip
+    if (await OnboardingPrefs.isCompleted()) return false;
+    // Ask server if assistant context is completed
+    try {
+      final client = AuthorizedHttpClient(_storage);
+      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/context/completed');
+      final res = await client.get(uri);
+      if (res.statusCode >= 200 && res.statusCode < 300 && res.body.isNotEmpty) {
+        final m = jsonDecode(res.body) as Map<String, dynamic>;
+        final completed = (m['completed'] == true);
+        return !completed; // run onboarding if not completed
+      }
+    } catch (_) {}
+    // Default to true (show onboarding) if unsure
+    return true;
+  }
+
+  String _normalizeBaseUrl(String value) {
+    final cleaned = value.replaceAll(RegExp(r'/+$'), '');
+    try {
+      final u = Uri.parse(cleaned);
+      if (u.host == 'localhost' && Platform.isAndroid) {
+        return cleaned.replaceFirst('localhost', '10.0.2.2');
+      }
+    } catch (_) {}
+    return cleaned;
   }
 
   @override

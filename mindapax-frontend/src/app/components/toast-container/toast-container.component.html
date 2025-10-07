@@ -1,0 +1,15 @@
+<div class="fixed top-4 right-4 z-50 space-y-2">
+  <div *ngFor="let t of toasts" class="border rounded shadow px-4 py-3 max-w-sm" [ngClass]="css(t)">
+    <div class="flex items-start gap-2">
+      <div class="flex-1">
+        <div>{{t.message}}</div>
+        <div *ngIf="t.actions?.length" class="mt-2 flex gap-2 flex-wrap">
+          <button *ngFor="let a of t.actions" class="px-2.5 py-1 text-sm rounded border bg-white/20 hover:bg-white/30"
+                  (click)="run(a, t.id)">{{a.label}}</button>
+        </div>
+      </div>
+      <button class="opacity-70 hover:opacity-100" (click)="ts.dismiss(t.id)">✕</button>
+    </div>
+  </div>
+  
+</div>

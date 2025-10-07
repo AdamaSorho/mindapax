@@ -14,9 +14,11 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
-    # properties:
-    #   hibernate:
-    #     dialect: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   ai:
     openai:
@@ -56,3 +58,12 @@ zoom:
     account-id: ${ZOOM_API_ACCOUNT_ID}
     client-id: ${ZOOM_API_CLIENT_ID}
     client-secret: ${ZOOM_API_CLIENT_SECRET}
+
+# Payments – CinetPay Phase 1
+payments:
+  cinetpay:
+    apiKey: ${CINETPAY_API_KEY:}
+    siteId: ${CINETPAY_SITE_ID:}
+    baseUrl: ${CINETPAY_BASE_URL:https://api-checkout.cinetpay.com}
+    notifyUrl: ${CINETPAY_NOTIFY_URL:https://example.com/api/v1/payments/webhook/cinetpay}
+    defaultReturnUrl: ${CINETPAY_RETURN_URL:https://example.com/payments/return}

@@ -14,6 +14,9 @@ import { ConnectionsComponent } from './connections/connections.component';
 import { ScheduleSessionComponent } from './schedule-session/schedule-session.component'; // Import new component
 import { ZoomMeetingComponent } from './zoom-meeting/zoom-meeting.component';
 import { AiAssistantComponent } from './ai-assistant/ai-assistant.component';
+import { AdminPlansComponent } from './admin-plans/admin-plans.component';
+import { PackagesComponent } from './packages/packages.component';
+import { MySubscriptionsComponent } from './my-subscriptions/my-subscriptions.component';
 
 export const featuresRoutes: Routes = [
   {
@@ -50,6 +53,9 @@ export const featuresRoutes: Routes = [
         // will be passed as query parameters during navigation.
         // authGuard is implicitly applied due to parent.
       },
+      { path: 'admin/plans', component: AdminPlansComponent, data: { roles: ['ADMIN'] } },
+      { path: 'packages', component: PackagesComponent },
+      { path: 'subscriptions', component: MySubscriptionsComponent },
     ],
   },
 ];

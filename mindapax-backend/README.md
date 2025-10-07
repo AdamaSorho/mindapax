@@ -92,3 +92,55 @@ zoom:
 ---
 
 For further details on specific APIs or modules, please refer to the source code and Javadoc comments.
+
+## Payments (Phase 1 – CinetPay)
+
+This backend integrates with CinetPay to accept payments in Côte d’Ivoire and Francophone West Africa, with support for Mobile Money (Orange/MTN/Moov/Wave) and cards via a hosted checkout page.
+
+Endpoints (authenticated unless noted):
+- `POST /api/v1/payments/checkout` → Creates a CinetPay checkout
+  - Body: `{ amount: number, currency?: 'XOF'|'USD', paymentMethod?: 'MOBILE_MONEY'|'CARD', description?: string, returnUrl?: string }`
+  - Response: `{ paymentId: number, checkoutUrl: string }`
+- `POST /api/v1/payments/webhook/cinetpay` (public) → Webhook receiver; the backend verifies with CinetPay and updates payment status.
+- `GET /api/v1/payments/user/{userId}` → List user payments (existing endpoint).
+
+Configuration (set in `.env` or environment):
+- `CINETPAY_API_KEY`
+- `CINETPAY_SITE_ID`
+- `CINETPAY_BASE_URL` (default `https://api-checkout.cinetpay.com`)
+- `CINETPAY_NOTIFY_URL` (e.g., `https://yourdomain.com/api/v1/payments/webhook/cinetpay`)
+- `CINETPAY_RETURN_URL` (e.g., `https://yourdomain.com/payments/return`)
+
+Notes:
+- We use CinetPay’s v2 API: `/v2/payment` to create checkout and `/v2/payment/check` to verify transactions.
+- Webhook handler always verifies with CinetPay before marking a payment as `COMPLETED` or `FAILED`.
+- The `Payment` entity now includes additional fields: `provider`, `currency`, `externalRef`, `checkoutUrl`, `description`, `metadataJson`.
+
+## Packages & Subscriptions (Beta)
+
+Plans let users subscribe to recurring packages (e.g., monthly session bundles). Initial implementation activates a subscription upon successful one‑time payment via CinetPay; auto‑renew can be added later with a scheduler or card tokenization.
+
+Entities:
+- `Plan`: name, price, currency, billingCycle, description, sessionAllowance, active
+- `Subscription`: user, plan, status (PENDING|ACTIVE|CANCELED|EXPIRED), currentPeriodStart/End, remainingSessions, lastPayment
+
+Endpoints:
+- `GET /api/v1/packages` → list active plans (auth currently required)
+- `POST /api/v1/packages/{planId}/subscribe` → creates a checkout for the plan and a pending subscription; returns `{ paymentId, checkoutUrl }`
+- `GET /api/v1/packages/me` → current user’s subscriptions
+
+Activation flow:
+1) Client calls subscribe → backend creates CinetPay checkout and a pending `Subscription` linked to the new `Payment`.
+2) CinetPay webhook received → backend verifies and marks `Payment` COMPLETED → subscription is activated and the period is set to now → now+1 month.
+
+Notes:
+- Seed `Plan` records via SQL or admin tooling.
+- Extend later for auto‑renew (e.g., with Flutterwave card tokens) and session credit deduction.
+
+Admin
+- Manage plans: `GET/POST/PUT/DELETE /api/v1/admin/plans` (ADMIN role).
+- On first run, three default plans are seeded (Basic/Standard/Premium) if no plans exist.
+
+Credits & Booking Rules
+- Booking enforcement: Professionals scheduling a session for a client requires the client to have an ACTIVE subscription with remainingSessions > 0 in the current period; otherwise returns HTTP 402 (payment required).
+- Credit deduction: When a session moves to COMPLETED status, 1 session credit is deducted from the client’s active subscription.
