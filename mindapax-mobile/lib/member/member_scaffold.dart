@@ -34,6 +34,7 @@ class _MemberScaffoldState extends State<MemberScaffold> {
     _NavItem('Find', '/member/find-professional', Icons.search, ['ROLE_USER']),
     _NavItem('Sessions', '/member/sessions', Icons.calendar_today_outlined, ['ROLE_USER', 'ROLE_PROFESSIONAL']),
     _NavItem('Messages', '/member/messages', Icons.chat_bubble_outline, ['ROLE_USER', 'ROLE_PROFESSIONAL']),
+    _NavItem('Connections', '/member/connections', Icons.person_add_alt_1_outlined, ['ROLE_PROFESSIONAL']),
     _NavItem('Settings', '/member/settings', Icons.settings_outlined, ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
   ];
 

@@ -1,0 +1,54 @@
+---
+# System
+app_user: mindapax
+app_group: "{{ app_user }}"
+timezone: Africa/Abidjan
+
+# Network / firewall
+exposed_ports:
+  - 22
+  - 80
+  - 443
+
+# PostgreSQL
+postgres_packages:
+  - postgresql
+  - postgresql-contrib
+  - python3-psycopg2
+db_name: mindapax_db
+db_user: mindapax_svc
+db_password: "{{ vault_db_password }}"
+
+spring_profile: prod
+
+# Docker deployment (default)
+docker_project_dir: /opt/mindapax/docker
+docker_env_file: "{{ docker_project_dir }}/mindapax-backend.env"
+docker_compose_file: "{{ docker_project_dir }}/docker-compose.backend.yml"
+docker_backend_context: "{{ docker_project_dir }}/mindapax-backend"
+docker_repo_codename: noble
+
+# Secrets / API keys (fill via Ansible vault or environment)
+jwt_secret: "{{ vault_jwt_secret }}"
+aws_access_key_id: "{{ vault_aws_access_key_id | default('', true) }}"
+aws_secret_access_key: "{{ vault_aws_secret_access_key | default('', true) }}"
+aws_region: us-east-1
+aws_s3_bucket: "{{ vault_aws_s3_bucket | default('', true) }}"
+openai_api_key: "{{ vault_openai_api_key | default('', true) }}"
+openai_org_id: "{{ vault_openai_org_id | default('', true) }}"
+
+# Zoom integration
+zoom_sdk_key: "{{ vault_zoom_sdk_key | default('', true) }}"
+zoom_sdk_secret: "{{ vault_zoom_sdk_secret | default('', true) }}"
+zoom_api_account_id: "{{ vault_zoom_api_account_id | default('', true) }}"
+zoom_api_client_id: "{{ vault_zoom_api_client_id | default('', true) }}"
+zoom_api_client_secret: "{{ vault_zoom_api_client_secret | default('', true) }}"
+
+# Optional payments (override as needed)
+cinetpay_api_key: "{{ vault_cinetpay_api_key | default('', true) }}"
+cinetpay_site_id: "{{ vault_cinetpay_site_id | default('', true) }}"
+cinetpay_base_url: "{{ vault_cinetpay_base_url | default('https://api-checkout.cinetpay.com', true) }}"
+cinetpay_notify_url: "{{ vault_cinetpay_notify_url | default('', true) }}"
+cinetpay_return_url: "{{ vault_cinetpay_return_url | default('', true) }}"
+
+extra_env: {}

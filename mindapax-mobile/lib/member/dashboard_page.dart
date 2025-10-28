@@ -1,13 +1,20 @@
-import 'package:flutter/material.dart';
-import '../auth/token_storage.dart';
-import '../auth/jwt.dart';
-import '../auth/auth_service.dart';
-import '../user/user_api.dart';
-import '../auth/authorized_client.dart';
-import '../subscriptions/subscriptions_api.dart';
-import '../env.dart';
 import 'dart:convert';
 import 'dart:io' show Platform;
+
+import 'package:flutter/material.dart';
+
+import '../auth/auth_service.dart';
+import '../auth/authorized_client.dart';
+import '../auth/jwt.dart';
+import '../auth/token_storage.dart';
+import '../connections/connections_api.dart';
+import '../connections/models.dart';
+import '../env.dart';
+import '../professional/professional_api.dart';
+import '../sessions/models.dart';
+import '../sessions/sessions_api.dart';
+import '../subscriptions/subscriptions_api.dart';
+import '../user/user_api.dart';
 import 'member_scaffold.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -21,11 +28,25 @@ class _DashboardPageState extends State<DashboardPage> {
   final _storage = TokenStorage();
   final _auth = AuthService();
   final _userApi = UserApi();
+  final _proApi = ProfessionalApi();
+  final _connectionsApi = ConnectionsApi();
+  final _sessionsApi = SessionsApi();
+
   String? _userEmail;
   Map<String, dynamic>? _user;
   bool _loading = true;
   Map<String, dynamic>? _progress;
   bool _hasActiveSubscription = false;
+  bool _isProfessional = false;
+
+  int? _professionalId;
+  int _pendingConnections = 0;
+  int _activeConnections = 0;
+  int _escalatedConnections = 0;
+  List<Session> _upcomingSessions = const [];
+  String? _professionalError;
+  final Map<int, String> _clientNames = {};
+  final Set<int> _clientNameRequests = <int>{};
 
   @override
   void initState() {
@@ -36,16 +57,107 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _load() async {
     final token = await _storage.getAccessToken();
     final payload = token != null ? decodeJwtPayload(token) : null;
-    final id = payload?['id'];
-    _userEmail = payload?['sub']?.toString();
-    try {
-      if (id != null) {
-        _user = await _userApi.getUserById((id as num).toInt());
+    final userId = (payload?['id'] as num?)?.toInt();
+    final email = payload?['sub']?.toString();
+    final roles = _extractRoles(payload?['roles']);
+    final isProfessional = roles.contains('ROLE_PROFESSIONAL');
+
+    Map<String, dynamic>? user;
+    if (userId != null) {
+      try {
+        user = await _userApi.getUserById(userId);
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _userEmail = email;
+      _user = user;
+      _isProfessional = isProfessional;
+      if (isProfessional) {
+        _progress = null;
+        _hasActiveSubscription = false;
+        _professionalError = null;
+        _professionalId = null;
+        _pendingConnections = 0;
+        _activeConnections = 0;
+        _escalatedConnections = 0;
+        _upcomingSessions = const [];
+        _clientNames.clear();
+        _clientNameRequests.clear();
       }
-    } catch (_) {}
-    await _loadProgress();
-    await _loadSubscriptionStatus();
-    if (mounted) setState(() => _loading = false);
+    });
+
+    if (isProfessional) {
+      await _loadProfessionalSnapshot();
+    } else {
+      await _loadProgress();
+      await _loadSubscriptionStatus();
+    }
+
+    if (!mounted) return;
+    setState(() => _loading = false);
+  }
+
+  List<String> _extractRoles(dynamic raw) {
+    if (raw is List) {
+      return raw
+          .map((e) => e.toString())
+          .where((e) => e.isNotEmpty)
+          .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
+          .toList(growable: false);
+    }
+    if (raw is String) {
+      return raw
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
+          .toList(growable: false);
+    }
+    return const [];
+  }
+
+  Future<void> _loadProfessionalSnapshot() async {
+    try {
+      final me = await _proApi.getMe();
+      final professionalId = me.id;
+      final connections =
+          await _connectionsApi.getConnectionsForProfessional(professionalId);
+      final pending =
+          connections.where((c) => c.status == ConnectionStatus.PENDING).length;
+      final active = connections
+          .where((c) => c.status == ConnectionStatus.ACCEPTED)
+          .length;
+      final escalated = connections
+          .where((c) => c.status == ConnectionStatus.ESCALATED)
+          .length;
+
+      final sessionsPage = await _sessionsApi.getSessions(SessionQueryParams(
+        userId: professionalId,
+        filter: SessionTimeFilter.UPCOMING,
+        date: DateTime.now(),
+        status: SessionStatus.SCHEDULED,
+        page: 0,
+        size: 5,
+        sort: 'startTime,asc',
+      ));
+
+      if (!mounted) return;
+      setState(() {
+        _professionalId = professionalId;
+        _pendingConnections = pending;
+        _activeConnections = active;
+        _escalatedConnections = escalated;
+        _upcomingSessions = sessionsPage.content;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _professionalError =
+            'Unable to load professional overview: ${e.toString()}';
+      });
+    }
   }
 
   Future<void> _loadProgress() async {
@@ -57,9 +169,6 @@ class _DashboardPageState extends State<DashboardPage> {
         setState(() {
           _progress = jsonDecode(res.body) as Map<String, dynamic>;
         });
-      } else {
-        // Surface minimal feedback in dev but keep UI graceful
-        // ignore
       }
     } catch (_) {}
   }
@@ -87,10 +196,41 @@ class _DashboardPageState extends State<DashboardPage> {
       bool active = false;
       for (final s in list) {
         final st = (s['status']?.toString() ?? '').toUpperCase();
-        if (st == 'ACTIVE') { active = true; break; }
+        if (st == 'ACTIVE') {
+          active = true;
+          break;
+        }
       }
       if (mounted) setState(() => _hasActiveSubscription = active);
     } catch (_) {}
+  }
+
+  void _prefetchClientName(int userId) {
+    if (_clientNameRequests.contains(userId)) return;
+    _clientNameRequests.add(userId);
+    _userApi.getUserById(userId).then((value) {
+      final first = (value['firstName']?.toString() ?? '').trim();
+      final last = (value['lastName']?.toString() ?? '').trim();
+      final name = ('$first $last').trim();
+      if (!mounted) return;
+      setState(() {
+        _clientNames[userId] = name.isEmpty ? 'Client' : name;
+      });
+    }).catchError((_) {
+      if (!mounted) return;
+      setState(() {
+        _clientNames[userId] = 'Client';
+      });
+    }).whenComplete(() {
+      _clientNameRequests.remove(userId);
+    });
+  }
+
+  String _clientNameFor(int userId) {
+    final cached = _clientNames[userId];
+    if (cached != null && cached.isNotEmpty) return cached;
+    _prefetchClientName(userId);
+    return cached == null || cached.isEmpty ? 'Client' : cached;
   }
 
   Future<void> _logout() async {
@@ -106,63 +246,356 @@ class _DashboardPageState extends State<DashboardPage> {
       currentRoute: '/member/dashboard',
       child: _loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
+          : (_isProfessional ? _professionalBody() : _memberBody()),
+    );
+  }
+
+  Widget _memberBody() {
+    final children = <Widget>[
+      _welcomeCard(professional: false),
+      const SizedBox(height: 12),
+      if (!_hasActiveSubscription) ...[
+        _subscriptionReminderCard(),
+        const SizedBox(height: 12),
+      ],
+      _progressCard(),
+      const SizedBox(height: 24),
+      FilledButton.icon(
+        onPressed: _logout,
+        icon: const Icon(Icons.logout),
+        label: const Text('Logout'),
+      ),
+    ];
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: children,
+    );
+  }
+
+  Widget _professionalBody() {
+    final children = <Widget>[
+      _welcomeCard(professional: true),
+      const SizedBox(height: 12),
+      if (_professionalError != null) ...[
+        _errorBanner(_professionalError!),
+        const SizedBox(height: 12),
+      ],
+      _professionalStatsCard(),
+      const SizedBox(height: 12),
+      _upcomingSessionsCard(),
+      const SizedBox(height: 12),
+      _professionalActionsCard(),
+      const SizedBox(height: 24),
+      FilledButton.icon(
+        onPressed: _logout,
+        icon: const Icon(Icons.logout),
+        label: const Text('Logout'),
+      ),
+    ];
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: children,
+    );
+  }
+
+  Widget _welcomeCard({required bool professional}) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final first = (_user?['firstName']?.toString() ?? '').trim();
+    final last = (_user?['lastName']?.toString() ?? '').trim();
+    final name = ('$first $last').trim();
+    final greeting = name.isNotEmpty ? 'Hello, $name' : 'Welcome to Mindapax!';
+    final subtitle = _userEmail != null ? 'Signed in as $_userEmail' : null;
+    final message = professional
+        ? 'Stay on top of your practice with quick access to sessions, connections, and client messages.'
+        : 'Track your goals, sessions, and payments at a glance.';
+
+    return Card(
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              greeting,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _subscriptionReminderCard() {
+    return Card(
+      elevation: 0,
+      color: Colors.amber.shade50,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const Icon(Icons.subscriptions_outlined, color: Colors.amber),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'No active package. Subscribe to a plan to get session bundles and perks.',
+              ),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/member/packages'),
+              child: const Text('View packages'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _professionalStatsCard() {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final stats = <({String label, int value, IconData icon})>[
+      (
+        label: 'Pending requests',
+        value: _pendingConnections,
+        icon: Icons.inbox_outlined
+      ),
+      (
+        label: 'Active clients',
+        value: _activeConnections,
+        icon: Icons.groups_outlined
+      ),
+      (
+        label: 'Upcoming sessions',
+        value: _upcomingSessions.length,
+        icon: Icons.calendar_month_outlined
+      ),
+      (
+        label: 'Escalated',
+        value: _escalatedConnections,
+        icon: Icons.priority_high_outlined
+      ),
+    ];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Practice overview',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
               children: [
-                Card(
-                  elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
+                for (final stat in stats)
+                  Container(
+                    constraints: const BoxConstraints(minWidth: 150),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Welcome to Mindapax!',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 8),
-                        if (_userEmail != null)
-                          Text('Signed in as $_userEmail'),
-                        if (_user != null)
-                          Text(
-                              'Hello, ${_user!['firstName'] ?? ''} ${_user!['lastName'] ?? ''}'),
+                        Icon(stat.icon, color: scheme.primary),
+                        const SizedBox(height: 12),
+                        Text(
+                          stat.value.toString(),
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          stat.label,
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: scheme.onSurfaceVariant),
+                        ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                if (!_hasActiveSubscription)
-                  Card(
-                    elevation: 0,
-                    color: Colors.amber.shade50,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.subscriptions_outlined, color: Colors.amber),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              'No active package. Subscribe to a plan to get session bundles and perks.',
-                            ),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.of(context).pushNamed('/member/packages'),
-                            child: const Text('View packages'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 12),
-                _progressCard(),
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: _logout,
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Logout'),
-                )
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _upcomingSessionsCard() {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    if (_upcomingSessions.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Upcoming sessions',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Text(
+                'You have no upcoming sessions scheduled.',
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () =>
+                    Navigator.of(context).pushNamed('/member/schedule-session'),
+                icon: const Icon(Icons.add_circle_outline),
+                label: const Text('Schedule a session'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final preview = _upcomingSessions.take(3).toList(growable: false);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Upcoming sessions',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            for (var i = 0; i < preview.length; i++) ...[
+              _sessionPreviewTile(preview[i]),
+              if (i != preview.length - 1)
+                Divider(color: scheme.outlineVariant, height: 16),
+            ],
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed('/member/sessions'),
+              icon: const Icon(Icons.calendar_today_outlined),
+              label: const Text('View all sessions'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sessionPreviewTile(Session session) {
+    final name = _clientNameFor(session.userId);
+    final initials =
+        name.isNotEmpty ? name.characters.first.toUpperCase() : 'C';
+    final subtitle =
+        '${_formatSessionDateTime(session.startTime)} · ${_formatSessionMode(session.mode)}';
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: CircleAvatar(child: Text(initials)),
+      title: Text(name),
+      subtitle: Text(subtitle),
+      onTap: () => Navigator.of(context).pushNamed('/member/sessions'),
+    );
+  }
+
+  Widget _professionalActionsCard() {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Quick actions',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed('/member/sessions'),
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  label: const Text('Manage sessions'),
+                ),
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(context)
+                      .pushNamed('/member/schedule-session'),
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('Schedule session'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: scheme.primaryContainer,
+                    foregroundColor: scheme.onPrimaryContainer,
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed('/member/connections'),
+                  icon: const Icon(Icons.people_outline),
+                  label: const Text('Connections'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed('/member/messages'),
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  label: const Text('Messages'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: scheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _errorBanner(String message) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      color: scheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: scheme.onErrorContainer),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(color: scheme.onErrorContainer, height: 1.3),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -186,12 +619,11 @@ class _DashboardPageState extends State<DashboardPage> {
     final rawNext = (p['nextSessionAt']?.toString() ?? '');
     final nextAt = rawNext.isEmpty ? '—' : _formatLocal(rawNext);
 
-    List<Widget> topGoals = [];
     final list = (p['topActiveGoals'] as List<dynamic>? ?? const []);
-    for (final g in list) {
-      final m = g as Map<String, dynamic>;
-      topGoals.add(Text('- [${m['frequency']}] ${m['title']}'));
-    }
+    final topGoals = list
+        .map((entry) => entry as Map<String, dynamic>)
+        .map((m) => Text('- [${m['frequency']}] ${m['title']}'))
+        .toList(growable: false);
 
     return Card(
       child: Padding(
@@ -242,11 +674,11 @@ class _DashboardPageState extends State<DashboardPage> {
                   label: const Text('View sessions'),
                 ),
                 TextButton.icon(
-                  onPressed: () => Navigator.of(context).pushNamed('/member/pay'),
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed('/member/pay'),
                   icon: const Icon(Icons.payment_outlined),
                   label: const Text('Make a payment'),
                 ),
-                // Payment history moved to side menu
               ],
             )
           ],
@@ -270,7 +702,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String _formatLocal(String iso) {
     try {
       final dt = DateTime.parse(iso).toLocal();
-      final months = [
+      const months = [
         'Jan',
         'Feb',
         'Mar',
@@ -293,6 +725,43 @@ class _DashboardPageState extends State<DashboardPage> {
       return '$m $day, $year · $h12:$mm $ampm';
     } catch (_) {
       return iso;
+    }
+  }
+
+  String _formatSessionDateTime(DateTime dateTime) {
+    final local = dateTime.toLocal();
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    final dow = weekdays[local.weekday - 1];
+    final month = months[local.month - 1];
+    final day = local.day.toString();
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final suffix = local.hour >= 12 ? 'PM' : 'AM';
+    return '$dow, $month $day · $hour:$minute $suffix';
+  }
+
+  String _formatSessionMode(SessionMode mode) {
+    switch (mode) {
+      case SessionMode.VIDEO:
+        return 'Video';
+      case SessionMode.CHAT:
+        return 'Chat';
+      case SessionMode.MESSAGE:
+        return 'Message';
     }
   }
 }

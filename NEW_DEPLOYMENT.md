@@ -16,7 +16,7 @@ To deploy the application, you need to have the following tools installed:
 
 *   [AWS CLI](https://aws.amazon.com/cli/)
 *   [Terraform](https://www.terraform.io/downloads.html)
-*   [Java 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
+*   [Java 21](https://adoptium.net/temurin/releases/)
 *   [Maven](https://maven.apache.org/download.cgi)
 *   [Node.js and npm](https://nodejs.org/en/download/)
 

@@ -1,0 +1,54 @@
+---
+- name: Deploy Mindapax backend via Docker
+  hosts: backend
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - group_vars/backend.secrets.yml
+  tasks:
+    - name: Ensure docker project directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - "{{ docker_project_dir }}"
+        - "{{ docker_backend_context }}"
+
+    - name: Render backend environment file for containers
+      ansible.builtin.template:
+        src: templates/mindapax-backend-docker.env.j2
+        dest: "{{ docker_env_file }}"
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: Render docker-compose definition
+      ansible.builtin.template:
+        src: templates/docker-compose.backend.yml.j2
+        dest: "{{ docker_compose_file }}"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Sync backend source for docker build context
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../..//mindapax-backend/"
+        dest: "{{ docker_backend_context }}/"
+        delete: true
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=target"
+          - "--exclude=docs"
+
+    - name: Build and run backend stack
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_project_dir }}"
+        files:
+          - "{{ docker_compose_file }}"
+        build: always
+        docker_cli: /usr/bin/docker
+        state: present

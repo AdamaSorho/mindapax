@@ -1,0 +1,120 @@
+---
+- name: Provision Mindapax backend host for Docker deployment
+  hosts: backend
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - group_vars/backend.secrets.yml
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Set timezone
+      ansible.builtin.timezone:
+        name: "{{ timezone }}"
+
+  tasks:
+    - name: Install base packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - ufw
+          - fail2ban
+        state: present
+
+    - name: Remove existing Docker GPG key (if any)
+      ansible.builtin.file:
+        path: /usr/share/keyrings/docker-archive-keyring.gpg
+        state: absent
+
+    - name: Install Docker GPG key
+      ansible.builtin.shell: |
+        set -e
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg |
+          gpg --dearmor |
+          tee /usr/share/keyrings/docker-archive-keyring.gpg >/dev/null
+        chmod 0644 /usr/share/keyrings/docker-archive-keyring.gpg
+      args:
+        executable: /bin/bash
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ docker_repo_codename }} stable"
+        filename: docker
+        state: present
+
+    - name: Install Docker Engine
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Ensure Docker service is running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Ensure application group exists
+      ansible.builtin.group:
+        name: "{{ app_group }}"
+        system: true
+
+    - name: Ensure application user exists
+      ansible.builtin.user:
+        name: "{{ app_user }}"
+        group: "{{ app_group }}"
+        system: true
+        create_home: false
+        shell: /usr/sbin/nologin
+
+    - name: Add app user to docker group
+      ansible.builtin.user:
+        name: "{{ app_user }}"
+        groups: docker
+        append: true
+
+    - name: Create docker project directory
+      ansible.builtin.file:
+        path: "{{ docker_project_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Configure UFW allowed ports
+      community.general.ufw:
+        rule: allow
+        port: "{{ item }}"
+      loop: "{{ exposed_ports }}"
+
+    - name: Allow HTTP traffic for backend container
+      community.general.ufw:
+        rule: allow
+        port: 8080
+        proto: tcp
+
+    - name: Set UFW default incoming policy
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Set UFW default outgoing policy
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Ensure UFW is enabled
+      community.general.ufw:
+        state: enabled

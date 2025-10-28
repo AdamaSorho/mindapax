@@ -60,12 +60,13 @@ export class PackagesComponent {
       next: (p) => {
         this.verifiedStatus = (p.status || '').toString();
         this.verifying = false;
-        if (this.verifiedStatus.toUpperCase() === 'COMPLETED') {
+        const statusUpper = (this.verifiedStatus || '').toUpperCase();
+        if (statusUpper === 'COMPLETED') {
           this.showModal = false;
           // Navigate to subscriptions and show toast there
           this.toast.success('Subscription activated successfully.');
           this.router.navigate(['/member/subscriptions']);
-        } else if (this.verifiedStatus.toUpperCase() === 'FAILED') {
+        } else if (statusUpper === 'FAILED') {
           this.toast.error('Payment failed', 7000, [
             ...(this.checkoutUrl ? [{ label: 'Open checkout', externalUrl: this.checkoutUrl }] : []),
           ]);

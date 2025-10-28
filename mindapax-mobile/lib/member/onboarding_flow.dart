@@ -68,21 +68,28 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
     try {
       final prefs = jsonEncode(_prefsMap());
       final client = AuthorizedHttpClient(_storage);
-      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/context');
-      final body = jsonEncode({'preferencesJson': prefs, 'notes': _notesCtrl.text.trim()});
-      final res = await client.post(uri, headers: {'Content-Type': 'application/json'}, body: body);
+      final uri =
+          Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/context');
+      final body = jsonEncode(
+          {'preferencesJson': prefs, 'notes': _notesCtrl.text.trim()});
+      final res = await client.post(uri,
+          headers: {'Content-Type': 'application/json'}, body: body);
       if (res.statusCode >= 200 && res.statusCode < 300) {
         await OnboardingPrefs.setCompleted(true);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thanks! Your preferences are saved.')));
-        Navigator.of(context).pushNamedAndRemoveUntil('/member/dashboard', (r) => false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Thanks! Your preferences are saved.')));
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/member/dashboard', (r) => false);
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed (${res.statusCode})')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Save failed (${res.statusCode})')));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -90,7 +97,8 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
 
   void _next() {
     if (_index < 3) {
-      _page.nextPage(duration: const Duration(milliseconds: 250), curve: Curves.easeInOut);
+      _page.nextPage(
+          duration: const Duration(milliseconds: 250), curve: Curves.easeInOut);
     } else {
       _saveAndFinish();
     }
@@ -98,7 +106,8 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
 
   void _back() {
     if (_index > 0) {
-      _page.previousPage(duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+      _page.previousPage(
+          duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
     }
   }
 
@@ -117,7 +126,8 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
                 : () async {
                     await OnboardingPrefs.setCompleted(true);
                     if (!mounted) return;
-                    Navigator.of(context).pushNamedAndRemoveUntil('/member/dashboard', (r) => false);
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                        '/member/dashboard', (r) => false);
                   },
             child: const Text('Skip'),
           ),
@@ -169,7 +179,10 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
                   FilledButton.icon(
                     onPressed: _saving ? null : _next,
                     icon: _saving
-                        ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : Icon(_index < 3 ? Icons.arrow_forward : Icons.check),
                     label: Text(_index < 3 ? 'Continue' : 'Finish'),
                   )
@@ -227,15 +240,18 @@ class _GoalFocusPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text('Primary goal', style: TextStyle(fontWeight: FontWeight.w600)),
+        const Text('Primary goal',
+            style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         TextField(
           controller: primaryGoalCtrl,
           decoration: const InputDecoration(
-              hintText: 'e.g., Reduce stress and sleep better', border: OutlineInputBorder()),
+              hintText: 'e.g., Reduce stress and sleep better',
+              border: OutlineInputBorder()),
         ),
         const SizedBox(height: 16),
-        const Text('Focus areas', style: TextStyle(fontWeight: FontWeight.w600)),
+        const Text('Focus areas',
+            style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(
           spacing: 8,
@@ -310,7 +326,8 @@ class _HabitsTimesPage extends StatelessWidget {
           onChanged: (v) => onExerciseChanged(v.round()),
         ),
         const SizedBox(height: 16),
-        const Text('Preferred times', style: TextStyle(fontWeight: FontWeight.w600)),
+        const Text('Preferred times',
+            style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         Wrap(
           spacing: 8,
@@ -356,8 +373,9 @@ class _ToneRemindersPage extends StatelessWidget {
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: reminders,
-                decoration: const InputDecoration(labelText: 'Reminders cadence'),
+                initialValue: reminders,
+                decoration:
+                    const InputDecoration(labelText: 'Reminders cadence'),
                 items: const [
                   DropdownMenuItem(value: 'DAILY', child: Text('Daily')),
                   DropdownMenuItem(value: 'WEEKLY', child: Text('Weekly')),
@@ -369,10 +387,11 @@ class _ToneRemindersPage extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: tone,
+                initialValue: tone,
                 decoration: const InputDecoration(labelText: 'Assistant style'),
                 items: const [
-                  DropdownMenuItem(value: 'SUPPORTIVE', child: Text('Supportive')),
+                  DropdownMenuItem(
+                      value: 'SUPPORTIVE', child: Text('Supportive')),
                   DropdownMenuItem(value: 'COACHING', child: Text('Coaching')),
                   DropdownMenuItem(value: 'CONCISE', child: Text('Concise')),
                 ],
@@ -397,4 +416,3 @@ class _ToneRemindersPage extends StatelessWidget {
     );
   }
 }
-

@@ -4,11 +4,12 @@ import { Invoice } from '../../models/invoice.model';
 import { PaymentMethod } from '../../models/payment-method.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CurrencyFormatPipe } from '../../pipes/currency-format.pipe';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-billing',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, CurrencyFormatPipe],
   templateUrl: './billing.component.html',
   styleUrl: './billing.component.css',
 })
