@@ -173,7 +173,7 @@ class _ScheduleSessionPageState extends State<ScheduleSessionPage> {
       );
       Navigator.pop(context, true);
     } catch (e) {
-      setState(() => _error = 'Failed to schedule: $e');
+      setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }

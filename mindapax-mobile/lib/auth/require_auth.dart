@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'token_storage.dart';
+import 'auth_service.dart';
 
 class RequireAuth extends StatefulWidget {
   final Widget child;
@@ -10,7 +10,7 @@ class RequireAuth extends StatefulWidget {
 }
 
 class _RequireAuthState extends State<RequireAuth> {
-  final _storage = TokenStorage();
+  final _auth = AuthService();
   bool? _allowed;
 
   @override
@@ -20,7 +20,7 @@ class _RequireAuthState extends State<RequireAuth> {
   }
 
   Future<void> _check() async {
-    final ok = await _storage.hasValidAccessToken();
+    final ok = await _auth.ensureAuthenticated();
     if (!mounted) return;
     if (!ok) {
       // redirect to login
@@ -46,4 +46,3 @@ class _RequireAuthState extends State<RequireAuth> {
     return widget.child;
   }
 }
-

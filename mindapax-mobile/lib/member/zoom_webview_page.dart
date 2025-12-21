@@ -1,5 +1,4 @@
 import 'dart:io' show Platform;
-import 'dart:convert' show utf8;
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -36,11 +35,14 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
   late final Uri _meetingUri;
   bool _preflightDone = false;
   bool _joining = false;
+  late final String _preflightBaseUrl;
 
   @override
   void initState() {
     super.initState();
-    final base = _normalizeBaseUrl(webAppBaseUrl);
+    final normalized = _normalizeBaseUrl(webAppBaseUrl);
+    final base = _ensureHttpsIfNotLocal(normalized);
+    _preflightBaseUrl = base.startsWith('http') ? base : 'https://mindapax.com';
     final params = {
       if (widget.sdkKey != null && widget.sdkKey!.isNotEmpty)
         'sdkKey': widget.sdkKey!,
@@ -87,11 +89,11 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
             final ok = await _requestNativePermissions();
             if (ok && mounted) {
               // Reload preflight; it will auto-continue if OK
-              await _controller.loadRequest(_preflightDataUri());
+              await _loadPreflight();
             }
           }
         })
-        ..loadRequest(_preflightDataUri());
+        ..loadHtmlString(_preflightHtml(), baseUrl: _preflightBaseUrl);
       final androidCtrl = controller.platform as AndroidWebViewController;
       AndroidWebViewController.enableDebugging(true);
       androidCtrl.setMediaPlaybackRequiresUserGesture(false);
@@ -155,11 +157,11 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
           } else if (message.message == 'requestPermissions') {
             final ok = await _requestNativePermissions();
             if (ok && mounted) {
-              await _controller.loadRequest(_preflightDataUri());
+              await _loadPreflight();
             }
           }
         })
-        ..loadRequest(_preflightDataUri());
+        ..loadHtmlString(_preflightHtml(), baseUrl: _preflightBaseUrl);
     } else {
       controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -187,11 +189,11 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
           } else if (message.message == 'requestPermissions') {
             final ok = await _requestNativePermissions();
             if (ok && mounted) {
-              await _controller.loadRequest(_preflightDataUri());
+              await _loadPreflight();
             }
           }
         })
-        ..loadRequest(_preflightDataUri());
+        ..loadHtmlString(_preflightHtml(), baseUrl: _preflightBaseUrl);
     }
 
     _controller = controller;
@@ -199,20 +201,28 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
 
   Future<bool> _requestNativePermissions() async {
     try {
-      final statuses = await [Permission.camera, Permission.microphone].request();
+      final statuses =
+          await [Permission.camera, Permission.microphone].request();
       final cam = statuses[Permission.camera];
       final mic = statuses[Permission.microphone];
       final granted = (cam?.isGranted ?? false) && (mic?.isGranted ?? false);
-      if (!granted && ((cam?.isPermanentlyDenied ?? false) || (mic?.isPermanentlyDenied ?? false))) {
+      if (!granted &&
+          ((cam?.isPermanentlyDenied ?? false) ||
+              (mic?.isPermanentlyDenied ?? false))) {
         if (!mounted) return false;
         final open = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Permissions needed'),
-            content: const Text('Please enable Camera and Microphone permissions in Settings to join video sessions.'),
+            content: const Text(
+                'Please enable Camera and Microphone permissions in Settings to join video sessions.'),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-              FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Open Settings')),
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel')),
+              FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Open Settings')),
             ],
           ),
         );
@@ -236,6 +246,21 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
       return cleaned;
     } catch (_) {
       return cleaned;
+    }
+  }
+
+  String _ensureHttpsIfNotLocal(String value) {
+    try {
+      final u = Uri.parse(value);
+      final isLocal = u.host == 'localhost' ||
+          u.host == '10.0.2.2' ||
+          u.host == '127.0.0.1';
+      if (!isLocal && u.scheme == 'http') {
+        return value.replaceFirst('http://', 'https://');
+      }
+      return value;
+    } catch (_) {
+      return value;
     }
   }
 
@@ -270,7 +295,7 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
+                    color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -301,7 +326,12 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
     );
   }
 
-  Uri _preflightDataUri() {
+  Future<void> _loadPreflight() async {
+    await _controller.loadHtmlString(_preflightHtml(),
+        baseUrl: _preflightBaseUrl);
+  }
+
+  String _preflightHtml() {
     const html = r'''
 <!doctype html>
 <html>
@@ -377,7 +407,6 @@ class _ZoomWebViewPageState extends State<ZoomWebViewPage> {
 </body>
 </html>
 ''';
-    final uri = Uri.dataFromString(html, mimeType: 'text/html', encoding: utf8);
-    return uri;
+    return html;
   }
 }

@@ -1,5 +1,6 @@
 package com.adamasorho.mindapax_backend.service.impl;
 
+import com.adamasorho.mindapax_backend.service.ZoomMeetingDetails;
 import com.adamasorho.mindapax_backend.service.ZoomService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -87,7 +88,7 @@ public class ZoomServiceImpl implements ZoomService {
     }
 
     @Override
-    public String createPermanentMeetingForProfessional(String professionalName, String password) {
+    public ZoomMeetingDetails createPermanentMeetingForProfessional(String professionalName, String password) {
         log.info("Attempting to create a permanent Zoom meeting for professional: {}", professionalName);
 
         String accessToken = getS2SAccessToken().block();
@@ -122,7 +123,11 @@ public class ZoomServiceImpl implements ZoomService {
 
             if (response != null && response.getId() != null) {
                 log.info("Successfully created Zoom meeting for {}. Meeting ID: {}", professionalName, response.getId());
-                return String.valueOf(response.getId());
+                return new ZoomMeetingDetails(
+                    String.valueOf(response.getId()),
+                    response.getStartUrl(),
+                    response.getJoinUrl()
+                );
             } else {
                 log.error("Failed to create Zoom meeting for {}. Response was null or lacked ID. Response: {}", professionalName, response);
                 throw new RuntimeException("Failed to create Zoom meeting for " + professionalName + ". Invalid response from Zoom.");
@@ -196,6 +201,8 @@ public class ZoomServiceImpl implements ZoomService {
         private String topic;
         @JsonProperty("join_url")
         private String joinUrl;
+        @JsonProperty("start_url")
+        private String startUrl;
 
         public Long getId() { return id; }
         public void setId(Long id) { this.id = id; }
@@ -203,5 +210,7 @@ public class ZoomServiceImpl implements ZoomService {
         public void setTopic(String topic) { this.topic = topic; }
         public String getJoinUrl() { return joinUrl; }
         public void setJoinUrl(String joinUrl) { this.joinUrl = joinUrl; }
+        public String getStartUrl() { return startUrl; }
+        public void setStartUrl(String startUrl) { this.startUrl = startUrl; }
     }
 }

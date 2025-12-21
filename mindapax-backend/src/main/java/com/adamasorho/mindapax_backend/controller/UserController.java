@@ -2,9 +2,11 @@ package com.adamasorho.mindapax_backend.controller;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.adamasorho.mindapax_backend.dto.UserDTO;
 import com.adamasorho.mindapax_backend.dto.request.AuthRequest;
+import com.adamasorho.mindapax_backend.dto.request.UserProfileUpdateRequest;
 import com.adamasorho.mindapax_backend.dto.response.PageResponse;
 import com.adamasorho.mindapax_backend.mapper.UserMapper;
 import com.adamasorho.mindapax_backend.model.User;
@@ -54,6 +57,13 @@ public class UserController {
         User user = userMapper.toEntity(userDTO);
 
         return ResponseEntity.ok(userMapper.toDTO(userService.updateUser(id, user)));
+    }
+
+    @PutMapping(value = "/{id}/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserDTO> updateProfile(
+            @PathVariable Long id,
+            @ModelAttribute UserProfileUpdateRequest request) {
+        return ResponseEntity.ok(userMapper.toDTO(userService.updateProfile(id, request)));
     }
 
     @DeleteMapping("/{id}")

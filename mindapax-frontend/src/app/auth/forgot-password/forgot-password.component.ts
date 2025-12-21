@@ -7,6 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -20,7 +21,11 @@ export class ForgotPasswordComponent {
   emailSent = false;
   submitError = '';
 
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private authService: AuthService
+  ) {
     this.forgotPasswordForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
     });
@@ -30,25 +35,19 @@ export class ForgotPasswordComponent {
     if (this.forgotPasswordForm.valid) {
       this.isSubmitting = true;
       this.submitError = '';
-
-      // Here you would normally make an API call to request a password reset
-      console.log('Forgot password submitted:', this.forgotPasswordForm.value);
-
-      // Simulate API call with timeout
-      setTimeout(() => {
-        this.isSubmitting = false;
-
-        // For demonstration purposes, let's simulate a successful password reset request
-        // In a real app, you would check the response from your service
-        if (Math.random() > 0.1) {
-          // 90% chance of success for demo
+      const email = this.forgotPasswordForm.value.email;
+      this.authService.requestPasswordReset(email).subscribe({
+        next: () => {
+          this.isSubmitting = false;
           this.emailSent = true;
-        } else {
-          // Show error message
+        },
+        error: (err) => {
+          this.isSubmitting = false;
           this.submitError =
+            err?.error?.message ||
             'There was a problem with your request. Please try again.';
-        }
-      }, 1000);
+        },
+      });
     } else {
       // Mark all fields as touched to trigger validation messages
       Object.keys(this.forgotPasswordForm.controls).forEach((key) => {

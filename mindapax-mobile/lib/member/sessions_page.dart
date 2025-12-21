@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
-import '../auth/auth_service.dart';
 import '../professional/professional_api.dart';
 import '../member/member_scaffold.dart';
 import '../sessions/models.dart';
@@ -25,7 +24,6 @@ class SessionsPage extends StatefulWidget {
 class _SessionsPageState extends State<SessionsPage> {
   late final SessionsApi _api = widget.api ?? SessionsApi();
   final _storage = TokenStorage();
-  final _auth = AuthService();
   final _proApi = ProfessionalApi();
   final _userApi = UserApi();
 
@@ -41,6 +39,7 @@ class _SessionsPageState extends State<SessionsPage> {
   bool _isProfessional = false;
   final Map<int, String> _userNames = {}; // cache client names by userId
   int? _remainingCredits;
+  bool _subscriptionExpired = false;
 
   @override
   void initState() {
@@ -105,9 +104,18 @@ class _SessionsPageState extends State<SessionsPage> {
             remain = int.tryParse(r?.toString() ?? '');
           }
           break;
+        } else if (st == 'EXPIRED') {
+          _subscriptionExpired = true;
         }
       }
-      if (mounted) setState(() => _remainingCredits = remain);
+      if (mounted) {
+        setState(() {
+          _remainingCredits = remain;
+          if (_subscriptionExpired && (remain == null || remain <= 0)) {
+            _remainingCredits = null;
+          }
+        });
+      }
     } catch (_) {}
   }
 
@@ -170,55 +178,41 @@ class _SessionsPageState extends State<SessionsPage> {
     }
   }
 
-  DateTime? _calculatedEndTime(Session s) {
-    if (s.durationMinutes <= 0) return null;
-    return s.startTime.add(Duration(minutes: s.durationMinutes));
-  }
-
-  bool _isToday(Session s) {
-    final d = s.startTime.toLocal();
-    final now = DateTime.now();
-    return d.year == now.year && d.month == now.month && d.day == now.day;
-  }
-
   bool _isJoinable(Session s) {
     if (s.mode != SessionMode.VIDEO || s.status != SessionStatus.SCHEDULED) {
       return false;
     }
     final now = DateTime.now().millisecondsSinceEpoch;
     final start = s.startTime.millisecondsSinceEpoch;
-    final joinWindowStart = start - 15 * 60 * 1000;
-    final joinWindowEnd =
-        start + (s.durationMinutes.clamp(1, 24 * 60)) * 60 * 1000;
+    const fifteenMinutesMs = 15 * 60 * 1000;
+    final joinWindowStart = start - fifteenMinutesMs;
+    final joinWindowEnd = start + fifteenMinutesMs;
     return now >= joinWindowStart && now <= joinWindowEnd;
-  }
-
-  String _relativeDate(DateTime d) {
-    final now = DateTime.now();
-    final a = DateTime(d.year, d.month, d.day);
-    final b = DateTime(now.year, now.month, now.day);
-    final diffDays = a.difference(b).inDays;
-    if (diffDays == 0) return 'Today';
-    if (diffDays == 1) return 'Tomorrow';
-    if (diffDays == -1) return 'Yesterday';
-    if (diffDays.abs() < 7) {
-      // Weekday label
-      const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      return names[d.weekday - 1];
-    }
-    return '${d.month}/${d.day}/${d.year}';
   }
 
   Future<void> _joinVideo(Session s) async {
     if (s.id == null) return;
+    if (!_isJoinable(s)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Video sessions can only be joined within 15 minutes of the start time.')));
+      return;
+    }
     try {
       setState(() => _loading = true);
       final zoom = await _api.getZoomMeetingSignature(s.id!);
       if (!mounted) return;
       // Determine join method based on Settings (default: Zoom app)
-      final method = await SettingsPrefs.getJoinMethod();
+      var method = await SettingsPrefs.getJoinMethod();
+      // Force professionals to use WebView so they join as host with SDK signature
+      if (_isProfessional) {
+        method = SessionJoinMethod.webView;
+      }
+      if (!mounted) return;
       // Ask runtime permissions if needed
       final ok = await _ensurePermissions(method);
+      if (!mounted) return;
       if (!ok) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -234,6 +228,14 @@ class _SessionsPageState extends State<SessionsPage> {
       final name = _extractNameFromEmail(email) ?? 'Mindapax User';
 
       if (method == SessionJoinMethod.zoomApp) {
+        // Prefer host start_url for professionals so Zoom app opens as host instead of guest.
+        if (_isProfessional && (zoom.startUrl ?? '').isNotEmpty) {
+          final startUri = Uri.parse(zoom.startUrl!);
+          final launched = await launchUrl(startUri, mode: LaunchMode.externalApplication);
+          if (launched) {
+            return;
+          }
+        }
         // Try Zoom deep link first, then fall back to web link
         final zoomUri = Uri.parse(
             'zoomus://zoom.us/join?confno=${Uri.encodeComponent(zoom.meetingNumber)}'
@@ -252,6 +254,7 @@ class _SessionsPageState extends State<SessionsPage> {
         }
       } else {
         // In-app WebView using Zoom Web SDK in frontend
+        if (!mounted) return;
         await Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => ZoomWebViewPage(
             meetingNumber: zoom.meetingNumber,
@@ -387,22 +390,29 @@ class _SessionsPageState extends State<SessionsPage> {
               ],
             ),
           ),
-          if (!_isProfessional && _remainingCredits != null)
+          if (!_isProfessional && (_remainingCredits != null || _subscriptionExpired))
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Card(
-                color: Colors.green.shade50,
+                color: _subscriptionExpired ? Colors.red.shade50 : Colors.green.shade50,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
                     children: [
-                      const Icon(Icons.credit_score, color: Colors.green),
+                      Icon(
+                        _subscriptionExpired ? Icons.warning_amber_rounded : Icons.credit_score,
+                        color: _subscriptionExpired ? Colors.red : Colors.green,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text('Remaining session credits: $_remainingCredits'),
+                        child: Text(_subscriptionExpired
+                            ? 'Subscription expired. Renew to book or join sessions.'
+                            : 'Remaining session credits: $_remainingCredits'),
                       ),
                       TextButton(
-                        onPressed: () => Navigator.of(context).pushNamed('/member/subscriptions'),
+                        onPressed: () => Navigator.of(context)
+                            .pushNamed('/member/subscriptions'),
                         child: const Text('View'),
                       ),
                     ],
@@ -613,7 +623,7 @@ class _SessionCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            _dateLabel(session.startTime),
+                            _dateLabel(session.startTime.toLocal()),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -628,7 +638,7 @@ class _SessionCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            '${_timeOf(session.startTime)} - ${end != null ? _timeOf(end) : ''} (${session.durationMinutes} mins)',
+                            '${_timeOf(session.startTime.toLocal())} - ${end != null ? _timeOf(end.toLocal()) : ''} (${session.durationMinutes} mins)',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

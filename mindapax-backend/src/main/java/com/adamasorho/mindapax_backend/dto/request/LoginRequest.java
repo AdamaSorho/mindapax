@@ -15,4 +15,6 @@ public class LoginRequest {
   private String email;
   @NotBlank(message = "Password is required")
   private String password;
+  private String twoFactorCode;
+  private Boolean rememberMe;
 }

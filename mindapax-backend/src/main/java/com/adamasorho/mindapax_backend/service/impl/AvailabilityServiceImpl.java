@@ -33,7 +33,9 @@ public class AvailabilityServiceImpl implements AvailabilityService {
 
     @Override
     public List<Availability> getAvailability(Long professionalId, LocalDate date) {
-        return availabilityRepository.findByProfessionalIdAndDate(professionalId, date);
+        if (date != null) {
+            return availabilityRepository.findByProfessionalIdAndDateOrderByStartTimeAsc(professionalId, date);
+        }
+        return availabilityRepository.findByProfessionalIdOrderByDateAscStartTimeAsc(professionalId);
     }
 }
-

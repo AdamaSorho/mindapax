@@ -17,7 +17,11 @@ public interface UserMapper {
     @Mapping(target = "agreeTerms", ignore = true),
     @Mapping(target = "sessions", ignore = true),
     @Mapping(target = "password", ignore = true),
-    @Mapping(target = "professional", ignore = true)
+    @Mapping(target = "professional", ignore = true),
+    @Mapping(target = "twoFactorEnabled", ignore = true),
+    @Mapping(target = "twoFactorSecret", ignore = true),
+    @Mapping(target = "avatarFilePath", ignore = true),
+    @Mapping(target = "avatarUrl", ignore = true)
   })
   User toEntity(UserDTO userDTO);
 
@@ -28,7 +32,11 @@ public interface UserMapper {
     @Mapping(target = "phone", ignore = true),
     @Mapping(target = "professional", ignore = true),
     @Mapping(target = "active", ignore = true),
-    @Mapping(target = "emailVerified", ignore = true)
+    @Mapping(target = "emailVerified", ignore = true),
+    @Mapping(target = "twoFactorEnabled", ignore = true),
+    @Mapping(target = "twoFactorSecret", ignore = true),
+    @Mapping(target = "avatarFilePath", ignore = true),
+    @Mapping(target = "avatarUrl", ignore = true)
   })
   User toEntity(AuthRequest authRequest);
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
-import '../professional/professional_api.dart';
 import '../messages/messages_api.dart';
 import '../messages/models.dart';
 import 'member_scaffold.dart';
@@ -18,7 +17,6 @@ class MessagesPage extends StatefulWidget {
 class _MessagesPageState extends State<MessagesPage> {
   late final MessagesApi _api = widget.api ?? MessagesApi();
   final _storage = TokenStorage();
-  final _proApi = ProfessionalApi();
 
   bool _loading = false;
   String? _error;

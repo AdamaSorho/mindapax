@@ -1,6 +1,7 @@
 package com.adamasorho.mindapax_backend.jpaSpecification;
 
 import java.time.LocalDate;
+import java.util.Collection;
 
 import org.springframework.data.jpa.domain.Specification;
 
@@ -11,6 +12,8 @@ import com.adamasorho.mindapax_backend.model.enums.Specialization;
 
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 public class ProfessionalSpecification {
 
@@ -37,13 +40,38 @@ public class ProfessionalSpecification {
   public static Specification<Professional> isAvailableOn(LocalDate date) {
       return (root, query, cb) -> {
           if (date == null) return null;
-          Join<Professional, Availability> availability = root.join("availabilities", JoinType.LEFT);
-          return cb.equal(availability.get("date"), date);
+          Subquery<Long> subquery = query.subquery(Long.class);
+          Root<Availability> availability = subquery.from(Availability.class);
+          Root<Professional> correlatedProfessional = subquery.correlate(root);
+          subquery.select(cb.literal(1L));
+          subquery.where(
+              cb.equal(availability.get("professional"), correlatedProfessional),
+              cb.equal(availability.get("date"), date));
+          return cb.exists(subquery);
+      };
+  }
+
+  public static Specification<Professional> hasAvailabilityOnOrAfter(LocalDate date) {
+      return (root, query, cb) -> {
+          if (date == null) return null;
+          Subquery<Long> subquery = query.subquery(Long.class);
+          Root<Availability> availability = subquery.from(Availability.class);
+          Root<Professional> correlatedProfessional = subquery.correlate(root);
+          subquery.select(cb.literal(1L));
+          subquery.where(
+              cb.equal(availability.get("professional"), correlatedProfessional),
+              cb.greaterThanOrEqualTo(availability.get("date"), date));
+          return cb.exists(subquery);
       };
   }
 
   public static Specification<Professional> hasStatus(ProfessionalStatus status) {
       return (root, query, cb) -> status == null ? null : cb.equal(root.get("status"), status);
   }
-}
 
+  public static Specification<Professional> excludeProfessionalIds(Collection<Long> ids) {
+      return (root, query, cb) -> (ids == null || ids.isEmpty())
+          ? null
+          : cb.not(root.get("id").in(ids));
+  }
+}

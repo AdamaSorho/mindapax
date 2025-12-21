@@ -122,6 +122,27 @@ class SessionsApi {
       final json = jsonDecode(res.body) as Map<String, dynamic>;
       return Session.fromJson(json);
     }
-    throw Exception('Failed to schedule session: ${res.statusCode}');
+    if (res.statusCode == 402) {
+      final msg = _extractErrorMessage(res.body) ??
+          'Client has no active subscription or remaining session credits. Ask the client to purchase a plan before scheduling.';
+      throw Exception(msg);
+    }
+    final msg = _extractErrorMessage(res.body);
+    throw Exception('Failed to schedule session: ${res.statusCode}${msg != null ? ' - $msg' : ''}');
+  }
+
+  String? _extractErrorMessage(String body) {
+    try {
+      final json = jsonDecode(body);
+      if (json is Map<String, dynamic>) {
+        final message = json['message'] ?? json['detail'] ?? json['error'];
+        if (message != null && message.toString().isNotEmpty) {
+          return message.toString();
+        }
+      }
+    } catch (_) {
+      // ignore parse errors
+    }
+    return null;
   }
 }

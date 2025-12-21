@@ -30,8 +30,10 @@ public class RefreshToken {
     @Column(nullable = false)
     private Date expiryDate;
 
+    @Column(nullable = false)
+    private boolean rememberMe = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }
-

@@ -19,4 +19,8 @@ public class PlanDTO {
     private boolean active;
     private Integer sessionAllowance;
     private List<String> features;
+    private boolean trial;
+    private Integer trialDurationDays;
+    private boolean eligibleForTrial;
+    private boolean requiresPayment;
 }

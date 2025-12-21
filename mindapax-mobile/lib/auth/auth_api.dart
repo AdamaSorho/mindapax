@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:http/http.dart' as http;
 import '../env.dart';
+import 'auth_exceptions.dart';
 
 class AuthTokens {
   final String accessToken;
@@ -40,16 +41,37 @@ class AuthApi {
 
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');
 
-  Future<AuthTokens> login({required String email, required String password}) async {
+  Future<AuthTokens> login({
+    required String email,
+    required String password,
+    String? twoFactorCode,
+    bool rememberMe = false,
+  }) async {
+    final payload = <String, dynamic>{
+      'email': email,
+      'password': password,
+      'rememberMe': rememberMe,
+    };
+    if (twoFactorCode != null && twoFactorCode.isNotEmpty) {
+      payload['twoFactorCode'] = twoFactorCode;
+    }
+
     final res = await _client.post(
       _uri('/auth/login'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
+      body: jsonEncode(payload),
     );
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return AuthTokens.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
     }
-    throw Exception(_extractError(res.body));
+    final message = _extractError(res.body);
+    if (res.statusCode == 401 && message.contains('TWO_FACTOR_CODE_REQUIRED')) {
+      throw const TwoFactorCodeRequiredException();
+    }
+    if (res.statusCode == 401 && message.contains('INVALID_TWO_FACTOR_CODE')) {
+      throw const InvalidTwoFactorCodeException();
+    }
+    throw Exception(message);
   }
 
   Future<void> registerUser({
@@ -95,6 +117,16 @@ class AuthApi {
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return AuthTokens.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
     }
+    throw Exception(_extractError(res.body));
+  }
+
+  Future<void> forgotPassword(String email) async {
+    final res = await _client.post(
+      _uri('/auth/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+    if (res.statusCode >= 200 && res.statusCode < 300) return;
     throw Exception(_extractError(res.body));
   }
 

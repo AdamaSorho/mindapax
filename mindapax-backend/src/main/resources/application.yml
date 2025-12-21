@@ -47,8 +47,10 @@ app:
   jwt:
     refresh-token:
       expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:86400000}
+      remember-me-expiration-ms: ${JWT_REFRESH_TOKEN_REMEMBER_ME_EXPIRATION_MS:2592000000}
   file-storage:
     upload-dir: uploads
+    max-avatar-size-bytes: ${APP_MAX_AVATAR_BYTES:2097152}
 
 # Zoom API Credentials
 zoom:

@@ -12,5 +12,5 @@ public class TransferConnectionRequest {
   @NotNull
   private Long professionalId;
   private String reason;
+  private Boolean escalateToAdmin;
 }
-

@@ -23,7 +23,10 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final list = await _api.listMySubscriptions();
       setState(() => _subs = list);
@@ -39,16 +42,22 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
     try {
       final dt = DateTime.parse(iso).toLocal();
       return DateFormat.yMMMd().add_Hm().format(dt);
-    } catch (_) { return iso; }
+    } catch (_) {
+      return iso;
+    }
   }
 
   Color _statusColor(String s) {
     switch (s.toUpperCase()) {
-      case 'ACTIVE': return Colors.green;
-      case 'PENDING': return Colors.orange;
+      case 'ACTIVE':
+        return Colors.green;
+      case 'PENDING':
+        return Colors.orange;
       case 'CANCELED':
-      case 'EXPIRED': return Colors.red;
-      default: return Colors.grey;
+      case 'EXPIRED':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -62,10 +71,11 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
           : RefreshIndicator(
               onRefresh: _load,
               child: _error != null
-                  ? ListView(children:[
+                  ? ListView(children: [
                       Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                        child: Text(_error!,
+                            style: const TextStyle(color: Colors.red)),
                       )
                     ])
                   : _subs.isEmpty
@@ -78,28 +88,38 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
                       : ListView.separated(
                           padding: const EdgeInsets.all(12),
                           itemCount: _subs.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
                           itemBuilder: (context, i) {
                             final s = _subs[i];
                             final name = s['planName']?.toString() ?? '';
                             final status = s['status']?.toString() ?? 'PENDING';
-                            final start = _fmtDate(s['currentPeriodStart']?.toString());
-                            final end = _fmtDate(s['currentPeriodEnd']?.toString());
-                            final remain = (s['remainingSessions'] as num?)?.toInt();
+                            final start =
+                                _fmtDate(s['currentPeriodStart']?.toString());
+                            final end =
+                                _fmtDate(s['currentPeriodEnd']?.toString());
+                            final remain =
+                                (s['remainingSessions'] as num?)?.toInt();
                             return Card(
                               child: ListTile(
-                                title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                title: Text(name,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600)),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('Period: $start → $end'),
-                                    if (remain != null) Text('Remaining sessions: $remain'),
+                                    if (remain != null)
+                                      Text('Remaining sessions: $remain'),
                                   ],
                                 ),
                                 trailing: Chip(
                                   label: Text(status),
-                                  backgroundColor: _statusColor(status).withOpacity(0.15),
-                                  labelStyle: TextStyle(color: _statusColor(status), fontWeight: FontWeight.w600),
+                                  backgroundColor: _statusColor(status)
+                                      .withValues(alpha: 0.15),
+                                  labelStyle: TextStyle(
+                                      color: _statusColor(status),
+                                      fontWeight: FontWeight.w600),
                                 ),
                               ),
                             );
@@ -109,4 +129,3 @@ class _MySubscriptionsPageState extends State<MySubscriptionsPage> {
     );
   }
 }
-

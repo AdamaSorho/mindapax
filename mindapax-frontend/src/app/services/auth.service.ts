@@ -53,6 +53,10 @@ export class AuthService {
     );
   }
 
+  requestPasswordReset(email: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/forgot-password`, { email });
+  }
+
   // Get current authentication status
   get isAuthenticated(): boolean {
     return this.hasValidToken();

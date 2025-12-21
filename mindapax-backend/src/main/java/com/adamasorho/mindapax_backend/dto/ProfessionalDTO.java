@@ -3,6 +3,7 @@ package com.adamasorho.mindapax_backend.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.adamasorho.mindapax_backend.dto.response.AvailabilityResponse;
 import com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus;
 import com.adamasorho.mindapax_backend.model.enums.Specialization;
 
@@ -21,6 +22,7 @@ public class ProfessionalDTO {
   private String resumeUrl;
   private String resumeFileUrl;
   private List <CertificationDTO> certifications;
+  private List<AvailabilityResponse> availabilities;
   private LocalDateTime createdAt;
   private LocalDateTime statusUpdatedAt;
   private Integer rating;

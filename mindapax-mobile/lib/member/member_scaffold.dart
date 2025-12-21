@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
@@ -5,6 +7,7 @@ import 'nav_prefs.dart';
 import 'menu.dart';
 import 'package:flutter/foundation.dart';
 import '../dev/role_override.dart';
+import '../notifications/notification_hub.dart';
 
 class _NavItem {
   final String label;
@@ -18,7 +21,11 @@ class MemberScaffold extends StatefulWidget {
   final String title;
   final String currentRoute;
   final Widget child;
-  const MemberScaffold({super.key, required this.title, required this.currentRoute, required this.child});
+  const MemberScaffold(
+      {super.key,
+      required this.title,
+      required this.currentRoute,
+      required this.child});
 
   @override
   State<MemberScaffold> createState() => _MemberScaffoldState();
@@ -28,18 +35,28 @@ class _MemberScaffoldState extends State<MemberScaffold> {
   final _storage = TokenStorage();
   List<String> _roles = const [];
   bool _loaded = false;
+  StreamSubscription<NotificationEvent>? _notifSub;
 
   static const _allItems = <_NavItem>[
-    _NavItem('Home', '/member/dashboard', Icons.home_outlined, ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+    _NavItem('Home', '/member/dashboard', Icons.home_outlined,
+        ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+    _NavItem('Today', '/member/today', Icons.bolt_outlined,
+        ['ROLE_USER', 'ROLE_PROFESSIONAL']),
     _NavItem('Find', '/member/find-professional', Icons.search, ['ROLE_USER']),
-    _NavItem('Sessions', '/member/sessions', Icons.calendar_today_outlined, ['ROLE_USER', 'ROLE_PROFESSIONAL']),
-    _NavItem('Messages', '/member/messages', Icons.chat_bubble_outline, ['ROLE_USER', 'ROLE_PROFESSIONAL']),
-    _NavItem('Connections', '/member/connections', Icons.person_add_alt_1_outlined, ['ROLE_PROFESSIONAL']),
-    _NavItem('Settings', '/member/settings', Icons.settings_outlined, ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
+    _NavItem('Sessions', '/member/sessions', Icons.calendar_today_outlined,
+        ['ROLE_USER', 'ROLE_PROFESSIONAL']),
+    _NavItem('Messages', '/member/messages', Icons.chat_bubble_outline,
+        ['ROLE_USER', 'ROLE_PROFESSIONAL']),
+    _NavItem('Connections', '/member/connections',
+        Icons.person_add_alt_1_outlined, ['ROLE_USER', 'ROLE_PROFESSIONAL']),
+    _NavItem('Settings', '/member/settings', Icons.settings_outlined,
+        ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
   ];
 
   List<_NavItem> get _visibleItems {
-    return _allItems.where((i) => i.roles.isEmpty || i.roles.any(_roles.contains)).toList(growable: false);
+    return _allItems
+        .where((i) => i.roles.isEmpty || i.roles.any(_roles.contains))
+        .toList(growable: false);
   }
 
   int get _currentIndex {
@@ -51,6 +68,8 @@ class _MemberScaffoldState extends State<MemberScaffold> {
   void initState() {
     super.initState();
     _loadRoles();
+    NotificationHub.instance.ensureConnected();
+    _notifSub = NotificationHub.instance.stream.listen(_handleNotification);
   }
 
   Future<void> _loadRoles() async {
@@ -65,7 +84,11 @@ class _MemberScaffoldState extends State<MemberScaffold> {
       if (raw is List) {
         rolesList = raw.map((e) => e.toString()).toList();
       } else if (raw is String) {
-        rolesList = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        rolesList = raw
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
       }
       // Normalize to ROLE_* format
       rolesList = rolesList
@@ -77,9 +100,9 @@ class _MemberScaffoldState extends State<MemberScaffold> {
     }
     setState(() => _loaded = true);
     // Do not auto-redirect here. RootGate performs the initial
-    // navigation to the last saved route after authentication.
+    // navigation (dashboard or onboarding) after authentication.
     // Auto-redirecting from every MemberScaffold causes pages like
-    // Packages to bounce back to the previously saved route.
+    // Packages to bounce back unexpectedly.
   }
 
   void _onTap(int index) {
@@ -87,6 +110,30 @@ class _MemberScaffoldState extends State<MemberScaffold> {
     if (target == widget.currentRoute) return;
     NavPrefs.saveLastRoute(target);
     Navigator.pushReplacementNamed(context, target);
+  }
+
+  void _handleNotification(NotificationEvent event) {
+    if (!mounted) return;
+    if (event.type == 'connection.accepted') {
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+              event.message.isNotEmpty ? event.message : 'Connection accepted'),
+          action: SnackBarAction(
+            label: 'View',
+            onPressed: () =>
+                Navigator.of(context).pushNamed('/member/connections'),
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _notifSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -108,7 +155,8 @@ class _MemberScaffoldState extends State<MemberScaffold> {
         onTap: _onTap,
         type: BottomNavigationBarType.fixed,
         items: [
-          for (final i in items) BottomNavigationBarItem(icon: Icon(i.icon), label: i.label),
+          for (final i in items)
+            BottomNavigationBarItem(icon: Icon(i.icon), label: i.label),
         ],
       ),
     );

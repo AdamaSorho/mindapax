@@ -6,19 +6,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import java.util.Map;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.adamasorho.mindapax_backend.dto.AuthResponse;
 import com.adamasorho.mindapax_backend.dto.LogoutRequest;
 import com.adamasorho.mindapax_backend.dto.RefreshTokenRequest;
 import com.adamasorho.mindapax_backend.dto.UserDTO;
 import com.adamasorho.mindapax_backend.dto.request.AuthRequest;
+import com.adamasorho.mindapax_backend.dto.request.ForgotPasswordRequest;
 import com.adamasorho.mindapax_backend.dto.request.LoginRequest;
+import com.adamasorho.mindapax_backend.dto.request.ResetPasswordRequest;
 import com.adamasorho.mindapax_backend.mapper.UserMapper;
 import com.adamasorho.mindapax_backend.model.RefreshToken;
 import com.adamasorho.mindapax_backend.model.User;
@@ -28,7 +33,9 @@ import com.adamasorho.mindapax_backend.security.CustomUserDetails;
 import com.adamasorho.mindapax_backend.security.CustomUserDetailsService;
 import com.adamasorho.mindapax_backend.security.JwtUtils;
 import com.adamasorho.mindapax_backend.service.AuthService;
+import com.adamasorho.mindapax_backend.service.PasswordResetService;
 import com.adamasorho.mindapax_backend.service.RefreshTokenService;
+import com.adamasorho.mindapax_backend.service.TwoFactorService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -48,6 +55,8 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final UserMapper userMapper;
     private final AuthService authService;
+    private final TwoFactorService twoFactorService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
@@ -55,8 +64,23 @@ public class AuthController {
         authManager.authenticate(auth);
 
         CustomUserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
+        User user = userDetails.getUser();
+
+        if (user.isTwoFactorEnabled()) {
+            String code = request.getTwoFactorCode();
+            if (code == null || code.isBlank()) {
+                throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "TWO_FACTOR_CODE_REQUIRED");
+            }
+            if (!twoFactorService.verifyCode(user, code)) {
+                throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "INVALID_TWO_FACTOR_CODE");
+            }
+        }
+
         String accessToken = jwtUtils.generateAccessToken(userDetails);
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUser());
+        boolean rememberMe = Boolean.TRUE.equals(request.getRememberMe());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, rememberMe);
 
         Long expiresIn = 15 * 60L; // 15 minutes in seconds
 
@@ -121,7 +145,8 @@ public class AuthController {
         User user = refreshToken.getUser();
 
         String newAccessToken = jwtUtils.generateAccessToken(user);
-        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user); // Optional: Rotate token
+        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(
+            user, refreshToken.isRememberMe()); // Optional: Rotate token
 
         Long expiresIn = 15 * 60L; // 15 minutes in seconds
 
@@ -137,6 +162,21 @@ public class AuthController {
             .ifPresent(token -> refreshTokenService.deleteByUser(token.getUser()));
 
         return ResponseEntity.ok("Logout successful. Refresh token deleted.");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(
+        @RequestBody @Valid ForgotPasswordRequest request) {
+        passwordResetService.initiateReset(request.getEmail());
+        return ResponseEntity.ok(Map.of(
+            "message", "If an account exists for that email, a reset link has been sent."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(
+        @RequestBody @Valid ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
     }
 
 }

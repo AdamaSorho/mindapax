@@ -12,6 +12,7 @@ public class ZoomSignatureResponse {
     private String meetingNumber;
     private String signature;
     private String password; // Added password field
+    private String startUrl;
     // Consider adding userName and userEmail if they are determined on the backend
     // and needed by the frontend for the Zoom SDK join method.
     // For now, kept it simple as per initial plan.

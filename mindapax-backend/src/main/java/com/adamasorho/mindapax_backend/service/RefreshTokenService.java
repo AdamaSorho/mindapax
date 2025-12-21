@@ -7,6 +7,7 @@ import com.adamasorho.mindapax_backend.model.User;
 
 public interface RefreshTokenService {
   RefreshToken createRefreshToken(User user);
+  RefreshToken createRefreshToken(User user, boolean rememberMe);
   Optional<RefreshToken> findByToken(String token);
   void deleteByUser(User user);
   RefreshToken verifyExpiration(RefreshToken token);

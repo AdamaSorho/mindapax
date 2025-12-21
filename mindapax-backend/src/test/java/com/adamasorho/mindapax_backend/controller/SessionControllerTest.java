@@ -77,6 +77,7 @@ public class SessionControllerTest {
         videoSession.setProfessional(professional);
         videoSession.setMode(SessionMode.VIDEO);
         videoSession.setZoomMeetingId("defaultZoomId123"); // Added default zoomMeetingId
+        professional.setZoomMeetingStartUrl("https://start.example.com"); // Default start URL
 
         // videoSessionDTO is no longer directly needed in setUp for these tests after controller changes
         // videoSessionDTO = new SessionDTO();
@@ -129,6 +130,7 @@ public class SessionControllerTest {
         // videoSession already has zoomMeetingId set in setUp or test-specific setup
         videoSession.setZoomMeetingId("clientZoomSuccess123");
         videoSession.setZoomMeetingPassword("clientPassword456"); // Set password for the session
+        professional.setZoomMeetingStartUrl("https://start.example.com/host");
 
 
         when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession);
@@ -144,6 +146,7 @@ public class SessionControllerTest {
         assertEquals(videoSession.getZoomMeetingId(), response.getBody().getMeetingNumber()); // Verify zoomMeetingId
         assertEquals("testSignature", response.getBody().getSignature());
         assertEquals("clientPassword456", response.getBody().getPassword()); // Verify password
+        assertEquals("https://start.example.com/host", response.getBody().getStartUrl());
         verify(sessionService).getSessionEntityById(videoSession.getId());
         verify(zoomService).generateSignature(eq(videoSession.getZoomMeetingId()), eq(0)); // Verify correct meetingNumber used
     }
@@ -160,6 +163,7 @@ public class SessionControllerTest {
         videoSession = new Session(); videoSession.setId(100L); videoSession.setUser(clientUser); videoSession.setProfessional(professional); videoSession.setMode(SessionMode.VIDEO);
         videoSession.setZoomMeetingId("clientZoomNoPass123");
         videoSession.setZoomMeetingPassword(null); // Explicitly null password
+        professional.setZoomMeetingStartUrl("https://start.example.com/host");
 
         mockSecurityContext(clientUser, UserRole.USER);
 
@@ -175,6 +179,7 @@ public class SessionControllerTest {
         assertEquals("clientZoomNoPass123", response.getBody().getMeetingNumber());
         assertEquals("testSignatureNoPass", response.getBody().getSignature());
         assertNull(response.getBody().getPassword(), "Password should be null in response"); // Verify password is null
+        assertEquals("https://start.example.com/host", response.getBody().getStartUrl());
     }
 
     @Test
@@ -192,6 +197,7 @@ public class SessionControllerTest {
         // videoSession already has zoomMeetingId set in setUp or test-specific setup
         videoSession.setZoomMeetingId("profZoomSuccess456");
         videoSession.setZoomMeetingPassword("profPassword789"); // Set password for the session
+        professional.setZoomMeetingStartUrl("https://start.example.com/prof");
 
 
         when(sessionService.getSessionEntityById(videoSession.getId())).thenReturn(videoSession);
@@ -207,6 +213,7 @@ public class SessionControllerTest {
         assertEquals(videoSession.getZoomMeetingId(), response.getBody().getMeetingNumber()); // Verify zoomMeetingId
         assertEquals("testSignatureProf", response.getBody().getSignature());
         assertEquals("profPassword789", response.getBody().getPassword()); // Verify password
+        assertEquals("https://start.example.com/prof", response.getBody().getStartUrl());
         verify(sessionService).getSessionEntityById(videoSession.getId());
         verify(zoomService).generateSignature(eq(videoSession.getZoomMeetingId()), eq(1)); // Verify correct meetingNumber used
     }

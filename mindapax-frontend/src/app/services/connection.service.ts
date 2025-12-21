@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { Connection } from '../models/connection.model';
 import { ConnectionStatus } from '../models/enums/connectionStatus';
 
@@ -22,10 +22,21 @@ export class ConnectionService {
     });
   }
 
-  getConnections(userId: number): Observable<Connection[]> {
-    return this.http.get<Connection[]>(
-      `${this.baseUrl}/professional/${userId}`
-    );
+  getConnections(
+    ownerId: number,
+    scope: 'user' | 'professional' = 'professional'
+  ): Observable<Connection[]> {
+    const path = scope === 'user' ? 'user' : 'professional';
+    return this.http
+      .get<Connection[]>(`${this.baseUrl}/${path}/${ownerId}`)
+      .pipe(
+        map((connections) =>
+          connections.map((connection) => ({
+            ...connection,
+            createdAt: new Date(connection.createdAt),
+          }))
+        )
+      );
   }
 
   updateConnection(
@@ -46,10 +57,12 @@ export class ConnectionService {
   transferConnection(
     connectionId: number,
     professionalId: number,
-    reason?: string
+    reason?: string,
+    escalateToAdmin: boolean = false
   ): Observable<Connection> {
     const body: any = { professionalId };
     if (reason && reason.trim().length > 0) body.reason = reason.trim();
+    if (escalateToAdmin) body.escalateToAdmin = true;
     return this.http.put<Connection>(
       `${this.baseUrl}/${connectionId}/transfer`,
       body

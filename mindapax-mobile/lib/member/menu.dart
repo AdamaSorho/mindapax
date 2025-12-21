@@ -9,6 +9,7 @@ import 'dart:io' show Platform;
 import '../auth/authorized_client.dart';
 import '../env.dart';
 import '../dev/role_override.dart';
+import '../notifications/notification_hub.dart';
 
 class MemberDrawer extends StatefulWidget {
   final String currentRoute;
@@ -97,6 +98,7 @@ class _MemberDrawerState extends State<MemberDrawer> {
 
   Future<void> _logout() async {
     await _auth.logout();
+    NotificationHub.instance.disconnect();
     if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil('/auth/login', (r) => false);
   }
@@ -109,23 +111,28 @@ class _MemberDrawerState extends State<MemberDrawer> {
       _MenuItem('Find a Professional', '/member/find-professional',
           Icons.search, const ['ROLE_USER']),
       _MenuItem(
+          'My Goals${_activeGoals > 0 ? ' ($_activeGoals)' : ''}',
+          '/member/goals',
+          Icons.flag_outlined,
+          const ['ROLE_USER', 'ROLE_ADMIN']),
+      _MenuItem(
           'My Sessions',
           '/member/sessions',
           Icons.calendar_today_outlined,
           const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
       _MenuItem('Messages', '/member/messages', Icons.chat_bubble_outline,
           const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
-      _MenuItem('AI Assistant', '/member/assistant', Icons.smart_toy_outlined,
-          const ['ROLE_USER', 'ROLE_ADMIN']),
       _MenuItem(
-          'My Goals${_activeGoals > 0 ? ' ($_activeGoals)' : ''}',
-          '/member/goals',
-          Icons.flag_outlined,
-          const ['ROLE_USER', 'ROLE_ADMIN']),
-      _MenuItem('Connections', '/member/connections',
-          Icons.person_add_alt_1_outlined, const ['ROLE_PROFESSIONAL']),
+          'Connections',
+          '/member/connections',
+          Icons.person_add_alt_1_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL']),
+      _MenuItem('Availability Calendar', '/member/availability',
+          Icons.event_available_outlined, const ['ROLE_PROFESSIONAL']),
       _MenuItem('Professionals', '/member/professionals',
           Icons.people_alt_outlined, const ['ROLE_ADMIN']),
+      _MenuItem('AI Assistant', '/member/assistant', Icons.smart_toy_outlined,
+          const ['ROLE_USER', 'ROLE_ADMIN']),
       _MenuItem('Billing', '/member/billing', Icons.credit_card,
           const ['ROLE_USER', 'ROLE_ADMIN']),
       _MenuItem('Packages', '/member/packages', Icons.subscriptions_outlined,
@@ -134,8 +141,8 @@ class _MemberDrawerState extends State<MemberDrawer> {
           const ['ROLE_USER', 'ROLE_ADMIN']),
       _MenuItem('Make a Payment', '/member/pay', Icons.payment_outlined,
           const ['ROLE_USER', 'ROLE_ADMIN']),
-      _MenuItem('Payment History', '/member/payments', Icons.receipt_long_outlined,
-          const ['ROLE_USER', 'ROLE_ADMIN']),
+      _MenuItem('Payment History', '/member/payments',
+          Icons.receipt_long_outlined, const ['ROLE_USER', 'ROLE_ADMIN']),
       _MenuItem('Settings', '/member/settings', Icons.settings_outlined,
           const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
     ];

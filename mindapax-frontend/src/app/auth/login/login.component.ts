@@ -55,7 +55,11 @@ export class LoginComponent {
         error: (error) => {
           console.error('Login failed:', error);
           this.isSubmitting = false;
-          this.loginError = error.error.message;
+          const message =
+            error?.error?.message ??
+            error?.message ??
+            'Unable to log in right now. Please verify your credentials and try again.';
+          this.loginError = message;
         },
       });
     } else {

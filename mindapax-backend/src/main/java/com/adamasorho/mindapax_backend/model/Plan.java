@@ -36,6 +36,12 @@ public class Plan {
     @Column(nullable = false)
     private Integer sessionAllowance = 0;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean trial = false;
+
+    @Column(name = "trial_duration_days")
+    private Integer trialDurationDays;
+
     // Human-readable feature bullets shown in pricing
     @ElementCollection
     @CollectionTable(name = "plan_features", joinColumns = @JoinColumn(name = "plan_id"))

@@ -29,7 +29,12 @@ public class PackageController {
 
     @GetMapping
     public ResponseEntity<List<PlanDTO>> listPlans() {
-        return ResponseEntity.ok(subscriptionService.listPlans());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof CustomUserDetails)) {
+            return ResponseEntity.status(401).build();
+        }
+        User user = ((CustomUserDetails) auth.getPrincipal()).getUser();
+        return ResponseEntity.ok(subscriptionService.listPlans(user));
     }
 
     @PostMapping("/{planId}/subscribe")
@@ -53,4 +58,3 @@ public class PackageController {
         return ResponseEntity.ok(subscriptionService.listMySubscriptions(user));
     }
 }
-

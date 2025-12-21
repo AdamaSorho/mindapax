@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'auth_api.dart';
 import 'token_storage.dart';
+import 'biometric_prefs.dart';
+import '../notifications/notification_hub.dart';
 
 class AuthService {
   final AuthApi _api;
@@ -9,15 +11,26 @@ class AuthService {
       : _api = api ?? AuthApi(),
         _storage = storage ?? TokenStorage();
 
-  Future<void> login({required String email, required String password}) async {
+  Future<void> login({
+    required String email,
+    required String password,
+    String? twoFactorCode,
+    bool rememberMe = false,
+  }) async {
     if (email.isEmpty || password.isEmpty) {
       throw Exception('Email and password are required');
     }
-    final tokens = await _api.login(email: email, password: password);
+    final tokens = await _api.login(
+      email: email,
+      password: password,
+      twoFactorCode: twoFactorCode,
+      rememberMe: rememberMe,
+    );
     await _storage.saveTokens(
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       expiresInSeconds: tokens.expiresIn,
+      rememberMe: rememberMe,
     );
   }
 
@@ -44,8 +57,7 @@ class AuthService {
 
   Future<void> forgotPassword({required String email}) async {
     if (email.isEmpty) throw Exception('Email is required');
-    // Not implemented in backend yet; simulate latency and success
-    await Future.delayed(const Duration(milliseconds: 600));
+    await _api.forgotPassword(email);
   }
 
   Future<void> logout() async {
@@ -58,6 +70,8 @@ class AuthService {
       }
     }
     await _storage.clear();
+    await BiometricPrefs.setEnabled(false);
+    NotificationHub.instance.disconnect();
   }
 
   Future<bool> isAuthenticated() => _storage.hasValidAccessToken();
@@ -65,11 +79,42 @@ class AuthService {
   Future<void> refresh() async {
     final refresh = await _storage.getRefreshToken();
     if (refresh == null || refresh.isEmpty) throw Exception('No refresh token');
+    final rememberMe = await _storage.isRemembered();
     final tokens = await _api.refreshTokens(refreshToken: refresh);
     await _storage.saveTokens(
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       expiresInSeconds: tokens.expiresIn,
+      rememberMe: rememberMe,
     );
+  }
+
+  Future<bool> ensureAuthenticated() async {
+    if (await _storage.hasValidAccessToken()) {
+      return true;
+    }
+    final rememberMe = await _storage.isRemembered();
+    if (!rememberMe) {
+      await _storage.clear();
+      return false;
+    }
+    final refresh = await _storage.getRefreshToken();
+    if (refresh == null || refresh.isEmpty) {
+      await _storage.clear();
+      return false;
+    }
+    try {
+      final tokens = await _api.refreshTokens(refreshToken: refresh);
+      await _storage.saveTokens(
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresInSeconds: tokens.expiresIn,
+        rememberMe: true,
+      );
+      return true;
+    } catch (_) {
+      await _storage.clear();
+      return false;
+    }
   }
 }

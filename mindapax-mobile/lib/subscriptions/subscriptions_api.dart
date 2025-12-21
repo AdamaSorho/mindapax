@@ -5,6 +5,24 @@ import '../auth/token_storage.dart';
 import '../env.dart';
 import 'dart:io' show Platform;
 
+class SubscriptionCheckoutResult {
+  final bool requiresPayment;
+  final int? paymentId;
+  final String? checkoutUrl;
+  final int subscriptionId;
+  final DateTime? activeUntil;
+
+  const SubscriptionCheckoutResult({
+    required this.requiresPayment,
+    required this.subscriptionId,
+    this.paymentId,
+    this.checkoutUrl,
+    this.activeUntil,
+  });
+
+  bool get isTrialActivation => !requiresPayment;
+}
+
 class SubscriptionsApi {
   final AuthorizedHttpClient _client;
   SubscriptionsApi([AuthorizedHttpClient? client])
@@ -29,14 +47,16 @@ class SubscriptionsApi {
       throw Exception('Fetch plans failed (${res.statusCode})');
     }
     final list = jsonDecode(res.body) as List<dynamic>;
-    return list.map((e) => (e as Map).map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>();
+    return list
+        .map((e) => (e as Map).map((k, v) => MapEntry(k.toString(), v)))
+        .toList()
+        .cast<Map<String, dynamic>>();
   }
 
-  Future<(int paymentId, String checkoutUrl)> subscribeToPlan(int planId) async {
+  Future<SubscriptionCheckoutResult> subscribeToPlan(int planId) async {
     final uri = Uri.parse('${_base()}/packages/$planId/subscribe');
     final res = await _client.post(uri);
     if (res.statusCode < 200 || res.statusCode >= 300) {
-      // Try to extract a useful message from error body
       String msg = 'Subscribe failed (${res.statusCode})';
       try {
         final body = jsonDecode(res.body) as Map<String, dynamic>;
@@ -46,13 +66,41 @@ class SubscriptionsApi {
       throw Exception(msg);
     }
     final json = jsonDecode(res.body) as Map<String, dynamic>;
-    final id = (json['paymentId'] as num).toInt();
-    final url = (json['checkoutUrl']?.toString() ?? '').trim();
-    if (url.isEmpty || Uri.tryParse(url)?.hasScheme != true) {
-      // Surface a clear error to the UI; backend returned an invalid link
+    final requiresPayment = json['requiresPayment'] != false;
+    final subscriptionId = (json['subscriptionId'] as num?)?.toInt();
+    if (subscriptionId == null) {
+      throw Exception('Subscription reference missing');
+    }
+
+    DateTime? activeUntil;
+    final rawActiveUntil = json['activeUntil']?.toString();
+    if (rawActiveUntil != null && rawActiveUntil.isNotEmpty) {
+      activeUntil = DateTime.tryParse(rawActiveUntil)?.toLocal();
+    }
+
+    if (!requiresPayment) {
+      return SubscriptionCheckoutResult(
+        requiresPayment: false,
+        subscriptionId: subscriptionId,
+        activeUntil: activeUntil,
+      );
+    }
+
+    final paymentId = (json['paymentId'] as num?)?.toInt();
+    final checkoutUrl = (json['checkoutUrl']?.toString() ?? '').trim();
+    if (paymentId == null ||
+        checkoutUrl.isEmpty ||
+        Uri.tryParse(checkoutUrl)?.hasScheme != true) {
       throw Exception('Checkout link unavailable');
     }
-    return (id, url);
+
+    return SubscriptionCheckoutResult(
+      requiresPayment: true,
+      subscriptionId: subscriptionId,
+      paymentId: paymentId,
+      checkoutUrl: checkoutUrl,
+      activeUntil: activeUntil,
+    );
   }
 
   Future<List<Map<String, dynamic>>> listMySubscriptions() async {
@@ -62,6 +110,9 @@ class SubscriptionsApi {
       throw Exception('Fetch subscriptions failed (${res.statusCode})');
     }
     final list = jsonDecode(res.body) as List<dynamic>;
-    return list.map((e) => (e as Map).map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>();
+    return list
+        .map((e) => (e as Map).map((k, v) => MapEntry(k.toString(), v)))
+        .toList()
+        .cast<Map<String, dynamic>>();
   }
 }

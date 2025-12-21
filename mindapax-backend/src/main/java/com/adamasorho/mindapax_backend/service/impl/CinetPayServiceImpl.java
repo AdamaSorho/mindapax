@@ -109,7 +109,7 @@ public class CinetPayServiceImpl implements CinetPayService {
         }
         payment.setCheckoutUrl(checkoutUrl);
         paymentRepository.save(payment);
-        return new CheckoutResponse(payment.getId(), checkoutUrl);
+        return new CheckoutResponse(payment.getId(), checkoutUrl, true, null, null);
     }
 
     @Override

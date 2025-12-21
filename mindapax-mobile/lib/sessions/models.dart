@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 enum SessionTimeFilter { PAST, UPCOMING }
 
 enum SessionStatus { SCHEDULED, COMPLETED, CANCELLED }
@@ -69,10 +71,13 @@ class Session {
     return Session(
       id: j['id'] == null ? null : (j['id'] as num).toInt(),
       userId: (j['userId'] as num).toInt(),
-      professionalId: j['professionalId'] == null ? null : (j['professionalId'] as num).toInt(),
+      professionalId: j['professionalId'] == null
+          ? null
+          : (j['professionalId'] as num).toInt(),
       professionalName: j['professionalName']?.toString(),
       professionalSpecialization: j['professionalSpecialization']?.toString(),
-      startTime: DateTime.tryParse(j['startTime']?.toString() ?? '') ?? DateTime.now(),
+      startTime:
+          DateTime.tryParse(j['startTime']?.toString() ?? '') ?? DateTime.now(),
       durationMinutes: (j['durationMinutes'] as num?)?.toInt() ?? 0,
       mode: sessionModeFromString(j['mode']?.toString()) ?? SessionMode.CHAT,
       notes: j['notes']?.toString(),
@@ -125,12 +130,14 @@ class ZoomSignatureResponse {
   final String meetingNumber;
   final String signature;
   final String? password;
+  final String? startUrl;
 
   ZoomSignatureResponse({
     required this.apiKey,
     required this.meetingNumber,
     required this.signature,
     this.password,
+    this.startUrl,
   });
 
   factory ZoomSignatureResponse.fromJson(Map<String, dynamic> j) {
@@ -139,6 +146,7 @@ class ZoomSignatureResponse {
       meetingNumber: j['meetingNumber']?.toString() ?? '',
       signature: j['signature']?.toString() ?? '',
       password: j['password']?.toString(),
+      startUrl: j['startUrl']?.toString(),
     );
   }
 }

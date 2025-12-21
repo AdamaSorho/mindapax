@@ -136,16 +136,26 @@ public ResponseEntity<Page<SessionDTO>> getSessionsByUser(
         // Determine Zoom role (e.g., Professional is host (1), Client is attendee (0))
         int zoomRole = isProfessional ? 1 : 0;
 
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime startTime = session.getStartTime();
+        OffsetDateTime earliestJoin = startTime.minusMinutes(15);
+        OffsetDateTime latestJoin = startTime.plusMinutes(15);
+        if (now.isBefore(earliestJoin) || now.isAfter(latestJoin)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Video session can only be joined within 15 minutes before or after the scheduled time.");
+        }
+
         // Use session ID as the meeting number for simplicity.
         if (session.getZoomMeetingId() == null || session.getZoomMeetingId().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zoom meeting ID is not configured for this session.");
         }
         String meetingNumber = session.getZoomMeetingId();
+        String startUrl = isProfessional ? session.getProfessional().getZoomMeetingStartUrl() : null;
 
         String signature = zoomService.generateSignature(meetingNumber, zoomRole);
         String sdkKey = zoomService.getSdkKey();
         String meetingPassword = session.getZoomMeetingPassword(); // This might be null if not set
 
-        return ResponseEntity.ok(new ZoomSignatureResponse(sdkKey, meetingNumber, signature, meetingPassword));
+        return ResponseEntity.ok(new ZoomSignatureResponse(sdkKey, meetingNumber, signature, meetingPassword, startUrl));
     }
 }

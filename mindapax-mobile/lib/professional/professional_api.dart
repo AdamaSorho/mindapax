@@ -1,34 +1,21 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:io' show Platform;
 import '../auth/authorized_client.dart';
 import '../auth/token_storage.dart';
 import '../auth/auth_service.dart';
 import '../auth/jwt.dart';
 import '../env.dart';
+import '../api/api_helpers.dart';
 import 'models.dart';
 
 class ProfessionalApi {
   final TokenStorage _storage;
   final AuthService _auth;
-  String get _baseUrl => _normalizeBaseUrl(apiBaseUrl);
+  String get _baseUrl => normalizeBaseUrl(apiBaseUrl);
 
   ProfessionalApi({TokenStorage? storage, AuthService? auth})
       : _storage = storage ?? TokenStorage(),
         _auth = auth ?? AuthService();
-
-  static String _normalizeBaseUrl(String value) {
-    final cleaned = value.replaceAll(RegExp(r'/+$'), '');
-    try {
-      final u = Uri.parse(cleaned);
-      if (u.host == 'localhost' && Platform.isAndroid) {
-        return cleaned.replaceFirst('localhost', '10.0.2.2');
-      }
-      return cleaned;
-    } catch (_) {
-      return cleaned;
-    }
-  }
 
   Uri _uri(String path, [Map<String, String>? query]) {
     final uri = Uri.parse('$_baseUrl$path');

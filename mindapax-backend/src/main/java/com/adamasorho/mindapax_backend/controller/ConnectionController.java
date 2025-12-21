@@ -74,6 +74,10 @@ public class ConnectionController {
       @RequestBody @Valid TransferConnectionRequest request) {
     return ResponseEntity.ok(
         connectionMapper.toDTO(
-            connectionService.transferConnection(id, request.getProfessionalId(), request.getReason())));
+            connectionService.transferConnection(
+                id,
+                request.getProfessionalId(),
+                request.getReason(),
+                request.getEscalateToAdmin())));
   }
 }

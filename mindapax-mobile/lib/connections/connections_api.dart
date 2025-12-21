@@ -83,10 +83,15 @@ class ConnectionsApi {
     required int connectionId,
     required int professionalId,
     String? reason,
+    bool escalateToAdmin = false,
   }) async {
     final client = AuthorizedHttpClient(_storage);
     final uri = _uri('/connections/$connectionId/transfer');
-    final body = jsonEncode({'professionalId': professionalId, if (reason != null) 'reason': reason});
+    final body = jsonEncode({
+      'professionalId': professionalId,
+      if (reason != null) 'reason': reason,
+      if (escalateToAdmin) 'escalateToAdmin': true,
+    });
     http.Response res = await client.put(uri, headers: {'Content-Type': 'application/json'}, body: body);
     if (res.statusCode == 401) {
       await _auth.refresh();

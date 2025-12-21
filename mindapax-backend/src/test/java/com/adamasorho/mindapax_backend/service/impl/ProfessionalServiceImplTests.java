@@ -166,6 +166,7 @@ class ProfessionalServiceImplTests {
         professional.setStatus(com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus.PENDING); // Ensure initial status is not ACTIVE
         professional.setZoomMeetingId(null);
         String expectedZoomMeetingId = "zoom123";
+        String expectedStartUrl = "https://zoom.us/s/zoom123";
         java.util.Set<org.springframework.security.core.GrantedAuthority> authorities = java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
 
 
@@ -175,7 +176,7 @@ class ProfessionalServiceImplTests {
         when(zoomService.createPermanentMeetingForProfessional(
             eq(professionalUser.getFirstName() + " " + professionalUser.getLastName()),
             passwordCaptor.capture()
-        )).thenReturn(expectedZoomMeetingId);
+        )).thenReturn(new com.adamasorho.mindapax_backend.service.ZoomMeetingDetails(expectedZoomMeetingId, expectedStartUrl, "https://zoom.us/j/zoom123"));
         when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -188,6 +189,7 @@ class ProfessionalServiceImplTests {
 
         assertEquals(newStatus, savedProfessional.getStatus());
         assertEquals(expectedZoomMeetingId, savedProfessional.getZoomMeetingId());
+        assertEquals(expectedStartUrl, savedProfessional.getZoomMeetingStartUrl());
         assertNotNull(savedProfessional.getStatusUpdatedAt());
 
         // Verify password handling
@@ -341,7 +343,8 @@ class ProfessionalServiceImplTests {
         when(professionalRepository.findById(professionalId)).thenReturn(Optional.of(professional));
         // Update mock to accept two arguments
         ArgumentCaptor<String> passwordCaptorForClearNote = ArgumentCaptor.forClass(String.class);
-        when(zoomService.createPermanentMeetingForProfessional(anyString(), passwordCaptorForClearNote.capture())).thenReturn("zoom789");
+        when(zoomService.createPermanentMeetingForProfessional(anyString(), passwordCaptorForClearNote.capture()))
+            .thenReturn(new com.adamasorho.mindapax_backend.service.ZoomMeetingDetails("zoom789", "https://zoom.us/s/zoom789", "https://zoom.us/j/zoom789"));
         when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -357,5 +360,6 @@ class ProfessionalServiceImplTests {
         assertEquals("zoom789", savedProfessional.getZoomMeetingId());
         assertEquals(passwordCaptorForClearNote.getValue(), savedProfessional.getZoomMeetingPassword()); // Ensure password was set
         assertEquals(10, passwordCaptorForClearNote.getValue().length());
+        assertEquals("https://zoom.us/s/zoom789", savedProfessional.getZoomMeetingStartUrl());
     }
 }

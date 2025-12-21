@@ -231,7 +231,10 @@ private Page<Session> getSessionsFromClient(Long clientId, OffsetDateTime date,
         }
       }
     }
-    throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "No session credits available");
+    throw new ResponseStatusException(
+        HttpStatus.PAYMENT_REQUIRED,
+        "Client has no active subscription or remaining session credits. Ask the client to purchase a plan before scheduling."
+    );
   }
 
   private void deductCreditIfPossible(User user) {

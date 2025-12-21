@@ -37,6 +37,7 @@ import com.adamasorho.mindapax_backend.model.Professional;
 import com.adamasorho.mindapax_backend.model.enums.ProfessionalStatus;
 import com.adamasorho.mindapax_backend.model.enums.Specialization;
 import com.adamasorho.mindapax_backend.repository.ProfessionalRepository; // Added ProfessionalRepository import
+import com.adamasorho.mindapax_backend.security.CustomUserDetails;
 import com.adamasorho.mindapax_backend.service.ProfessionalService;
 
 import jakarta.persistence.EntityNotFoundException; // Added EntityNotFoundException
@@ -81,17 +82,24 @@ public class ProfessionalController {
     @RequestParam(required = false) Specialization specialization,
     @RequestParam(required = false) Integer experience,
     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate availabilityDate,
+    @RequestParam(required = false, defaultValue = "false") boolean availableOnly,
+    @RequestParam(required = false, defaultValue = "false") boolean excludeConnected,
     @RequestParam(required = false) ProfessionalStatus status,
     @AuthenticationPrincipal UserDetails userDetails,
     @PageableDefault(size = 10) 
     @SortDefaults({@SortDefault(sort = "id", direction = Sort.Direction.DESC)}) Pageable pageable
   ) {
     Set<GrantedAuthority> authorities = new HashSet<>(userDetails.getAuthorities());
+    Long requesterUserId = null;
+    if (userDetails instanceof CustomUserDetails cud) {
+      requesterUserId = cud.getUser().getId();
+    }
 
     return ResponseEntity.ok(
         new PageResponse<ProfessionalDTO>(
           professionalService.getProfessionals(firstName, lastName, specialization, 
-            experience, availabilityDate, status, authorities, pageable).map(professionalMapper::toDTO)
+            experience, availabilityDate, availableOnly, status, excludeConnected, requesterUserId, authorities, pageable)
+            .map(professionalMapper::toDTO)
         )
     );
   }

@@ -16,7 +16,6 @@ class SubscriptionCheckoutPage extends StatefulWidget {
 
 class _SubscriptionCheckoutPageState extends State<SubscriptionCheckoutPage> {
   bool _verifying = false;
-  bool _finished = false;
 
   Future<void> _verify() async {
     try {
@@ -26,7 +25,6 @@ class _SubscriptionCheckoutPageState extends State<SubscriptionCheckoutPage> {
       final status = (p['status']?.toString() ?? '').toUpperCase();
       if (!mounted) return;
       if (status == 'COMPLETED') {
-        _finished = true;
         Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context)

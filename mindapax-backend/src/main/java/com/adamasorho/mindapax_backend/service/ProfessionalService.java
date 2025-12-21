@@ -16,9 +16,18 @@ public interface ProfessionalService {
   Page<UserDTO> getConnectedUsers(Long professionalId, Pageable pageable);
   Professional createProfessional(Professional professional);
   Professional getProfessionalById(Long id);
-  Page<Professional> getProfessionals(String firstName, String lastName, Specialization specialization, 
-    Integer experience, LocalDate availabilityDate, ProfessionalStatus status, 
-    Set<GrantedAuthority> authorities, Pageable pageable);
+  Page<Professional> getProfessionals(
+    String firstName,
+    String lastName,
+    Specialization specialization,
+    Integer experience,
+    LocalDate availabilityDate,
+    Boolean availableOnly,
+    ProfessionalStatus status,
+    boolean excludeConnected,
+    Long requesterUserId,
+    Set<GrantedAuthority> authorities,
+    Pageable pageable);
   Professional updateProfessional(Long id, Professional professional);
   void deleteProfessional(Long id);
   void updateProfessionalStatus(Long professionalId, ProfessionalStatus status, String rejectionNote, Set<GrantedAuthority> authorities);

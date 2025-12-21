@@ -3,9 +3,11 @@ package com.adamasorho.mindapax_backend.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import com.adamasorho.mindapax_backend.dto.assistant.AssistantContextDTO;
 import com.adamasorho.mindapax_backend.dto.assistant.AssistantPrefsDTO;
 import com.adamasorho.mindapax_backend.dto.response.AssistantChatResponse;
 import com.adamasorho.mindapax_backend.dto.response.assistant.GoalSuggestionDTO;
+import com.adamasorho.mindapax_backend.dto.response.assistant.ProgressSnapshotDTO;
 import com.adamasorho.mindapax_backend.model.AssistantContext;
 import com.adamasorho.mindapax_backend.model.AssistantGoal;
 import com.adamasorho.mindapax_backend.model.AssistantPreferences;
@@ -25,6 +28,7 @@ import com.adamasorho.mindapax_backend.repository.AssistantContextRepository;
 import com.adamasorho.mindapax_backend.repository.AssistantGoalRepository;
 import com.adamasorho.mindapax_backend.exception.BadRequestException;
 import com.adamasorho.mindapax_backend.repository.SessionRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.adamasorho.mindapax_backend.repository.AssistantPreferencesRepository;
 import java.time.OffsetDateTime;
 import java.time.Duration;
@@ -33,9 +37,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AssistantServiceImpl implements com.adamasorho.mindapax_backend.service.AssistantService {
 
     private final OpenAiChatModel chatModel;
@@ -65,20 +71,19 @@ public class AssistantServiceImpl implements com.adamasorho.mindapax_backend.ser
         String text = "";
         try {
             Prompt prompt = new Prompt(List.of(new SystemMessage(system), new UserMessage(userMsg)));
-            org.springframework.ai.chat.model.ChatResponse ai = chatModel.call(prompt);
+            ChatResponse ai = chatModel.call(prompt);
             text = (ai != null && ai.getResult() != null && ai.getResult().getOutput() != null)
                     ? ai.getResult().getOutput().getText()
                     : "";
         } catch (Exception ex) {
             // Graceful fallback when OpenAI quota or network errors occur
-            String hint = "";
             String msg = ex.getMessage();
             if (msg != null && msg.toLowerCase().contains("quota")) {
-                hint = " (OpenAI quota exceeded)";
+                log.warn("OpenAI quota exceeded for assistant chat");
             }
             return new AssistantChatResponse(
-                "Sorry, the AI assistant is temporarily unavailable" + hint + ". Please try again later.",
-                java.util.List.of()
+                "Sorry, the AI assistant is temporarily unavailable. Please try again later.",
+                List.of()
             );
         }
 
@@ -151,12 +156,12 @@ public class AssistantServiceImpl implements com.adamasorho.mindapax_backend.ser
         return contextRepo.findByUser(user).orElse(null);
     }
 
-    private static final java.util.Set<String> REMINDER_ENUM = java.util.Set.of("DAILY", "WEEKLY", "MONTHLY");
-    private static final java.util.Set<String> TONE_ENUM = java.util.Set.of("SUPPORTIVE", "COACHING", "CONCISE");
+    private static final Set<String> REMINDER_ENUM = Set.of("DAILY", "WEEKLY", "MONTHLY");
+    private static final Set<String> TONE_ENUM = java.util.Set.of("SUPPORTIVE", "COACHING", "CONCISE");
 
     private static String normalizePrefsJson(String raw) {
         try {
-            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
+            ObjectMapper om = new ObjectMapper();
             @SuppressWarnings("unchecked")
             Map<String, Object> map = om.readValue(raw, Map.class);
             // Normalize specific enum-like fields when present
@@ -212,7 +217,7 @@ public class AssistantServiceImpl implements com.adamasorho.mindapax_backend.ser
     }
 
     @Override
-    public com.adamasorho.mindapax_backend.dto.response.assistant.ProgressSnapshotDTO getProgress(User user) {
+    public ProgressSnapshotDTO getProgress(User user) {
         try {
             var now = OffsetDateTime.now();
             List<AssistantGoal> goals = goalRepo.findByUserOrderByCreatedAtDesc(user);
@@ -393,7 +398,7 @@ class JsonUtils {
     public static Map<String, Object> parseJson(String json) {
         try {
             // Use Spring's Jackson via ObjectMapper if available on classpath
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            ObjectMapper mapper = new ObjectMapper();
             return mapper.readValue(json, Map.class);
         } catch (Exception e) {
             return Map.of();

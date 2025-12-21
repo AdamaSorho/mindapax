@@ -1,11 +1,12 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import '../auth/authorized_client.dart';
 import '../auth/token_storage.dart';
 import '../env.dart';
-import 'dart:io' show Platform;
 import 'assistant_prefs.dart';
+import 'self_guided_store.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({super.key});
@@ -27,6 +28,8 @@ class _AssistantPageState extends State<AssistantPage> {
   final Set<String> _accepted = {};
   int _activeGoals = 0;
   bool _hasContext = false;
+  bool _sendingQuick = false;
+  String? _outcomeFocus;
 
   @override
   void initState() {
@@ -116,11 +119,26 @@ class _AssistantPageState extends State<AssistantPage> {
     } catch (_) {}
   }
 
-  Future<void> _send() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty || _loading) return;
+  Future<void> _send(
+      {String? textOverride,
+      bool appendPlanContext = false,
+      String? visibleText}) async {
+    final raw = textOverride ?? _controller.text.trim();
+    if (raw.isEmpty || _loading) return;
+    var text = raw;
+    if (appendPlanContext) {
+      final ctx = await _buildPlanContext();
+      if (ctx.isNotEmpty) {
+        text = '$raw\n\n$ctx';
+      }
+    }
+    if (!appendPlanContext &&
+        _outcomeFocus != null &&
+        _outcomeFocus!.isNotEmpty) {
+      text = '$text\n\nOutcome focus: ${_outcomeFocus!}.';
+    }
     setState(() {
-      _messages.add(_Msg(role: 'user', text: text));
+      _messages.add(_Msg(role: 'user', text: visibleText ?? raw));
       _loading = true;
       _controller.clear();
     });
@@ -152,11 +170,11 @@ class _AssistantPageState extends State<AssistantPage> {
               final freq = m['frequency']?.toString() ?? '';
               return GoalSuggestion(title: title, frequency: freq);
             }).toList(growable: false);
-            _messages.add(_Msg(
-                role: 'assistant', text: 'Suggested goals', suggestions: list));
-          }
-        });
-      } else {
+                _messages.add(_Msg(
+                    role: 'assistant', text: 'Suggested goals', suggestions: list));
+              }
+            });
+          } else {
         setState(() {
           _messages.add(_Msg(
               role: 'assistant',
@@ -169,6 +187,52 @@ class _AssistantPageState extends State<AssistantPage> {
       });
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _sendQuick(String label, String instruction) async {
+    if (_loading || _sendingQuick) return;
+    setState(() => _sendingQuick = true);
+    await _send(
+        textOverride: instruction,
+        appendPlanContext: true,
+        visibleText: '$label (plan-aware)');
+    if (mounted) setState(() => _sendingQuick = false);
+  }
+
+  Future<String> _buildPlanContext() async {
+    try {
+      final today = DateUtils.dateOnly(DateTime.now());
+      final goals = await SelfGuidedStore.loadGoals();
+      final checkIn = await SelfGuidedStore.loadCheckIn(today);
+      final buf = StringBuffer();
+      if (_outcomeFocus != null && _outcomeFocus!.isNotEmpty) {
+        buf.writeln('Outcome focus: ${_outcomeFocus!}.');
+      }
+      if (goals.isNotEmpty) {
+        buf.writeln('Self-guided plan context:');
+        for (final g in goals) {
+          final todays = g.tasks
+              .where((t) => DateUtils.isSameDay(t.date, today))
+              .toList();
+          buf.writeln(
+              '- Goal "${g.title}" (${g.domain}${g.outcome != null && g.outcome!.isNotEmpty ? ', outcome ${g.outcome}' : ''}) ${g.targetPerWeek}x/week, ${g.minutesPerTask} min each, difficulty ${g.difficulty}. Streak ${g.streak}, XP ${g.xp}.');
+          if (todays.isNotEmpty) {
+            buf.writeln('  Today tasks:');
+            for (final t in todays) {
+              buf.writeln(
+                  '    • ${t.title} (${t.minutes} min) [${t.status.name}]');
+            }
+          }
+        }
+      }
+      if (checkIn != null) {
+        buf.writeln(
+            'Today mood ${checkIn.mood}/5, effort ${checkIn.effort}/5, note: ${checkIn.note ?? 'n/a'}.');
+      }
+      return buf.toString().trim();
+    } catch (_) {
+      return '';
     }
   }
 
@@ -318,7 +382,7 @@ class _AssistantPageState extends State<AssistantPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.15),
+                  color: Colors.green.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -531,6 +595,76 @@ class _AssistantPageState extends State<AssistantPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Outcome focus',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(color: Colors.black54)),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('All'),
+                            selected: _outcomeFocus == null,
+                            onSelected: (_) =>
+                                setState(() => _outcomeFocus = null),
+                          ),
+                          for (final o in _outcomeCategories)
+                            ChoiceChip(
+                              label: Text(o),
+                              selected: _outcomeFocus == o,
+                              onSelected: (_) =>
+                                  setState(() => _outcomeFocus = o),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ActionChip(
+                        avatar: const Icon(Icons.edit_note_outlined, size: 18),
+                        label: const Text('Rewrite today'),
+                        onPressed: _sendingQuick || _loading
+                            ? null
+                            : () => _sendQuick('Rewrite today',
+                                'Rewrite today\'s tasks into a clear plan and mark which to do first.'),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.hourglass_bottom, size: 18),
+                        label: const Text('5-min version'),
+                        onPressed: _sendingQuick || _loading
+                            ? null
+                            : () => _sendQuick('5-min version',
+                                'Give me a 5-minute version of today that still moves me forward.'),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.trending_down, size: 18),
+                        label: const Text('Make it easier'),
+                        onPressed: _sendingQuick || _loading
+                            ? null
+                            : () => _sendQuick('Make it easier',
+                                'Make today easier while keeping momentum. Offer swaps or lighter reps.'),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.auto_fix_high_outlined, size: 18),
+                        label: const Text('Adjust plan'),
+                        onPressed: _sendingQuick || _loading
+                            ? null
+                            : () => _sendQuick('Adjust plan',
+                                'Adjust my plan for this week based on adherence.'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
@@ -639,3 +773,18 @@ String _shorten(String s, int max) {
   if (s.length <= max) return s;
   return '${s.substring(0, max - 1)}…';
 }
+
+const List<String> _outcomeCategories = [
+  'Find clarity',
+  'Reduce stress',
+  'Improve self-confidence',
+  'Heal emotional patterns',
+  'Strengthen mental discipline',
+  'Manage money better',
+  'Grow professionally',
+  'Build healthy habits',
+  'Improve physical energy',
+  'Build healthier relationships',
+  'Overcome transitions',
+  'Live a balanced, intentional life',
+];

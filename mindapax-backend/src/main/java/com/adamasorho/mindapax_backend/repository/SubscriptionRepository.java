@@ -3,6 +3,7 @@ package com.adamasorho.mindapax_backend.repository;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import com.adamasorho.mindapax_backend.model.Plan;
 import com.adamasorho.mindapax_backend.model.Subscription;
 import com.adamasorho.mindapax_backend.model.User;
 import com.adamasorho.mindapax_backend.model.Payment;
@@ -12,4 +13,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     List<Subscription> findByUserOrderByIdDesc(User user);
     Optional<Subscription> findByLastPayment(Payment payment);
     List<Subscription> findByUserAndStatusOrderByIdDesc(User user, SubscriptionStatus status);
+    boolean existsByUserAndPlanTrialTrue(User user);
+    boolean existsByUserAndPlan(User user, Plan plan);
 }

@@ -55,6 +55,9 @@ public class Professional {
     @Column(length = 1024)
     private String resumeFileUrl;
 
+    @OneToMany(mappedBy = "professional", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Availability> availabilities = new ArrayList<>();
+
     @OneToOne
     @JoinColumn(name = "user_id")
     @MapsId
@@ -71,6 +74,8 @@ public class Professional {
     private String rejectionNote;
     private String zoomMeetingId;
     private String zoomMeetingPassword;
+    @Column(length = 2048)
+    private String zoomMeetingStartUrl;
     
     @CreationTimestamp
     private LocalDateTime createdAt;

@@ -117,7 +117,7 @@ class _BillingPageState extends State<BillingPage>
                           _overviewTab(deviceLocale: deviceLocale),
                           _invoicesTab(deviceLocale: deviceLocale),
                           _subscriptionTab(),
-                         ],
+                        ],
                       ),
                     ),
                   ],
@@ -223,11 +223,10 @@ class _BillingPageState extends State<BillingPage>
                       padding: EdgeInsets.all(8.0),
                       child: Text('No invoices yet.'),
                     )
-                  else
-                    ...[
-                      for (final p in _payments.take(3))
-                        _invoiceTile(p, deviceLocale: deviceLocale),
-                    ]
+                  else ...[
+                    for (final p in _payments.take(3))
+                      _invoiceTile(p, deviceLocale: deviceLocale),
+                  ]
                 ],
               ),
             ),
@@ -286,8 +285,7 @@ class _BillingPageState extends State<BillingPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Period: $start → $end'),
-                        if (remain != null)
-                          Text('Remaining sessions: $remain'),
+                        if (remain != null) Text('Remaining sessions: $remain'),
                       ],
                     ),
                     trailing: Row(
@@ -299,7 +297,8 @@ class _BillingPageState extends State<BillingPage>
                           onSelected: (v) {
                             switch (v) {
                               case 'change':
-                                Navigator.pushNamed(context, '/member/packages');
+                                Navigator.pushNamed(
+                                    context, '/member/packages');
                                 break;
                               case 'cancel':
                                 _confirmCancel();
@@ -307,8 +306,11 @@ class _BillingPageState extends State<BillingPage>
                             }
                           },
                           itemBuilder: (context) => const [
-                            PopupMenuItem(value: 'change', child: Text('Change plan')),
-                            PopupMenuItem(value: 'cancel', child: Text('Cancel subscription')),
+                            PopupMenuItem(
+                                value: 'change', child: Text('Change plan')),
+                            PopupMenuItem(
+                                value: 'cancel',
+                                child: Text('Cancel subscription')),
                           ],
                         ),
                       ],
@@ -376,7 +378,7 @@ class _BillingPageState extends State<BillingPage>
     final c = _statusColor(status);
     return Chip(
       label: Text(status),
-      backgroundColor: c.withOpacity(0.15),
+      backgroundColor: c.withValues(alpha: 0.15),
       labelStyle: TextStyle(color: c, fontWeight: FontWeight.w600),
     );
   }
@@ -418,7 +420,7 @@ class _BillingPageState extends State<BillingPage>
       final mm = dt.minute.toString().padLeft(2, '0');
       return '$y-$m-$d $hh:$mm';
     } catch (_) {
-      return iso ?? '';
+      return iso;
     }
   }
 

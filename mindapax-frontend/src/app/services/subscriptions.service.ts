@@ -13,11 +13,18 @@ export interface PlanDTO {
   active: boolean;
   sessionAllowance: number;
   features?: string[];
+  trial: boolean;
+  trialDurationDays?: number;
+  eligibleForTrial?: boolean;
+  requiresPayment: boolean;
 }
 
 export interface CheckoutResponse {
-  paymentId: number;
-  checkoutUrl: string;
+  paymentId?: number;
+  checkoutUrl?: string;
+  requiresPayment: boolean;
+  subscriptionId: number;
+  activeUntil?: string;
 }
 
 export interface SubscriptionDTO {

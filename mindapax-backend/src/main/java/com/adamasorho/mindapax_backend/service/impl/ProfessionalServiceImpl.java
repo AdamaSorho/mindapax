@@ -2,6 +2,7 @@ package com.adamasorho.mindapax_backend.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.security.SecureRandom; // Added import
 import java.util.stream.Collectors; // Added import
@@ -27,6 +28,7 @@ import com.adamasorho.mindapax_backend.model.enums.Specialization;
 import com.adamasorho.mindapax_backend.repository.ConnectionRepository;
 import com.adamasorho.mindapax_backend.repository.ProfessionalRepository;
 import com.adamasorho.mindapax_backend.service.ProfessionalService;
+import com.adamasorho.mindapax_backend.service.ZoomMeetingDetails;
 import com.adamasorho.mindapax_backend.service.ZoomService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -89,8 +91,8 @@ public class ProfessionalServiceImpl implements ProfessionalService {
 
   @Override
   public Page<Professional> getProfessionals(String firstName, String lastName, Specialization specialization, 
-      Integer experience, LocalDate availabilityDate, ProfessionalStatus status, 
-      Set<GrantedAuthority> authorities, Pageable pageable) {
+      Integer experience, LocalDate availabilityDate, Boolean availableOnly, ProfessionalStatus status, 
+      boolean excludeConnected, Long requesterUserId, Set<GrantedAuthority> authorities, Pageable pageable) {
     if (!authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN")) && status != ProfessionalStatus.ACTIVE) {
       log.warn("Non-admin user attempted to access non-active professionals. User authorities: {}", authorities);
       throw new AccessDeniedException("Only ACTIVE professionals are visible to regular users.");
@@ -101,8 +103,25 @@ public class ProfessionalServiceImpl implements ProfessionalService {
             .and(ProfessionalSpecification.hasLastName(lastName))
             .and(ProfessionalSpecification.hasSpecialization(specialization))
             .and(ProfessionalSpecification.hasExperienceGreaterThanOrEqual(experience))
-            .and(ProfessionalSpecification.isAvailableOn(availabilityDate))
             .and(ProfessionalSpecification.hasStatus(status));
+
+    if (availabilityDate != null) {
+      spec = spec.and(ProfessionalSpecification.isAvailableOn(availabilityDate));
+    } else if (Boolean.TRUE.equals(availableOnly)) {
+      spec = spec.and(ProfessionalSpecification.hasAvailabilityOnOrAfter(LocalDate.now()));
+    }
+
+    if (excludeConnected && requesterUserId != null) {
+      List<Long> excluded = connectionRepository.findByUserId(requesterUserId).stream()
+          .filter(conn -> conn.getProfessional() != null)
+          .filter(conn ->
+              conn.getStatus() == ConnectionStatus.PENDING ||
+                  conn.getStatus() == ConnectionStatus.ACCEPTED)
+          .map(conn -> conn.getProfessional().getId())
+          .distinct()
+          .toList();
+      spec = spec.and(ProfessionalSpecification.excludeProfessionalIds(excluded));
+    }
 
     return professionalRepository.findAll(spec, pageable);
   }
@@ -156,12 +175,13 @@ public class ProfessionalServiceImpl implements ProfessionalService {
             log.info("Professional {} {} (ID: {}) is being approved. Attempting to create Zoom meeting with password.",
                         professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId);
 
-            String meetingId = zoomService.createPermanentMeetingForProfessional(professionalFullName, generatedPassword);
-            professional.setZoomMeetingId(meetingId);
+            ZoomMeetingDetails meetingDetails = zoomService.createPermanentMeetingForProfessional(professionalFullName, generatedPassword);
+            professional.setZoomMeetingId(meetingDetails.getMeetingId());
             professional.setZoomMeetingPassword(generatedPassword); // Store the generated password
+            professional.setZoomMeetingStartUrl(meetingDetails.getStartUrl());
 
-            log.info("Successfully created Zoom meeting (ID: {}) and password, and set them for professional {} {} (ID: {})",
-                        meetingId, professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId);
+            log.info("Successfully created Zoom meeting (ID: {}) and password, and set them for professional {} {} (ID: {}).",
+                        meetingDetails.getMeetingId(), professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId);
         } catch (Exception e) {
             log.error("Failed to create Zoom meeting for professional {} {} (ID: {}): {}. Professional status will be updated without a Zoom ID/password.",
                          professional.getUser().getFirstName(), professional.getUser().getLastName(), professionalId, e.getMessage(), e);

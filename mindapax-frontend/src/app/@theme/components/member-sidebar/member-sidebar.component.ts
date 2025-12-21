@@ -51,7 +51,7 @@ export class MemberSidebarComponent implements OnInit {
       label: 'Connections',
       route: '/member/connections',
       icon: 'person-add-outline',
-      allowedRoles: ['ROLE_PROFESSIONAL'],
+      allowedRoles: ['ROLE_USER', 'ROLE_PROFESSIONAL'],
     },
     {
       label: 'Professionals',

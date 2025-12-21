@@ -10,6 +10,6 @@ import com.adamasorho.mindapax_backend.model.Availability;
 
 @Repository
 public interface AvailabilityRepository extends JpaRepository<Availability, Long> {
-  List<Availability> findByProfessionalIdAndDate(Long professionalId, LocalDate date);
-  List<Availability> findByProfessionalId(Long professionalId);
+  List<Availability> findByProfessionalIdAndDateOrderByStartTimeAsc(Long professionalId, LocalDate date);
+  List<Availability> findByProfessionalIdOrderByDateAscStartTimeAsc(Long professionalId);
 }

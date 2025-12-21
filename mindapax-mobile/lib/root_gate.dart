@@ -1,9 +1,16 @@
+import 'dart:convert';
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
+
 import 'auth/auth_service.dart';
+import 'auth/authorized_client.dart';
+import 'auth/biometric_auth.dart';
+import 'auth/biometric_prefs.dart';
 import 'auth/token_storage.dart';
-import 'auth/jwt.dart';
-import 'member/nav_prefs.dart';
+import 'env.dart';
 import 'main.dart' show HomePage; // reuse existing HomePage
+import 'member/onboarding_prefs.dart';
 import 'splash.dart';
 
 class RootGate extends StatefulWidget {
@@ -25,14 +32,28 @@ class _RootGateState extends State<RootGate> {
   }
 
   Future<void> _decide() async {
-    final authed = await _auth.isAuthenticated();
+    final authed = await _auth.ensureAuthenticated();
     if (!mounted) return;
     if (authed) {
-      final savedRoute = await NavPrefs.getLastRoute();
-      final target = await _resolveLandingRoute(savedRoute);
-      if (target != savedRoute) {
-        await NavPrefs.saveLastRoute(target);
+      final biometricsEnabled = await BiometricPrefs.isEnabled();
+      if (biometricsEnabled) {
+        final supported = await BiometricAuth.isSupported();
+        final available = supported && await BiometricAuth.canCheckBiometrics();
+        bool verified = false;
+        if (supported && available) {
+          verified = await BiometricAuth.authenticate(
+            reason: 'Authenticate to unlock Mindapax',
+          );
+        }
+        if (!verified) {
+          await _auth.logout();
+          if (!mounted) return;
+          setState(() => _deciding = false);
+          return;
+        }
       }
+
+      final target = await _resolveLandingRoute();
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, target);
@@ -42,47 +63,41 @@ class _RootGateState extends State<RootGate> {
     }
   }
 
-  Future<String> _resolveLandingRoute(String? route) async {
-    final requested =
-        (route == null || route.isEmpty) ? NavPrefs.defaultRoute : route;
-    final token = await _storage.getAccessToken();
-    if (token == null || token.isEmpty) {
-      return requested;
+  Future<String> _resolveLandingRoute() async {
+    final needsOnboarding = await _shouldRunOnboarding();
+    if (needsOnboarding) {
+      return '/member/onboarding';
     }
-    final payload = decodeJwtPayload(token);
-    final roles = _normalizeRoles(payload?['roles']);
-    if (roles.contains('ROLE_PROFESSIONAL')) {
-      const allowed = {
-        '/member/dashboard',
-        '/member/sessions',
-        '/member/messages',
-        '/member/connections',
-        '/member/settings',
-      };
-      if (!allowed.contains(requested)) {
-        return '/member/sessions';
-      }
-    }
-    return requested;
+    return '/member/dashboard';
   }
 
-  List<String> _normalizeRoles(dynamic raw) {
-    if (raw is List) {
-      return raw
-          .map((e) => e.toString())
-          .where((e) => e.isNotEmpty)
-          .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
-          .toList(growable: false);
-    }
-    if (raw is String) {
-      return raw
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
-          .toList(growable: false);
-    }
-    return const [];
+  Future<bool> _shouldRunOnboarding() async {
+    if (await OnboardingPrefs.isCompleted()) return false;
+    try {
+      final client = AuthorizedHttpClient(_storage);
+      final uri = Uri.parse(
+          '${_normalizeBaseUrl(apiBaseUrl)}/assistant/context/completed');
+      final res = await client.get(uri);
+      if (res.statusCode >= 200 &&
+          res.statusCode < 300 &&
+          res.body.isNotEmpty) {
+        final m = jsonDecode(res.body) as Map<String, dynamic>;
+        final completed = (m['completed'] == true);
+        return !completed;
+      }
+    } catch (_) {}
+    return true;
+  }
+
+  String _normalizeBaseUrl(String value) {
+    final cleaned = value.replaceAll(RegExp(r'/+$'), '');
+    try {
+      final u = Uri.parse(cleaned);
+      if (u.host == 'localhost' && Platform.isAndroid) {
+        return cleaned.replaceFirst('localhost', '10.0.2.2');
+      }
+    } catch (_) {}
+    return cleaned;
   }
 
   @override

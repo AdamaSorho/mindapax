@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'member_scaffold.dart';
 import '../professional/professional_api.dart';
 import '../professional/models.dart';
@@ -37,13 +38,16 @@ class _FindProfessionalPageState extends State<FindProfessionalPage> {
       if (resetPage) _page = 0;
     });
     try {
+      final dateFilter = _availabilityDate?.toIso8601String().split('T').first;
       final filters = ProfessionalFilterParams(
         firstName: _searchController.text.trim().isEmpty
             ? null
             : _searchController.text.trim(),
         specialization: _specialization,
         experience: _experience,
-        availabilityDate: _availabilityDate?.toIso8601String(),
+        availabilityDate: dateFilter,
+        availableOnly: true,
+        excludeConnected: true,
         status: 'ACTIVE',
         page: _page,
         size: 20,
@@ -51,7 +55,9 @@ class _FindProfessionalPageState extends State<FindProfessionalPage> {
       );
       final res = await _api.search(filters);
       setState(() {
-        _items = res.content;
+        _items = res.content
+            .where((p) => p.availabilities.isNotEmpty)
+            .toList(growable: false);
         _totalPages = res.totalPages;
       });
     } catch (e) {
@@ -83,8 +89,10 @@ class _FindProfessionalPageState extends State<FindProfessionalPage> {
   }
 
   void _viewProfessional(Professional p) {
+    final parentContext = context;
+    final messenger = ScaffoldMessenger.of(parentContext);
     showModalBottomSheet(
-      context: context,
+      context: parentContext,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -92,20 +100,18 @@ class _FindProfessionalPageState extends State<FindProfessionalPage> {
       builder: (context) => _ProfessionalSheet(
         professional: p,
         onConnect: () async {
-          Navigator.pop(context);
+          Navigator.of(parentContext).pop();
           try {
             await _api.connectWithProfessional(p.id);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Connection request sent')),
-              );
-            }
+            if (!mounted) return;
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Connection request sent')),
+            );
           } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to connect: $e')),
-              );
-            }
+            if (!mounted) return;
+            messenger.showSnackBar(
+              SnackBar(content: Text('Failed to connect: $e')),
+            );
           }
         },
       ),
@@ -305,6 +311,12 @@ class _ProfessionalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final nextSlot = professional.availabilities.isNotEmpty
+        ? professional.availabilities.first
+        : null;
+    final nextSlotLabel = nextSlot != null
+        ? DateFormat('EEE, MMM d · h:mm a').format(nextSlot.startTime)
+        : null;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Padding(
@@ -341,6 +353,22 @@ class _ProfessionalCard extends StatelessWidget {
                       Text((professional.rating ?? 0).toStringAsFixed(1)),
                     ],
                   ),
+                  if (nextSlotLabel != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.event_available,
+                            color: Colors.green, size: 16),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            nextSlotLabel,
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -441,13 +469,15 @@ class _ProfessionalSheet extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    if ((professional.availability ?? const []).isNotEmpty) ...[
+                    if (professional.availabilities.isNotEmpty) ...[
                       const Text('Availability'),
                       Wrap(
                         spacing: 8,
                         children: [
-                          for (final a in professional.availability!)
-                            Chip(label: Text(a))
+                          for (final slot in professional.availabilities)
+                            Chip(
+                                avatar: const Icon(Icons.schedule, size: 16),
+                                label: Text(slot.formatLabel()))
                         ],
                       ),
                     ],

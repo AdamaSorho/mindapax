@@ -53,6 +53,18 @@ public class User {
     @Column(nullable = false)
     private boolean emailVerified = false;
 
+    @Column(nullable = false)
+    private boolean twoFactorEnabled = false;
+
+    @Column(length = 128)
+    private String twoFactorSecret;
+
+    @Column(name = "avatar_path", length = 2048)
+    private String avatarFilePath;
+
+    @Column(name = "avatar_url", length = 2048)
+    private String avatarUrl;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private Professional professional;

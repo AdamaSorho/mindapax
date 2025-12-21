@@ -3,7 +3,8 @@ import '../auth/token_storage.dart';
 import '../auth/jwt.dart';
 import '../dev/role_override.dart';
 import '../professional/professional_api.dart';
-import '../professional/models.dart' show specializationLabels, ProfessionalFilterParams;
+import '../professional/models.dart'
+    show specializationLabels, ProfessionalFilterParams;
 import '../connections/models.dart';
 import '../connections/connections_api.dart';
 import 'member_scaffold.dart';
@@ -49,11 +50,17 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
       if (raw is List) {
         roles = raw.map((e) => e.toString()).toList();
       } else if (raw is String) {
-        roles = raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        roles = raw
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
       }
       // Debug role override support
       if (RoleOverride.roles != null) roles = RoleOverride.roles!;
-      roles = roles.map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}').toList();
+      roles = roles
+          .map((r) => r.startsWith('ROLE_') ? r : 'ROLE_${r.toUpperCase()}')
+          .toList();
       _isProfessional = roles.contains('ROLE_PROFESSIONAL');
 
       if (_isProfessional) {
@@ -77,11 +84,17 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
   List<ConnectionItem> get _filtered {
     switch (_activeTab) {
       case 'accepted':
-        return _all.where((c) => c.status == ConnectionStatus.ACCEPTED).toList();
+        return _all
+            .where((c) => c.status == ConnectionStatus.ACCEPTED)
+            .toList();
       case 'transferred':
-        return _all.where((c) => c.status == ConnectionStatus.TRANSFERRED).toList();
+        return _all
+            .where((c) => c.status == ConnectionStatus.TRANSFERRED)
+            .toList();
       case 'escalated':
-        return _all.where((c) => c.status == ConnectionStatus.ESCALATED).toList();
+        return _all
+            .where((c) => c.status == ConnectionStatus.ESCALATED)
+            .toList();
       case 'all':
         return _all;
       default:
@@ -104,7 +117,8 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
       setState(() {});
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to update: $e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -120,52 +134,65 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
     String q = '';
     int page = 0;
     bool loading = true;
-    Future<void> load() async {
-      loading = true;
-      setState(() {});
+    bool escalateToAdmin = false;
+    Future<void> load({void Function(void Function())? modalState}) async {
+      void apply(void Function() fn) {
+        if (modalState != null) {
+          modalState(fn);
+        } else {
+          if (mounted) setState(fn);
+        }
+      }
+
+      apply(() => loading = true);
       try {
         final res = await _proApi.search(ProfessionalFilterParams(
           firstName: q.isEmpty ? null : q,
           page: page,
           size: 20,
+          availableOnly: true,
         ));
         pros = res.content;
       } catch (_) {
         pros = const [];
       } finally {
-        loading = false;
-        if (mounted) setState(() {});
+        apply(() => loading = false);
       }
     }
 
+    final rootContext = context;
+    final messenger = ScaffoldMessenger.of(rootContext);
+    await load(); // initial load before showing sheet
+
     await showModalBottomSheet(
-      context: context,
+      context: rootContext,
       isScrollControlled: true,
       builder: (context) {
-        // initial load
-        load();
         return StatefulBuilder(builder: (context, setModal) {
+          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
           return Padding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
+              bottom: bottomInset,
               left: 16,
               right: 16,
               top: 16,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Transfer Connection', style: TextStyle(fontWeight: FontWeight.w600)),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                const Text('Transfer Connection',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 TextField(
                   controller: controller,
                   decoration: const InputDecoration(
-                      border: OutlineInputBorder(), hintText: 'Search professional by first name'),
+                      border: OutlineInputBorder(),
+                      hintText: 'Search professional by first name'),
                   onChanged: (v) {
                     q = v.trim();
                     page = 0;
-                    load();
-                    setModal(() {});
+                    load(modalState: setModal);
                   },
                 ),
                 const SizedBox(height: 12),
@@ -177,13 +204,18 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
                           itemCount: pros.length,
                           itemBuilder: (_, i) {
                             final p = pros[i];
-                            final name = '${p.user.firstName} ${p.user.lastName}';
+                            final name =
+                                '${p.user.firstName} ${p.user.lastName}';
                             return RadioListTile<int>(
                               value: p.id as int,
+                              // ignore: deprecated_member_use
                               groupValue: selectedProId,
-                              onChanged: (v) => setModal(() => selectedProId = v),
+                              // ignore: deprecated_member_use
+                              onChanged: (v) =>
+                                  setModal(() => selectedProId = v),
                               title: Text(name),
-                              subtitle: Text(p.specialization?.toString() ?? ''),
+                              subtitle:
+                                  Text(p.specialization?.toString() ?? ''),
                             );
                           },
                         ),
@@ -196,30 +228,47 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
                   ),
                   onChanged: (v) => reason = v,
                 ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Escalate to Admin'),
+                  subtitle: const Text(
+                      'Notify the admin team about this transfer'),
+                  value: escalateToAdmin,
+                  onChanged: (v) => setModal(() => escalateToAdmin = v),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     TextButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Navigator.of(rootContext).pop(),
                         child: const Text('Cancel')),
                     const Spacer(),
                     FilledButton(
                         onPressed: selectedProId == null
                             ? null
                             : () async {
-                                Navigator.pop(context);
+                                Navigator.of(rootContext).pop();
+                                if (!mounted) return;
                                 setState(() => _loading = true);
                                 try {
                                   final updated = await _api.transferConnection(
-                                      connectionId: c.id, professionalId: selectedProId!, reason: reason.trim().isEmpty ? null : reason.trim());
-                                  final idx = _all.indexWhere((x) => x.id == c.id);
-                                  if (idx >= 0) _all = List.of(_all)..[idx] = updated;
+                                      connectionId: c.id,
+                                      professionalId: selectedProId!,
+                                      reason: reason.trim().isEmpty
+                                          ? null
+                                          : reason.trim(),
+                                      escalateToAdmin: escalateToAdmin);
+                                  if (!mounted) return;
+                                  final idx =
+                                      _all.indexWhere((x) => x.id == c.id);
+                                  if (idx >= 0) {
+                                    _all = List.of(_all)..[idx] = updated;
+                                  }
                                   setState(() {});
                                 } catch (e) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Transfer failed: $e')));
-                                  }
+                                  if (!mounted) return;
+                                  messenger.showSnackBar(SnackBar(
+                                      content: Text('Transfer failed: $e')));
                                 } finally {
                                   if (mounted) setState(() => _loading = false);
                                 }
@@ -229,6 +278,7 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
                 ),
                 const SizedBox(height: 12),
               ],
+              ),
             ),
           );
         });
@@ -255,7 +305,13 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (final tab in const ['pending', 'accepted', 'transferred', 'escalated', 'all']) ...[
+                  for (final tab in const [
+                    'pending',
+                    'accepted',
+                    'transferred',
+                    'escalated',
+                    'all'
+                  ]) ...[
                     ChoiceChip(
                       label: Text(tab[0].toUpperCase() + tab.substring(1)),
                       selected: _activeTab == tab,
@@ -285,9 +341,11 @@ class _ConnectionsPageState extends State<ConnectionsPage> {
                       itemBuilder: (_, i) => _ConnectionCard(
                         item: _filtered[i],
                         isProfessional: _isProfessional,
-                        onAccept: () => _updateStatus(_filtered[i], ConnectionStatus.ACCEPTED),
+                        onAccept: () => _updateStatus(
+                            _filtered[i], ConnectionStatus.ACCEPTED),
                         onTransfer: () => _openTransfer(_filtered[i]),
-                        onEscalate: () => _updateStatus(_filtered[i], ConnectionStatus.ESCALATED),
+                        onEscalate: () => _updateStatus(
+                            _filtered[i], ConnectionStatus.ESCALATED),
                       ),
                     ),
             ),
@@ -315,6 +373,20 @@ class _ConnectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = isProfessional ? item.userName : item.professionalName;
+    final avatarUrl =
+        isProfessional ? item.userAvatar : item.professionalAvatar;
+    final fallbackInitial =
+        displayName.isNotEmpty ? displayName[0].toUpperCase() : 'M';
+    final primaryDescriptor = isProfessional
+        ? _formatSpecialization(item.requestType)
+        : _formatSpecialization(item.professionalSpecialization);
+    final secondaryDescriptor = isProfessional
+        ? _formatSpecialization(item.professionalSpecialization)
+        : (item.requestType == null
+            ? null
+            : 'Request: ${_formatSpecialization(item.requestType)!}');
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Padding(
@@ -326,11 +398,12 @@ class _ConnectionCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundImage: item.userAvatar != null && item.userAvatar!.isNotEmpty
-                      ? NetworkImage(item.userAvatar!)
-                      : null,
-                  child: (item.userAvatar == null || item.userAvatar!.isEmpty)
-                      ? Text(item.userName.isNotEmpty ? item.userName[0].toUpperCase() : 'U')
+                  backgroundImage:
+                      avatarUrl != null && avatarUrl.isNotEmpty
+                          ? NetworkImage(avatarUrl)
+                          : null,
+                  child: (avatarUrl == null || avatarUrl.isEmpty)
+                      ? Text(fallbackInitial)
                       : null,
                 ),
                 const SizedBox(width: 12),
@@ -338,19 +411,14 @@ class _ConnectionCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(item.userName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      if (item.requestType != null)
-                        Text(item.requestType!, style: const TextStyle(color: Colors.black54)),
-                      if (item.professionalSpecialization != null)
-                        Text(
-                          specializationLabels.entries
-                                  .firstWhere(
-                                      (e) => e.key.toString().split('.').last == item.professionalSpecialization,
-                                      orElse: () => MapEntry(specializationLabels.keys.first, ''))
-                                  .value ??
-                              (item.professionalSpecialization ?? ''),
-                          style: const TextStyle(color: Colors.black45),
-                        ),
+                      Text(displayName,
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      if (primaryDescriptor != null)
+                        Text(primaryDescriptor,
+                            style: const TextStyle(color: Colors.black54)),
+                      if (secondaryDescriptor != null)
+                        Text(secondaryDescriptor,
+                            style: const TextStyle(color: Colors.black45)),
                     ],
                   ),
                 ),
@@ -359,13 +427,16 @@ class _ConnectionCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             if ((item.message ?? '').isNotEmpty)
-              Text(item.message!, style: const TextStyle(color: Colors.black87)),
-            if (item.status == ConnectionStatus.TRANSFERRED && (item.transferReason ?? '').isNotEmpty) ...[
+              Text(item.message!,
+                  style: const TextStyle(color: Colors.black87)),
+            if (item.status == ConnectionStatus.TRANSFERRED &&
+                (item.transferReason ?? '').isNotEmpty) ...[
               const SizedBox(height: 6),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline, size: 16, color: Colors.black45),
+                  const Icon(Icons.info_outline,
+                      size: 16, color: Colors.black45),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text('Reason: ${item.transferReason}',
@@ -384,13 +455,15 @@ class _ConnectionCard extends StatelessWidget {
                 const Spacer(),
                 if (item.urgency != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: _urgencyColor(item.urgency!),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text('${item.urgency}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12)),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 12)),
                   ),
               ],
             ),
@@ -398,11 +471,14 @@ class _ConnectionCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  FilledButton(onPressed: onAccept, child: const Text('Accept')),
+                  FilledButton(
+                      onPressed: onAccept, child: const Text('Accept')),
                   const SizedBox(width: 8),
-                  OutlinedButton(onPressed: onTransfer, child: const Text('Transfer')),
+                  OutlinedButton(
+                      onPressed: onTransfer, child: const Text('Transfer')),
                   const SizedBox(width: 8),
-                  OutlinedButton(onPressed: onEscalate, child: const Text('Escalate')),
+                  OutlinedButton(
+                      onPressed: onEscalate, child: const Text('Escalate')),
                 ],
               )
             ]
@@ -410,6 +486,19 @@ class _ConnectionCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static String _specializationLabel(String value) {
+    final match = specializationLabels.entries.firstWhere(
+      (e) => e.key.toString().split('.').last == value,
+      orElse: () => specializationLabels.entries.first,
+    );
+    return match.value.isNotEmpty ? match.value : value;
+  }
+
+  static String? _formatSpecialization(String? value) {
+    if (value == null || value.isEmpty) return null;
+    return _specializationLabel(value);
   }
 
   static Widget _statusChip(ConnectionStatus s) {
@@ -440,8 +529,10 @@ class _ConnectionCard extends StatelessWidget {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
-      child: Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+      child:
+          Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
     );
   }
 

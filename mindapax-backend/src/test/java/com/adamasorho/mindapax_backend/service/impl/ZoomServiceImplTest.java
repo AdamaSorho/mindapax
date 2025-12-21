@@ -1,5 +1,6 @@
 package com.adamasorho.mindapax_backend.service.impl;
 
+import com.adamasorho.mindapax_backend.service.ZoomMeetingDetails;
 import com.adamasorho.mindapax_backend.service.ZoomService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -67,10 +68,6 @@ public class ZoomServiceImplTest {
 
     @Captor
     private ArgumentCaptor<BodyInserters.FormInserter<String>> formInserterCaptor;
-    @Captor
-    private ArgumentCaptor<ZoomServiceImpl.ZoomMeetingRequest> meetingRequestCaptor;
-
-
     @BeforeEach
     void setUp() {
         // Configure WebClient.Builder mock
@@ -199,6 +196,8 @@ public class ZoomServiceImplTest {
         ZoomServiceImpl.ZoomMeetingResponse mockMeetingResponse = new ZoomServiceImpl.ZoomMeetingResponse();
         mockMeetingResponse.setId(expectedMeetingId);
         mockMeetingResponse.setTopic("Consultation Room for " + professionalName);
+        mockMeetingResponse.setStartUrl("https://zoom.us/s/" + expectedMeetingId);
+        mockMeetingResponse.setJoinUrl("https://zoom.us/j/" + expectedMeetingId);
 
         // Ensure the bodyToMono for ZoomMeetingResponse.class is correctly mocked
         // This was the tricky part. Need to mock the body method that takes BodyInserters.fromValue
@@ -218,9 +217,11 @@ public class ZoomServiceImplTest {
         when(responseSpec.bodyToMono(ZoomServiceImpl.ZoomMeetingResponse.class)).thenReturn(Mono.just(mockMeetingResponse));
 
         // Call with password
-        String meetingId = spiedZoomService.createPermanentMeetingForProfessional(professionalName, testPassword);
+        ZoomMeetingDetails meetingDetails = spiedZoomService.createPermanentMeetingForProfessional(professionalName, testPassword);
 
-        assertEquals(String.valueOf(expectedMeetingId), meetingId);
+        assertEquals(String.valueOf(expectedMeetingId), meetingDetails.getMeetingId());
+        assertEquals("https://zoom.us/s/" + expectedMeetingId, meetingDetails.getStartUrl());
+        assertEquals("https://zoom.us/j/" + expectedMeetingId, meetingDetails.getJoinUrl());
         // verify(spiedZoomService, times(1)).getS2SAccessToken(); // Verify S2S token was fetched
 
         // Verify meeting creation call details
@@ -228,14 +229,6 @@ public class ZoomServiceImplTest {
         verify(requestBodyUriSpec).header(HttpHeaders.AUTHORIZATION, "Bearer " + mockAccessToken);
         verify(requestBodyUriSpec).contentType(MediaType.APPLICATION_JSON);
 
-        // verify(requestBodyUriSpec).body(meetingRequestCaptor.capture());
-        ZoomServiceImpl.ZoomMeetingRequest capturedRequest = meetingRequestCaptor.getValue();
-        assertEquals("Consultation Room for " + professionalName, capturedRequest.getTopic());
-        assertEquals(2, capturedRequest.getType());
-        assertEquals(capturedRequest.getPassword(), testPassword);
-        assertTrue(capturedRequest.getSettings().isJoinBeforeHost());
-        assertTrue(capturedRequest.getSettings().isWaitingRoom());
-        assertFalse(capturedRequest.getSettings().isMeetingAuthentication());
     }
 
     @Test

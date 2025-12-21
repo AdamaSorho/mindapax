@@ -170,27 +170,35 @@
       class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between">
         <div class="flex items-center mb-4 md:mb-0">
-          <img [src]="connection.user.avatar || 'https://placehold.co/400x400?text=Profile'" alt="Client Photo"
+          <img [src]="getDisplayAvatar(connection) || 'https://placehold.co/400x400?text=Profile'" alt="Profile Photo"
             class="w-10 h-10 rounded-full" />
           <div class="ml-3">
-            <h3 class="text-lg font-semibold text-gray-900">{{connection.user.firstName}}
-              {{connection.user.lastName}}</h3>
-            <div class="flex items-center">
-              <span class="text-sm text-gray-500">{{connection.requestType | titlecase}}</span>
-              <span class="mx-2 h-1 w-1 rounded-full bg-gray-300"></span>
-              <span class="text-sm text-gray-500">{{connection.createdAt | date}}</span>
-              <span class="mx-2 h-1 w-1 rounded-full bg-gray-300"></span>
-              @if (connection.urgency) {
-              <span [ngClass]="getUrgencyClass(connection.urgency)"
-                class="px-2 py-0.5 rounded-full text-xs font-medium">
-                {{connection.urgency | titlecase}} Priority
-              </span>
-              }
+            <h3 class="text-lg font-semibold text-gray-900">
+              {{getDisplayName(connection)}}
+            </h3>
+            <div class="flex items-center flex-wrap text-sm text-gray-500">
+              <ng-container *ngIf="getPrimaryDescriptor(connection) as descriptor">
+                <span>{{descriptor}}</span>
+                <span class="mx-2 h-1 w-1 rounded-full bg-gray-300"></span>
+              </ng-container>
+              <span>{{connection.createdAt | date}}</span>
+              <ng-container *ngIf="connection.urgency as urgency">
+                <span class="mx-2 h-1 w-1 rounded-full bg-gray-300"></span>
+                <span
+                  [ngClass]="getUrgencyClass(urgency)"
+                  class="px-2 py-0.5 rounded-full text-xs font-medium"
+                >
+                  {{urgency | titlecase}} Priority
+                </span>
+              </ng-container>
+            </div>
+            <div class="text-xs text-gray-500 mt-1" *ngIf="getSecondaryDescriptor(connection) as secondary">
+              {{secondary}}
             </div>
           </div>
         </div>
 
-        <div class="flex flex-wrap gap-2" *ngIf="connection.status === connectionStatus.PENDING">
+        <div class="flex flex-wrap gap-2" *ngIf="isProfessional && connection.status === connectionStatus.PENDING">
           <button
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             (click)="acceptConnection(connection.id)">
@@ -250,7 +258,7 @@
   </div>
 
   <!-- Transfer Modal -->
-  <div *ngIf="isTransferModalOpen"
+  <div *ngIf="isProfessional && isTransferModalOpen"
     class="fixed inset-0 bg-gray-500 bg-opacity-75 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-lg w-full">
       <div class="p-4 border-b border-gray-200">
@@ -276,6 +284,15 @@
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
             placeholder="Please provide a reason for transferring this connection..."></textarea>
         </div>
+
+        <div class="mb-4 flex items-start space-x-3">
+          <input id="escalateTransfer" type="checkbox" [(ngModel)]="escalateTransfer"
+            class="mt-1 h-4 w-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" />
+          <label for="escalateTransfer" class="text-sm text-gray-900">
+            <span class="font-medium">Notify Admin</span><br />
+            <span class="text-gray-500">Escalate this transfer to the admin team.</span>
+          </label>
+        </div>
       </div>
 
       <div class="p-4 border-t border-gray-200 flex justify-end space-x-2">
@@ -292,7 +309,7 @@
   </div>
 
   <!-- Admin Escalation Modal -->
-  <div *ngIf="isAdminModalOpen"
+  <div *ngIf="isProfessional && isAdminModalOpen"
     class="fixed inset-0 bg-gray-500 bg-opacity-75 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg max-w-lg w-full">
       <div class="p-4 border-b border-gray-200">

@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 enum ConnectionStatus { PENDING, ACCEPTED, TRANSFERRED, ESCALATED, BLOCKED }
 
 ConnectionStatus? connectionStatusFromString(String? value) {
@@ -34,6 +36,7 @@ class ConnectionItem {
   final String? userAvatar;
   final int professionalId;
   final String professionalName;
+  final String? professionalAvatar;
   final String? professionalSpecialization;
 
   ConnectionItem({
@@ -49,6 +52,7 @@ class ConnectionItem {
     required this.userAvatar,
     required this.professionalId,
     required this.professionalName,
+    required this.professionalAvatar,
     required this.professionalSpecialization,
   });
 
@@ -56,10 +60,14 @@ class ConnectionItem {
     final user = j['user'] as Map<String, dynamic>? ?? const {};
     final pro = j['professional'] as Map<String, dynamic>? ?? const {};
     final proUser = pro['user'] as Map<String, dynamic>? ?? const {};
-    final status = connectionStatusFromString(j['status']?.toString()) ?? ConnectionStatus.PENDING;
-    final created = DateTime.tryParse(j['createdAt']?.toString() ?? '') ?? DateTime.now();
-    final userName = '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim();
-    final proName = '${proUser['firstName'] ?? ''} ${proUser['lastName'] ?? ''}'.trim();
+    final status = connectionStatusFromString(j['status']?.toString()) ??
+        ConnectionStatus.PENDING;
+    final created =
+        DateTime.tryParse(j['createdAt']?.toString() ?? '') ?? DateTime.now();
+    final userName =
+        '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim();
+    final proName =
+        '${proUser['firstName'] ?? ''} ${proUser['lastName'] ?? ''}'.trim();
     return ConnectionItem(
       id: (j['id'] as num?)?.toInt() ?? 0,
       status: status,
@@ -73,6 +81,10 @@ class ConnectionItem {
       userAvatar: user['avatar']?.toString(),
       professionalId: (pro['id'] as num?)?.toInt() ?? 0,
       professionalName: proName.isEmpty ? 'Professional' : proName,
+      professionalAvatar: (proUser['avatarUrl'] ??
+              proUser['avatar'] ??
+              proUser['avatar_url'])
+          ?.toString(),
       professionalSpecialization: pro['specialization']?.toString(),
     );
   }

@@ -77,19 +77,21 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         await OnboardingPrefs.setCompleted(true);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        final navigator = Navigator.of(context);
+        messenger.showSnackBar(const SnackBar(
             content: Text('Thanks! Your preferences are saved.')));
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil('/member/dashboard', (r) => false);
+        navigator.pushNamedAndRemoveUntil('/member/dashboard', (r) => false);
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
             SnackBar(content: Text('Save failed (${res.statusCode})')));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -125,7 +127,7 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
                 ? null
                 : () async {
                     await OnboardingPrefs.setCompleted(true);
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     Navigator.of(context).pushNamedAndRemoveUntil(
                         '/member/dashboard', (r) => false);
                   },

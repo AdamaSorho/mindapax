@@ -58,5 +58,7 @@
     <string>Mindapax uses the camera for video sessions.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Mindapax uses the microphone for video sessions.</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Enable Face ID to quickly and securely unlock your Mindapax account.</string>
 </dict>
 </plist>

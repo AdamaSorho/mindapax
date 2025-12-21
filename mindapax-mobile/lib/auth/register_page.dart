@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import 'auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -20,6 +22,8 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscure2 = true;
   bool _loading = false;
   String? _error;
+  bool _termsError = false;
+  double _passwordStrength = 0;
 
   final _auth = AuthService();
 
@@ -38,7 +42,15 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       _loading = true;
       _error = null;
+      _termsError = false;
     });
+    if (!_agreeTerms) {
+      setState(() {
+        _termsError = true;
+        _loading = false;
+      });
+      return;
+    }
     try {
       await _auth.register(
         firstName: _firstNameController.text.trim(),
@@ -49,14 +61,72 @@ class _RegisterPageState extends State<RegisterPage> {
         agreeTerms: _agreeTerms,
       );
       if (!mounted) return;
-      Navigator.popAndPushNamed(context, '/auth/login');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful. Please log in.')),
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/auth/login',
+        (route) => false,
+        arguments: const {'registered': true},
       );
     } catch (e) {
-      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+      final friendly = _friendlyRegisterError(e);
+      setState(() => _error = friendly);
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _friendlyRegisterError(Object error) {
+    final raw = error.toString().replaceFirst('Exception: ', '');
+    final lower = raw.toLowerCase();
+    if (lower.contains('email') &&
+        (lower.contains('exists') || lower.contains('used'))) {
+      return 'An account with that email already exists. Try logging in instead.';
+    }
+    if (lower.contains('network') ||
+        lower.contains('timeout') ||
+        lower.contains('socket') ||
+        lower.contains('failed host lookup') ||
+        lower.contains('connection refused')) {
+      return 'We couldn\'t reach the server. Check your internet connection and try again.';
+    }
+    if (lower.contains('password')) {
+      return 'That password didn\'t meet our requirements. Please try a stronger password.';
+    }
+    return 'We couldn\'t create your account right now. Please try again in a moment.';
+  }
+
+  void _updatePasswordStrength(String value) {
+    final score = _calculatePasswordStrength(value);
+    setState(() => _passwordStrength = score);
+  }
+
+  double _calculatePasswordStrength(String value) {
+    if (value.isEmpty) return 0;
+    double strength = 0;
+    if (value.length >= 8) strength += 0.25;
+    if (RegExp(r'[A-Z]').hasMatch(value)) strength += 0.25;
+    if (RegExp(r'[0-9]').hasMatch(value)) strength += 0.25;
+    if (RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(value)) strength += 0.25;
+    return strength.clamp(0, 1);
+  }
+
+  String _passwordStrengthLabel(double value) {
+    if (value <= 0.25) return 'Too weak';
+    if (value <= 0.5) return 'Weak';
+    if (value <= 0.75) return 'Good';
+    return 'Strong';
+  }
+
+  Color _passwordStrengthColor(double value) {
+    if (value <= 0.25) return Colors.redAccent;
+    if (value <= 0.5) return Colors.orangeAccent;
+    if (value <= 0.75) return Colors.amber;
+    return Colors.green;
+  }
+
+  Future<void> _openLegalUrl(String path) async {
+    final uri = Uri.parse('https://mindapax.com/$path');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -111,8 +181,11 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscure1,
+                  onChanged: _updatePasswordStrength,
                   decoration: InputDecoration(
-                    labelText: 'Password (min 8 chars)',
+                    labelText: 'Password',
+                    helperText:
+                        'Use at least 8 characters with a mix of uppercase, numbers, and symbols.',
                     suffixIcon: IconButton(
                       icon: Icon(_obscure1 ? Icons.visibility : Icons.visibility_off),
                       onPressed: () => setState(() => _obscure1 = !_obscure1),
@@ -124,6 +197,30 @@ class _RegisterPageState extends State<RegisterPage> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 8),
+                if (_passwordController.text.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.all(Radius.circular(4)),
+                        child: LinearProgressIndicator(
+                          value: _passwordStrength,
+                          minHeight: 6,
+                          backgroundColor: Colors.grey.shade200,
+                          color: _passwordStrengthColor(_passwordStrength),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _passwordStrengthLabel(_passwordStrength),
+                        style: TextStyle(
+                          color: _passwordStrengthColor(_passwordStrength),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _confirmPasswordController,
@@ -146,13 +243,48 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     Checkbox(
                       value: _agreeTerms,
-                      onChanged: (v) => setState(() => _agreeTerms = v ?? false),
+                      onChanged: (v) => setState(() {
+                        _agreeTerms = v ?? false;
+                        if (_agreeTerms) _termsError = false;
+                      }),
                     ),
-                    const Expanded(
-                      child: Text('I agree to the Terms and Privacy Policy'),
+                    Expanded(
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          const Text('I agree to the '),
+                          TextButton(
+                            onPressed: () => _openLegalUrl('terms'),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('Terms of Service'),
+                          ),
+                          const Text(' and '),
+                          TextButton(
+                            onPressed: () => _openLegalUrl('privacy'),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('Privacy Policy'),
+                          ),
+                        ],
+                      ),
                     )
                   ],
                 ),
+                if (_termsError)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 48),
+                    child: Text(
+                      'You must agree to continue.',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
                 if (_error != null) ...[
                   const SizedBox(height: 8),
                   Text(_error!, style: const TextStyle(color: Colors.red)),
@@ -177,4 +309,3 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
-

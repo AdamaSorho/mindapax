@@ -21,9 +21,9 @@ class SessionDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final end = DateTime.tryParse(session.startTime
-        .add(Duration(minutes: session.durationMinutes))
-        .toIso8601String());
+    final localStart = session.startTime.toLocal();
+    final localEnd = DateTime.tryParse(
+        session.startTime.add(Duration(minutes: session.durationMinutes)).toIso8601String())?.toLocal();
 
     return Scaffold(
       appBar: AppBar(
@@ -65,11 +65,11 @@ class SessionDetailPage extends StatelessWidget {
           ),
 
           const SizedBox(height: 16),
-          _InfoRow(icon: Icons.today, label: _dateLabel(session.startTime)),
+          _InfoRow(icon: Icons.today, label: _dateLabel(localStart)),
           const SizedBox(height: 8),
           _InfoRow(
             icon: Icons.schedule,
-            label: '${_timeOf(session.startTime)} - ${end != null ? _timeOf(end) : ''} (${session.durationMinutes} mins)'
+            label: '${_timeOf(localStart)} - ${localEnd != null ? _timeOf(localEnd) : ''} (${session.durationMinutes} mins)'
           ),
           const SizedBox(height: 8),
           _InfoRow(icon: _modeIcon(session.mode), label: '${sessionModeToString(session.mode)} session'),

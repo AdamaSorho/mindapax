@@ -20,8 +20,8 @@ public interface ZoomService {
      * Creates a permanent Zoom meeting for a professional.
      * @param professionalName The name of the professional, used for the meeting topic.
      * @param password The password for the Zoom meeting.
-     * @return The numeric Zoom Meeting ID as a String.
+     * @return Meeting details including ID and start URL.
      * @throws RuntimeException if meeting creation fails.
      */
-    String createPermanentMeetingForProfessional(String professionalName, String password);
+    ZoomMeetingDetails createPermanentMeetingForProfessional(String professionalName, String password);
 }

@@ -138,8 +138,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                                 ),
                                 trailing: Chip(
                                   label: Text(status),
-                                  backgroundColor:
-                                      _statusColor(status).withOpacity(0.15),
+                                  backgroundColor: _statusColor(status)
+                                      .withValues(alpha: 0.15),
                                   labelStyle: TextStyle(
                                       color: _statusColor(status),
                                       fontWeight: FontWeight.w600),

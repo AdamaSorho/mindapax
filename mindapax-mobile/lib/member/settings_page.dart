@@ -1,15 +1,21 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io' show File, Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:local_auth/local_auth.dart';
 
 import '../auth/authorized_client.dart';
+import '../auth/biometric_auth.dart';
+import '../auth/biometric_prefs.dart';
 import '../auth/jwt.dart';
 import '../auth/token_storage.dart';
 import '../env.dart';
 import '../member/assistant_prefs.dart' as ap;
 import '../member/notification_prefs.dart' as np;
 import '../member/onboarding_prefs.dart';
+import '../user/user_api.dart';
 import 'member_scaffold.dart';
 import 'settings_prefs.dart';
 
@@ -39,10 +45,43 @@ class _SettingsPageState extends State<SettingsPage> {
   TimeOfDay _quietStart = const TimeOfDay(hour: 22, minute: 0);
   TimeOfDay _quietEnd = const TimeOfDay(hour: 7, minute: 0);
 
+  bool _biometricSupported = false;
+  bool _biometricEnrolled = false;
+  bool _biometricEnabled = false;
+  bool _biometricLoading = false;
+  List<BiometricType> _availableBiometrics = const [];
+
+  bool _twoFactorEnabled = false;
+  bool _twoFactorLoading = false;
+
+  final _userApi = UserApi();
+  final ImagePicker _imagePicker = ImagePicker();
+
+  final TextEditingController _firstNameCtrl = TextEditingController();
+  final TextEditingController _lastNameCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
+  final TextEditingController _locationCtrl = TextEditingController();
+
+  String? _email;
+  String? _avatarUrl;
+  File? _avatarFile;
+  bool _removeAvatar = false;
+  bool _profileSaving = false;
+  int? _userId;
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
+    _phoneCtrl.dispose();
+    _locationCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -50,6 +89,8 @@ class _SettingsPageState extends State<SettingsPage> {
     final payload = token != null ? decodeJwtPayload(token) : null;
     final roles = _extractRoles(payload?['roles']);
     final isProfessional = roles.contains('ROLE_PROFESSIONAL');
+    final userId = (payload?['id'] as num?)?.toInt();
+    final email = payload?['sub']?.toString();
 
     final joinMethod = await SettingsPrefs.getJoinMethod();
     final useContext = await ap.AssistantPrefs.getUseContext();
@@ -79,10 +120,13 @@ class _SettingsPageState extends State<SettingsPage> {
       _quietEnabled = quietEnabled;
       _quietStart = quietStart;
       _quietEnd = quietEnd;
+      _userId = userId;
+      _email = email ?? _email;
     });
 
+    final client = AuthorizedHttpClient(_storage);
+
     try {
-      final client = AuthorizedHttpClient(_storage);
       final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/assistant/prefs');
       final res = await client.get(uri);
       if (res.statusCode >= 200 &&
@@ -104,6 +148,11 @@ class _SettingsPageState extends State<SettingsPage> {
         await ap.AssistantPrefs.setSuggestGoals(remoteSuggest);
       }
     } catch (_) {}
+
+    await _loadProfile(userId);
+
+    await _fetchTwoFactorStatus(client);
+    await _refreshBiometricState();
 
     if (mounted) setState(() => _loading = false);
   }
@@ -128,11 +177,14 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   List<Widget> _buildContent() {
-    final widgets = <Widget>[
-      const ListTile(
-        title: Text('Notifications'),
-        subtitle: Text('Push, reminders, and quiet hours'),
-      ),
+    final widgets = <Widget>[];
+    widgets.addAll(_profileSection());
+    widgets.add(const Divider(height: 32));
+    widgets.add(const ListTile(
+      title: Text('Notifications'),
+      subtitle: Text('Push, reminders, and quiet hours'),
+    ));
+    widgets.addAll([
       SwitchListTile(
         title: const Text('Push notifications'),
         value: _pushEnabled,
@@ -175,7 +227,124 @@ class _SettingsPageState extends State<SettingsPage> {
           await np.NotificationPrefs.setQuietEnabled(v);
         },
       ),
-    ];
+    ]);
+    widgets.add(const Divider(height: 32));
+    widgets.add(const ListTile(
+      title: Text('Security'),
+      subtitle: Text('Add extra protection to your account'),
+    ));
+    widgets.add(
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                _biometricEnabled
+                    ? Icons.lock_open_rounded
+                    : Icons.lock_outline,
+                color: _biometricEnabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Quick unlock',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _biometricStatusMessage(),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              _biometricLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : TextButton(
+                      onPressed: !_biometricSupported
+                          ? null
+                          : _biometricEnabled
+                              ? _disableBiometrics
+                              : _enableBiometrics,
+                      child: Text(_biometricEnabled ? 'Disable' : 'Enable'),
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    widgets.add(const SizedBox(height: 12));
+    widgets.add(
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                _twoFactorEnabled
+                    ? Icons.verified_user
+                    : Icons.verified_user_outlined,
+                color: _twoFactorEnabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _twoFactorEnabled
+                          ? 'Two-factor authentication is on'
+                          : 'Two-factor authentication is off',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _twoFactorEnabled
+                          ? 'Logging in requires a code from your authenticator app.'
+                          : 'Use an authenticator app for an extra verification step at sign-in.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              _twoFactorLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : TextButton(
+                      onPressed: _twoFactorEnabled
+                          ? _promptDisableTwoFactor
+                          : _beginTwoFactorSetup,
+                      child: Text(_twoFactorEnabled ? 'Disable' : 'Enable'),
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
 
     if (_quietEnabled) {
       widgets.add(
@@ -234,7 +403,9 @@ class _SettingsPageState extends State<SettingsPage> {
     widgets.addAll([
       RadioListTile<SessionJoinMethod>(
         value: SessionJoinMethod.zoomApp,
+        // ignore: deprecated_member_use
         groupValue: _method,
+        // ignore: deprecated_member_use
         onChanged: (v) => v != null ? _update(v) : null,
         title: const Text('Open in Zoom app (default)'),
         subtitle: const Text(
@@ -242,13 +413,253 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       RadioListTile<SessionJoinMethod>(
         value: SessionJoinMethod.webView,
+        // ignore: deprecated_member_use
         groupValue: _method,
+        // ignore: deprecated_member_use
         onChanged: (v) => v != null ? _update(v) : null,
         title: const Text('Open inside app (WebView)'),
         subtitle: const Text('Use in-app browser to run the Zoom Web SDK'),
       ),
     ]);
     return widgets;
+  }
+
+  List<Widget> _profileSection() {
+    final theme = Theme.of(context);
+    final image = _avatarImageProvider();
+    final hasAvatar = image != null;
+    final initials = _profileInitials();
+
+    return [
+      const ListTile(
+        title: Text('Profile'),
+        subtitle: Text('Update your personal information'),
+      ),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 44,
+            backgroundImage: image,
+            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+            child: image == null
+                ? Text(
+                    initials,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextButton.icon(
+                  onPressed: _profileSaving ? null : _pickAvatar,
+                  icon: const Icon(Icons.photo_camera_outlined),
+                  label: const Text('Change photo'),
+                ),
+                if (hasAvatar)
+                  TextButton.icon(
+                    onPressed: _profileSaving ? null : _removeAvatarLocally,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Remove photo'),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      TextField(
+        controller: _firstNameCtrl,
+        decoration: const InputDecoration(labelText: 'First name'),
+        textInputAction: TextInputAction.next,
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _lastNameCtrl,
+        decoration: const InputDecoration(labelText: 'Last name'),
+        textInputAction: TextInputAction.next,
+      ),
+      const SizedBox(height: 12),
+      ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Email'),
+        subtitle: Text(_email ?? '—'),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _phoneCtrl,
+        decoration: const InputDecoration(labelText: 'Phone'),
+        keyboardType: TextInputType.phone,
+        textInputAction: TextInputAction.next,
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _locationCtrl,
+        decoration: const InputDecoration(labelText: 'Location'),
+        textInputAction: TextInputAction.done,
+      ),
+      const SizedBox(height: 16),
+      FilledButton.icon(
+        onPressed: _profileSaving ? null : _saveProfile,
+        icon: _profileSaving
+            ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.save_outlined),
+        label: Text(_profileSaving ? 'Saving…' : 'Save profile'),
+      ),
+    ];
+  }
+
+  ImageProvider<Object>? _avatarImageProvider() {
+    if (_avatarFile != null) {
+      return FileImage(_avatarFile!);
+    }
+    final value = _avatarUrl;
+    if (value == null || value.isEmpty) return null;
+    return NetworkImage(_resolveAvatarUrl(value));
+  }
+
+  String _profileInitials() {
+    final first = _firstNameCtrl.text.trim();
+    final last = _lastNameCtrl.text.trim();
+    if (first.isNotEmpty && last.isNotEmpty) {
+      return '${first[0]}${last[0]}'.toUpperCase();
+    }
+    if (first.isNotEmpty) return first[0].toUpperCase();
+    if (last.isNotEmpty) return last[0].toUpperCase();
+    if (_email != null && _email!.isNotEmpty) return _email![0].toUpperCase();
+    return 'U';
+  }
+
+  static const int _maxAvatarBytes = 2 * 1024 * 1024; // 2MB
+  static const String _maxAvatarLabel = '2 MB';
+
+  Future<void> _pickAvatar() async {
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      final file = File(picked.path);
+      final size = await file.length();
+      if (size > _maxAvatarBytes) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Avatar is too large. Max allowed is $_maxAvatarLabel.'),
+          ),
+        );
+        return;
+      }
+      setState(() {
+        _avatarFile = file;
+        _removeAvatar = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not select image: $e')),
+      );
+    }
+  }
+
+  void _removeAvatarLocally() {
+    setState(() {
+      _avatarFile = null;
+      _avatarUrl = null;
+      _removeAvatar = true;
+    });
+  }
+
+  Future<void> _saveProfile() async {
+    if (_userId == null) return;
+    setState(() => _profileSaving = true);
+    try {
+      final first = _firstNameCtrl.text.trim();
+      final last = _lastNameCtrl.text.trim();
+      final phone = _phoneCtrl.text.trim();
+      final location = _locationCtrl.text.trim();
+      final response = await _userApi.updateProfile(
+        id: _userId!,
+        firstName: first.isEmpty ? null : first,
+        lastName: last.isEmpty ? null : last,
+        phone: phone.isEmpty ? null : phone,
+        location: location.isEmpty ? null : location,
+        avatarFile: _avatarFile,
+        removeAvatar: _removeAvatar,
+      );
+      _firstNameCtrl.text = response['firstName']?.toString() ?? first;
+      _lastNameCtrl.text = response['lastName']?.toString() ?? last;
+      final updatedPhone = response['phone']?.toString() ?? '';
+      _phoneCtrl.text = updatedPhone;
+      final updatedLocation = response['location']?.toString() ?? '';
+      _locationCtrl.text = updatedLocation;
+      final newEmail = response['email']?.toString();
+      final avatar = response['avatarUrl']?.toString();
+      if (!mounted) return;
+      setState(() {
+        _email = newEmail ?? _email;
+        _avatarUrl = (avatar != null && avatar.isNotEmpty) ? avatar : null;
+        _avatarFile = null;
+        _removeAvatar = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not update profile: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _profileSaving = false);
+    }
+  }
+
+  Future<void> _loadProfile(int? userId) async {
+    if (userId == null) return;
+    try {
+      final data = await _userApi.getUserById(userId);
+      final first = data['firstName']?.toString() ?? '';
+      final last = data['lastName']?.toString() ?? '';
+      final phone = data['phone']?.toString() ?? '';
+      final location = data['location']?.toString() ?? '';
+      final email = data['email']?.toString();
+      final avatar = data['avatarUrl']?.toString();
+      _firstNameCtrl.text = first;
+      _lastNameCtrl.text = last;
+      _phoneCtrl.text = phone;
+      _locationCtrl.text = location;
+      if (!mounted) return;
+      setState(() {
+        _email = email ?? _email;
+        _avatarUrl = (avatar != null && avatar.isNotEmpty) ? avatar : null;
+        _avatarFile = null;
+        _removeAvatar = false;
+      });
+    } catch (_) {}
+  }
+
+  String _resolveAvatarUrl(String value) {
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+    if (value.startsWith('/')) {
+      return '${_normalizeBaseUrl(apiBaseUrl)}$value';
+    }
+    return '${_normalizeBaseUrl(apiBaseUrl)}/$value';
   }
 
   List<Widget> _memberAssistantSettings() {
@@ -320,6 +731,370 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
     ];
+  }
+
+  Future<void> _fetchTwoFactorStatus(AuthorizedHttpClient client) async {
+    try {
+      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/auth/2fa/status');
+      final res = await client.get(uri);
+      if (res.statusCode >= 200 &&
+          res.statusCode < 300 &&
+          res.body.isNotEmpty) {
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        if (mounted) {
+          setState(() {
+            _twoFactorEnabled = body['enabled'] == true;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _refreshBiometricState() async {
+    final supported = await BiometricAuth.isSupported();
+    final available = supported
+        ? await BiometricAuth.getAvailableBiometrics()
+        : const <BiometricType>[];
+    final enrolled = supported &&
+        available.isNotEmpty &&
+        await BiometricAuth.canCheckBiometrics();
+    var enabledPreference = await BiometricPrefs.isEnabled();
+    if (!enrolled && enabledPreference) {
+      await BiometricPrefs.setEnabled(false);
+      enabledPreference = false;
+    }
+    if (!mounted) return;
+    setState(() {
+      _biometricSupported = supported;
+      _biometricEnrolled = enrolled;
+      _availableBiometrics = available;
+      _biometricEnabled = enabledPreference && enrolled;
+    });
+  }
+
+  Future<void> _enableBiometrics() async {
+    if (_biometricLoading) return;
+    if (!_biometricSupported) {
+      _showSnack('Biometric unlock is not available on this device.');
+      return;
+    }
+    if (!_biometricEnrolled) {
+      _showSnack(
+          'Set up Face ID or fingerprint in your device settings first.');
+      return;
+    }
+    setState(() => _biometricLoading = true);
+    final success = await BiometricAuth.authenticate(
+      reason: 'Authenticate to enable quick unlock',
+    );
+    if (!mounted) return;
+    if (success) {
+      await BiometricPrefs.setEnabled(true);
+      await _storage.setRemembered(true);
+      await _refreshBiometricState();
+      _showSnack('Quick unlock enabled.');
+    } else {
+      final reason = BiometricAuth.lastError;
+      _showSnack(reason == null || reason.trim().isEmpty
+          ? 'Biometric authentication was cancelled.'
+          : reason.trim());
+    }
+    if (mounted) setState(() => _biometricLoading = false);
+  }
+
+  Future<void> _disableBiometrics() async {
+    if (_biometricLoading) return;
+    setState(() => _biometricLoading = true);
+    final confirmed = await BiometricAuth.authenticate(
+      reason: 'Confirm to disable quick unlock',
+    );
+    if (!mounted) return;
+    if (confirmed) {
+      await BiometricPrefs.setEnabled(false);
+      await _storage.setRemembered(false);
+      await _refreshBiometricState();
+      _showSnack('Quick unlock disabled.');
+    } else {
+      final reason = BiometricAuth.lastError;
+      _showSnack(reason == null || reason.trim().isEmpty
+          ? 'Biometric authentication was cancelled.'
+          : reason.trim());
+    }
+    if (mounted) setState(() => _biometricLoading = false);
+  }
+
+  String _biometricStatusMessage() {
+    if (!_biometricSupported) {
+      return 'Biometric unlock is not supported on this device.';
+    }
+    if (!_biometricEnrolled) {
+      return 'Set up Face ID or fingerprint in your device settings to enable quick unlock.';
+    }
+    final label = _biometricMethodLabel();
+    if (_biometricEnabled) {
+      return 'Use $label to unlock the app quickly.';
+    }
+    return 'Enable $label to unlock your account without entering your password.';
+  }
+
+  String _biometricMethodLabel() {
+    final types = _availableBiometrics.toSet();
+    if (types.contains(BiometricType.face)) {
+      return 'Face ID';
+    }
+    if (types.contains(BiometricType.fingerprint)) {
+      return 'your fingerprint';
+    }
+    if (types.contains(BiometricType.iris)) {
+      return 'your device biometrics';
+    }
+    if (types.contains(BiometricType.strong)) {
+      return 'your device biometrics';
+    }
+    return 'biometrics';
+  }
+
+  Future<void> _beginTwoFactorSetup() async {
+    setState(() => _twoFactorLoading = true);
+    final client = AuthorizedHttpClient(_storage);
+    try {
+      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/auth/2fa/setup');
+      final res = await client.post(uri);
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        throw Exception(_readErrorBody(res.body));
+      }
+      final payload = jsonDecode(res.body) as Map<String, dynamic>;
+      if (!mounted) return;
+      setState(() => _twoFactorLoading = false);
+      await _showTwoFactorSetupSheet(
+        secret: payload['secret'] as String? ?? '',
+        otpauthUrl: payload['otpauthUrl'] as String? ?? '',
+      );
+      final code = await _requestTwoFactorCode(
+        title: 'Verify two-factor authentication',
+        description:
+            'Enter the 6-digit code from your authenticator app to finish setup.',
+      );
+      if (code != null) {
+        await _completeEnableTwoFactor(code);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('Unable to start two-factor setup: ${_friendlyError(e)}');
+      setState(() => _twoFactorLoading = false);
+    } finally {
+      if (mounted) {
+        setState(() => _twoFactorLoading = false);
+      }
+    }
+  }
+
+  Future<void> _completeEnableTwoFactor(String code) async {
+    setState(() => _twoFactorLoading = true);
+    final client = AuthorizedHttpClient(_storage);
+    try {
+      final uri = Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/auth/2fa/enable');
+      final res = await client.post(uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'code': code}));
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        await _fetchTwoFactorStatus(client);
+        if (mounted) {
+          _showSnack('Two-factor authentication enabled.');
+        }
+      } else {
+        throw Exception(_readErrorBody(res.body));
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnack(
+            'Could not enable two-factor authentication: ${_friendlyError(e)}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _twoFactorLoading = false);
+      }
+    }
+  }
+
+  Future<void> _promptDisableTwoFactor() async {
+    final code = await _requestTwoFactorCode(
+      title: 'Disable two-factor authentication',
+      description:
+          'Enter the 6-digit code from your authenticator app to disable protection.',
+    );
+    if (code == null) return;
+    await _disableTwoFactor(code);
+  }
+
+  Future<void> _disableTwoFactor(String code) async {
+    setState(() => _twoFactorLoading = true);
+    final client = AuthorizedHttpClient(_storage);
+    try {
+      final uri =
+          Uri.parse('${_normalizeBaseUrl(apiBaseUrl)}/auth/2fa/disable');
+      final res = await client.post(uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'code': code}));
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        await _fetchTwoFactorStatus(client);
+        if (mounted) {
+          _showSnack('Two-factor authentication disabled.');
+        }
+      } else {
+        throw Exception(_readErrorBody(res.body));
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnack(
+            'Could not disable two-factor authentication: ${_friendlyError(e)}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _twoFactorLoading = false);
+      }
+    }
+  }
+
+  Future<void> _showTwoFactorSetupSheet(
+      {required String secret, required String otpauthUrl}) async {
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            24,
+            24,
+            24 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Set up two-factor authentication',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Add Mindapax to your authenticator app using the secret below. '
+                'After scanning or entering it manually, return here to verify the setup.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              _TwoFactorValueTile(
+                label: 'Secret key',
+                value: secret,
+                onCopy: () => _copyToClipboard(secret, 'Secret key copied'),
+              ),
+              const SizedBox(height: 12),
+              _TwoFactorValueTile(
+                label: 'otpauth URL',
+                value: otpauthUrl,
+                onCopy: () => _copyToClipboard(otpauthUrl, 'Setup URL copied'),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('I\'m ready to verify'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String?> _requestTwoFactorCode({
+    required String title,
+    required String description,
+  }) async {
+    if (!mounted) return null;
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        String? error;
+        return StatefulBuilder(
+          builder: (ctx, setState) => AlertDialog(
+            title: Text(title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(description),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: 'Two-factor code',
+                    counterText: '',
+                    errorText: error,
+                  ),
+                  onChanged: (_) => setState(() => error = null),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final value = controller.text.trim();
+                  if (value.length != 6) {
+                    setState(() => error = 'Enter the 6-digit code');
+                    return;
+                  }
+                  Navigator.of(ctx).pop(value);
+                },
+                child: const Text('Confirm'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _copyToClipboard(String value, String message) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (!mounted) return;
+    _showSnack(message);
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  String _friendlyError(Object error) {
+    final text = error.toString();
+    return text.replaceFirst('Exception: ', '');
+  }
+
+  String _readErrorBody(String body) {
+    if (body.isEmpty) return 'Request failed';
+    try {
+      final map = jsonDecode(body) as Map<String, dynamic>;
+      return (map['message'] ?? map['error'] ?? body).toString();
+    } catch (_) {
+      return body;
+    }
   }
 
   List<Widget> _professionalPracticeNotes() {
@@ -409,5 +1184,56 @@ class _SettingsPageState extends State<SettingsPage> {
           .toList(growable: false);
     }
     return const [];
+  }
+}
+
+class _TwoFactorValueTile extends StatelessWidget {
+  const _TwoFactorValueTile({
+    required this.label,
+    required this.value,
+    required this.onCopy,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          SelectableText(
+            value,
+            style:
+                theme.textTheme.titleSmall?.copyWith(fontFamily: 'monospace'),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onCopy,
+              icon: const Icon(Icons.copy, size: 18),
+              label: const Text('Copy'),
+            ),
+          )
+        ],
+      ),
+    );
   }
 }

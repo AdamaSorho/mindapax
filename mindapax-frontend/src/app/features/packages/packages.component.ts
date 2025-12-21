@@ -38,19 +38,58 @@ export class PackagesComponent {
   }
 
   subscribe(plan: PlanDTO) {
+    if (plan.trial && plan.eligibleForTrial === false) {
+      this.toast.info('You have already used your trial. Pick a plan to keep going.');
+      return;
+    }
     this.loading = true; this.error = null; this.verifiedStatus = null;
     this.subs.subscribe(plan.id).subscribe({
       next: (resp) => {
         this.loading = false;
+        if (!resp.requiresPayment) {
+          const days = plan.trialDurationDays ?? 7;
+          this.showModal = false;
+          this.paymentId = undefined;
+          this.checkoutUrl = '';
+          if (plan.trial) {
+            this.toast.success(`Trial activated! Enjoy Mindapax for ${days} day${days === 1 ? '' : 's'}.`);
+            plan.eligibleForTrial = false;
+            this.router.navigate(['/member/dashboard']);
+          } else {
+            this.toast.success('Subscription activated successfully.');
+            this.router.navigate(['/member/subscriptions']);
+          }
+          return;
+        }
+        const checkoutUrl = (resp.checkoutUrl ?? '').trim();
+        if (!resp.paymentId || !checkoutUrl) {
+          this.error = 'Checkout is currently unavailable. Please try again shortly.';
+          this.toast.error(this.error!, 6000, [{ label: 'Retry' }]);
+          return;
+        }
         this.paymentId = resp.paymentId;
-        this.checkoutUrl = resp.checkoutUrl;
+        this.checkoutUrl = checkoutUrl;
         this.showModal = true;
       },
-      error: () => {
-        this.error = 'Failed to start checkout'; this.loading = false;
-        this.toast.error('Could not start checkout', 7000, [{ label: 'Retry' }]);
+      error: (err) => {
+        const message = (err?.error?.message || 'Failed to start checkout').toString();
+        this.error = message; this.loading = false;
+        this.toast.error(message, 7000, [{ label: 'Retry' }]);
       }
     });
+  }
+
+  buttonLabel(plan: PlanDTO): string {
+    if (plan.trial) {
+      return plan.eligibleForTrial === false ? 'Trial used' : 'Start free trial';
+    }
+    return 'Subscribe';
+  }
+
+  disableSubscribe(plan: PlanDTO): boolean {
+    if (this.loading) return true;
+    if (plan.trial && plan.eligibleForTrial === false) return true;
+    return false;
   }
 
   verifyPayment() {
