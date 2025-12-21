@@ -15,6 +15,7 @@ import { ScheduleSessionComponent } from './schedule-session/schedule-session.co
 import { ZoomMeetingComponent } from './zoom-meeting/zoom-meeting.component';
 import { AiAssistantComponent } from './ai-assistant/ai-assistant.component';
 import { AdminPlansComponent } from './admin-plans/admin-plans.component';
+import { AdminMicroSessionsComponent } from './admin-micro-sessions/admin-micro-sessions.component';
 import { PackagesComponent } from './packages/packages.component';
 import { MySubscriptionsComponent } from './my-subscriptions/my-subscriptions.component';
 
@@ -54,6 +55,7 @@ export const featuresRoutes: Routes = [
         // authGuard is implicitly applied due to parent.
       },
       { path: 'admin/plans', component: AdminPlansComponent, data: { roles: ['ADMIN'] } },
+      { path: 'admin/micro-sessions', component: AdminMicroSessionsComponent, data: { roles: ['ADMIN'] } },
       { path: 'packages', component: PackagesComponent },
       { path: 'subscriptions', component: MySubscriptionsComponent },
     ],

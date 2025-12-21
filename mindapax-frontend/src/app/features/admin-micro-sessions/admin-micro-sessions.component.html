@@ -1,0 +1,123 @@
+<div class="p-4">
+  <h2 class="text-xl font-semibold mb-4">Admin: Micro Sessions</h2>
+
+  <div *ngIf="error" class="mb-3 p-3 bg-red-100 text-red-700 rounded">{{ error }}</div>
+  <div *ngIf="loading" class="mb-3 text-gray-500">Loading…</div>
+
+  <div class="grid md:grid-cols-2 gap-6">
+    <div>
+      <h3 class="font-semibold mb-2">Existing Sessions</h3>
+      <div *ngFor="let s of sessions" class="p-3 border rounded mb-3">
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="font-semibold">{{ s.title }}</div>
+            <div class="text-sm text-gray-600">{{ s.domain }} • {{ s.minutes }} min</div>
+            <div class="text-sm" *ngIf="s.description">{{ s.description }}</div>
+            <div class="text-xs mt-1 text-gray-500" *ngIf="s.outcomes?.length">
+              Outcomes: {{ s.outcomes.join(', ') }}
+            </div>
+            <div class="text-xs mt-1 text-gray-500" *ngIf="s.steps?.length">
+              Steps: {{ s.steps.length }}
+            </div>
+          </div>
+          <div class="space-x-2">
+            <button class="px-3 py-1 bg-blue-600 text-white rounded" (click)="edit(s)">Edit</button>
+            <button class="px-3 py-1 bg-red-600 text-white rounded" (click)="remove(s.id)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="font-semibold mb-2">{{ editing ? 'Edit Micro Session' : 'Create Micro Session' }}</h3>
+      <div class="p-3 border rounded space-y-3">
+        <ng-container *ngIf="!editing; else editForm">
+          <label class="block text-sm">Title
+            <input class="w-full border rounded p-2" [(ngModel)]="draft.title" />
+          </label>
+          <div *ngIf="submitted && !draft.title" class="text-xs text-red-600">
+            Title is required.
+          </div>
+          <label class="block text-sm">Description
+            <textarea class="w-full border rounded p-2" [(ngModel)]="draft.description"></textarea>
+          </label>
+          <div *ngIf="submitted && !draft.description" class="text-xs text-red-600">
+            Description is required.
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block text-sm">Domain
+              <select class="w-full border rounded p-2" [(ngModel)]="draft.domain">
+                <option *ngFor="let d of domains" [value]="d">{{ d }}</option>
+              </select>
+            </label>
+            <label class="block text-sm">Minutes
+              <input type="number" class="w-full border rounded p-2" [(ngModel)]="draft.minutes" />
+            </label>
+          </div>
+          <div *ngIf="submitted && (!draft.minutes || draft.minutes < 1)" class="text-xs text-red-600">
+            Minutes must be at least 1.
+          </div>
+          <label class="block text-sm">Outcomes (one per line)
+            <textarea class="w-full border rounded p-2" [(ngModel)]="draftOutcomesText" rows="4"></textarea>
+          </label>
+          <div *ngIf="submitted && !draftOutcomesText" class="text-xs text-red-600">
+            Add at least one outcome.
+          </div>
+          <label class="block text-sm">Steps (one per line)
+            <textarea class="w-full border rounded p-2" [(ngModel)]="draftStepsText" rows="4"></textarea>
+          </label>
+          <div *ngIf="submitted && !draftStepsText" class="text-xs text-red-600">
+            Add at least one step.
+          </div>
+          <div class="pt-2">
+            <button class="px-3 py-1 bg-green-600 text-white rounded" (click)="saveNew()" [disabled]="loading">Create</button>
+          </div>
+        </ng-container>
+
+        <ng-template #editForm>
+          <label class="block text-sm">Title
+            <input class="w-full border rounded p-2" [(ngModel)]="editing!.title" />
+          </label>
+          <div *ngIf="editSubmitted && !editing!.title" class="text-xs text-red-600">
+            Title is required.
+          </div>
+          <label class="block text-sm">Description
+            <textarea class="w-full border rounded p-2" [(ngModel)]="editing!.description"></textarea>
+          </label>
+          <div *ngIf="editSubmitted && !editing!.description" class="text-xs text-red-600">
+            Description is required.
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block text-sm">Domain
+              <select class="w-full border rounded p-2" [(ngModel)]="editing!.domain">
+                <option *ngFor="let d of domains" [value]="d">{{ d }}</option>
+              </select>
+            </label>
+            <label class="block text-sm">Minutes
+              <input type="number" class="w-full border rounded p-2" [(ngModel)]="editing!.minutes" />
+            </label>
+          </div>
+          <div *ngIf="editSubmitted && (!editing!.minutes || editing!.minutes < 1)" class="text-xs text-red-600">
+            Minutes must be at least 1.
+          </div>
+          <label class="block text-sm">Outcomes (one per line)
+            <textarea class="w-full border rounded p-2" [(ngModel)]="editOutcomesText" rows="4"></textarea>
+          </label>
+          <div *ngIf="editSubmitted && !editOutcomesText" class="text-xs text-red-600">
+            Add at least one outcome.
+          </div>
+          <label class="block text-sm">Steps (one per line)
+            <textarea class="w-full border rounded p-2" [(ngModel)]="editStepsText" rows="4"></textarea>
+          </label>
+          <div *ngIf="editSubmitted && !editStepsText" class="text-xs text-red-600">
+            Add at least one step.
+          </div>
+          <div class="pt-2 space-x-2">
+            <button class="px-3 py-1 bg-blue-600 text-white rounded" (click)="saveEdit()" [disabled]="loading">Save</button>
+            <button class="px-3 py-1 bg-gray-200 rounded" (click)="cancel()">Cancel</button>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>

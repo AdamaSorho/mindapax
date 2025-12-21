@@ -22,6 +22,7 @@ import 'member/settings_page.dart';
 import 'member/connections_page.dart';
 import 'member/professional_availability_page.dart';
 import 'member/today_page.dart';
+import 'member/micro_sessions_page.dart';
 import 'launch_gate.dart';
 import 'root_gate.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -62,6 +63,8 @@ class MyApp extends StatelessWidget {
         '/auth/forgot-password': (_) => const ForgotPasswordPage(),
         '/member/dashboard': (_) => const RequireAuth(child: DashboardPage()),
         '/member/today': (_) => const RequireAuth(child: TodayPage()),
+        '/member/micro-sessions': (_) =>
+            const RequireAuth(child: MicroSessionsPage()),
         '/member/find-professional': (_) =>
             const RequireAuth(child: FindProfessionalPage()),
         '/member/sessions': (_) => const RequireAuth(child: SessionsPage()),

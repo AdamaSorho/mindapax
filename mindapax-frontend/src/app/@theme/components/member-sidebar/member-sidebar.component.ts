@@ -66,6 +66,12 @@ export class MemberSidebarComponent implements OnInit {
       allowedRoles: ['ROLE_ADMIN'],
     },
     {
+      label: 'Admin: Micro Sessions',
+      route: '/member/admin/micro-sessions',
+      icon: 'flash-outline',
+      allowedRoles: ['ROLE_ADMIN'],
+    },
+    {
       label: 'Billing',
       route: '/member/billing',
       icon: 'card-outline',

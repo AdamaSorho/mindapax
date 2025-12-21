@@ -115,6 +115,8 @@ class _MemberDrawerState extends State<MemberDrawer> {
           '/member/goals',
           Icons.flag_outlined,
           const ['ROLE_USER', 'ROLE_ADMIN']),
+      _MenuItem('Micro Sessions', '/member/micro-sessions', Icons.bolt_outlined,
+          const ['ROLE_USER', 'ROLE_PROFESSIONAL', 'ROLE_ADMIN']),
       _MenuItem(
           'My Sessions',
           '/member/sessions',

@@ -29,6 +29,7 @@ class _GoalWizardSheetState extends State<_GoalWizardSheet> {
   final _actionCtrl = TextEditingController();
   bool _saving = false;
   GoalTemplate? _selectedTemplate;
+  bool _showTitleError = false;
 
   @override
   void dispose() {
@@ -38,10 +39,21 @@ class _GoalWizardSheetState extends State<_GoalWizardSheet> {
   }
 
   void _next() {
-    if (_step == 0 && _titleCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Give your goal a title to continue.')));
-      return;
+    if (_step == 0) {
+      if (_titleCtrl.text.trim().isEmpty) {
+        if (_selectedTemplate != null) {
+          _titleCtrl.text = _selectedTemplate!.title;
+        } else if (_outcome != null && _outcome!.trim().isNotEmpty) {
+          _titleCtrl.text = _outcome!.trim();
+        } else if (_actionCtrl.text.trim().isNotEmpty) {
+          _titleCtrl.text = _actionCtrl.text.trim();
+        }
+      }
+      if (_titleCtrl.text.trim().isEmpty) {
+        setState(() => _showTitleError = true);
+        FocusScope.of(context).unfocus();
+        return;
+      }
     }
     if (_step < 2) {
       setState(() => _step += 1);
@@ -205,8 +217,15 @@ class _GoalWizardSheetState extends State<_GoalWizardSheet> {
         const SizedBox(height: 12),
         TextField(
           controller: _titleCtrl,
-          decoration: const InputDecoration(
-              labelText: 'Goal title', border: OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: 'Goal title',
+              border: const OutlineInputBorder(),
+              errorText: _showTitleError ? 'Goal title is required' : null),
+          onChanged: (_) {
+            if (_showTitleError) {
+              setState(() => _showTitleError = false);
+            }
+          },
         ),
         const SizedBox(height: 12),
         TextField(
@@ -328,6 +347,7 @@ class _GoalWizardSheetState extends State<_GoalWizardSheet> {
       _minutes = t.minutes;
       _titleCtrl.text = t.title;
       _actionCtrl.text = t.action;
+      _showTitleError = false;
     });
   }
 
